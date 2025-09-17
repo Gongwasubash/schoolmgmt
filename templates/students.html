@@ -9,7 +9,300 @@
 </div>
 
 <div class="content-card">
-    <h2>Student List</h2>
+    <div class="section-header">
+        <h2>Student List</h2>
+        <button class="btn btn-primary" onclick="showAdmissionForm()" type="button">New Admission</button>
+    </div>
     <p>View and manage all student records in the system.</p>
 </div>
+
+<!-- Admission Form Modal -->
+<div id="admissionModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>New Student Admission</h3>
+            <span class="close" onclick="hideAdmissionForm()">&times;</span>
+        </div>
+        <form id="admissionForm" class="admission-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="firstName">First Name *</label>
+                    <input type="text" id="firstName" name="firstName" required>
+                </div>
+                <div class="form-group">
+                    <label for="lastName">Last Name *</label>
+                    <input type="text" id="lastName" name="lastName" required>
+                </div>
+                <div class="form-group">
+                    <label for="dateOfBirth">Date of Birth *</label>
+                    <input type="date" id="dateOfBirth" name="dateOfBirth" required>
+                </div>
+                <div class="form-group">
+                    <label for="gender">Gender *</label>
+                    <select id="gender" name="gender" required>
+                        <option value="">Select Gender</option>
+                        <option value="male">Male</option>
+                        <option value="female">Female</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="class">Class *</label>
+                    <select id="class" name="class" required>
+                        <option value="">Select Class</option>
+                        <option value="1">Class 1</option>
+                        <option value="2">Class 2</option>
+                        <option value="3">Class 3</option>
+                        <option value="4">Class 4</option>
+                        <option value="5">Class 5</option>
+                        <option value="6">Class 6</option>
+                        <option value="7">Class 7</option>
+                        <option value="8">Class 8</option>
+                        <option value="9">Class 9</option>
+                        <option value="10">Class 10</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="section">Section</label>
+                    <select id="section" name="section">
+                        <option value="">Select Section</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="rollNumber">Roll Number</label>
+                    <input type="text" id="rollNumber" name="rollNumber">
+                </div>
+                <div class="form-group">
+                    <label for="admissionDate">Admission Date *</label>
+                    <input type="date" id="admissionDate" name="admissionDate" required>
+                </div>
+                <div class="form-group full-width">
+                    <label for="address">Address</label>
+                    <textarea id="address" name="address" rows="3"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="parentName">Parent/Guardian Name *</label>
+                    <input type="text" id="parentName" name="parentName" required>
+                </div>
+                <div class="form-group">
+                    <label for="parentPhone">Parent Phone *</label>
+                    <input type="tel" id="parentPhone" name="parentPhone" required>
+                </div>
+                <div class="form-group">
+                    <label for="parentEmail">Parent Email</label>
+                    <input type="email" id="parentEmail" name="parentEmail">
+                </div>
+                <div class="form-group">
+                    <label for="bloodGroup">Blood Group</label>
+                    <select id="bloodGroup" name="bloodGroup">
+                        <option value="">Select Blood Group</option>
+                        <option value="A+">A+</option>
+                        <option value="A-">A-</option>
+                        <option value="B+">B+</option>
+                        <option value="B-">B-</option>
+                        <option value="AB+">AB+</option>
+                        <option value="AB-">AB-</option>
+                        <option value="O+">O+</option>
+                        <option value="O-">O-</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="hideAdmissionForm()">Cancel</button>
+                <button type="submit" class="btn btn-primary">Submit Admission</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.modal {
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(5px);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 2% auto;
+    padding: 0;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 800px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    border-radius: 12px 12px 0 0;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #2d3748;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.close {
+    color: #718096;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.close:hover {
+    color: #2d3748;
+}
+
+.admission-form {
+    padding: 2rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group.full-width {
+    grid-column: 1 / -1;
+}
+
+.form-group label {
+    margin-bottom: 0.5rem;
+    color: #2d3748;
+    font-weight: 500;
+    font-size: 0.875rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+    padding: 0.75rem;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: #3182ce;
+    box-shadow: 0 0 0 3px rgba(49, 130, 206, 0.1);
+}
+
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e2e8f0;
+}
+
+@media (max-width: 768px) {
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .modal-content {
+        width: 95%;
+        margin: 5% auto;
+    }
+    
+    .admission-form {
+        padding: 1rem;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    function showAdmissionForm() {
+        const modal = document.getElementById('admissionModal');
+        if (modal) {
+            modal.style.display = 'block';
+            const admissionDate = document.getElementById('admissionDate');
+            if (admissionDate) {
+                admissionDate.value = new Date().toISOString().split('T')[0];
+            }
+        }
+    }
+
+    function hideAdmissionForm() {
+        const modal = document.getElementById('admissionModal');
+        const form = document.getElementById('admissionForm');
+        if (modal) modal.style.display = 'none';
+        if (form) form.reset();
+    }
+
+    // Make functions global
+    window.showAdmissionForm = showAdmissionForm;
+    window.hideAdmissionForm = hideAdmissionForm;
+
+    // Modal click outside to close
+    window.onclick = function(event) {
+        const modal = document.getElementById('admissionModal');
+        if (event.target === modal) {
+            hideAdmissionForm();
+        }
+    }
+
+    // Form submission
+    const form = document.getElementById('admissionForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const formData = new FormData(this);
+            const studentData = {};
+            for (let [key, value] of formData.entries()) {
+                studentData[key] = value;
+            }
+            console.log('Student admission data:', studentData);
+            alert('Student admission submitted successfully!');
+            hideAdmissionForm();
+        });
+    }
+});
+</script>
 {% endblock %}
