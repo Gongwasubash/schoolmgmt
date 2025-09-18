@@ -1023,83 +1023,83 @@ function printBill() {
     const billHTML = `
         <html>
         <head>
-            <title>Official Fee Receipt</title>
+            <title>School Fee Receipt</title>
             <style>
                 @page { size: A4; margin: 20mm; }
-                body { font-family: 'Times New Roman', serif; margin: 0; padding: 0; font-size: 11px; line-height: 1.3; color: #000; }
-                .bill-container { max-width: 210mm; margin: 0 auto; background: white; border: 2px solid #000; }
-                .header { text-align: center; padding: 15px; border-bottom: 2px solid #000; background: #f8f8f8; }
-                .govt-seal { width: 50px; height: 50px; border: 2px solid #000; border-radius: 50%; display: inline-block; margin-bottom: 10px; text-align: center; line-height: 46px; font-weight: bold; }
-                .dept-name { font-size: 16px; font-weight: bold; margin: 5px 0; text-transform: uppercase; }
-                .office-name { font-size: 14px; font-weight: bold; margin: 3px 0; }
-                .address { font-size: 10px; margin: 3px 0; }
-                .doc-title { font-size: 14px; font-weight: bold; text-decoration: underline; margin: 10px 0; }
-                .ref-section { display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #000; }
-                .ref-item { font-size: 10px; }
-                .content { padding: 15px; }
-                .info-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
-                .info-table td { padding: 5px; border: 1px solid #000; font-size: 10px; }
-                .info-table .label { background: #f0f0f0; font-weight: bold; width: 30%; }
-                .fee-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-                .fee-table th, .fee-table td { border: 1px solid #000; padding: 8px; text-align: center; font-size: 10px; }
-                .fee-table th { background: #e0e0e0; font-weight: bold; }
-                .amount-col { text-align: right; }
-                .total-row { background: #f0f0f0; font-weight: bold; }
-                .amount-words { border: 1px solid #000; padding: 10px; margin: 15px 0; background: #f8f8f8; }
-                .certification { margin: 20px 0; font-size: 10px; text-align: justify; }
-                .footer { display: flex; justify-content: space-between; margin-top: 30px; }
-                .signature-box { text-align: center; width: 200px; }
-                .signature-line { border-top: 1px solid #000; margin-top: 40px; padding-top: 5px; font-size: 10px; }
-                .official-stamp { border: 1px solid #000; width: 100px; height: 60px; margin: 10px auto; text-align: center; line-height: 60px; font-size: 8px; }
+                body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; font-size: 14px; line-height: 1.5; color: #000; }
+                .bill-container { max-width: 210mm; margin: 0 auto; background: white; border: 1px solid #000; }
+                .header { text-align: center; padding: 25px; border-bottom: 1px solid #000; }
+                .school-name { font-size: 24px; font-weight: bold; margin: 0 0 10px 0; }
+                .school-address { font-size: 12px; margin: 5px 0; }
+                .doc-title { font-size: 18px; font-weight: bold; margin: 15px 0 0 0; text-decoration: underline; }
+                .ref-info { display: flex; justify-content: space-between; padding: 15px 25px; border-bottom: 1px solid #000; }
+                .ref-item { font-size: 12px; font-weight: bold; }
+                .content { padding: 25px; }
+                .student-info { margin: 20px 0; }
+                .info-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                .info-table td { padding: 8px 12px; border: 1px solid #000; font-size: 13px; }
+                .info-table .label { background: #f0f0f0; font-weight: bold; width: 25%; }
+                .fee-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                .fee-table th, .fee-table td { border: 1px solid #000; padding: 10px; text-align: left; font-size: 13px; }
+                .fee-table th { background: #000; color: white; font-weight: bold; text-align: center; }
+                .amount-col { text-align: right; font-weight: bold; }
+                .total-row { background: #000; color: white; font-weight: bold; }
+                .amount-words { border: 1px solid #000; padding: 15px; margin: 20px 0; background: #f9f9f9; }
+                .payment-info { display: flex; justify-content: space-between; margin: 20px 0; }
+                .payment-box { width: 30%; text-align: center; border: 1px solid #000; padding: 10px; }
+                .footer { display: flex; justify-content: space-between; margin-top: 40px; }
+                .signature { text-align: center; width: 200px; }
+                .signature-line { border-top: 1px solid #000; margin-top: 50px; padding-top: 5px; font-size: 12px; font-weight: bold; }
             </style>
         </head>
         <body>
             <div class="bill-container">
                 <div class="header">
-                    <div class="govt-seal">SEAL</div>
-                    <div class="dept-name">Government of Nepal</div>
-                    <div class="dept-name">Ministry of Education</div>
-                    <div class="office-name">Bright Future Secondary School</div>
-                    <div class="address">Kathmandu, Bagmati Province</div>
-                    <div class="address">Phone: +977-1-XXXXXXX | Reg. No: 12345/2020</div>
-                    <div class="doc-title">OFFICIAL FEE RECEIPT</div>
+                    <div class="school-name">BRIGHT FUTURE SECONDARY SCHOOL</div>
+                    <div class="school-address">Kathmandu, Nepal</div>
+                    <div class="school-address">Phone: +977-1-4567890</div>
+                    <div class="doc-title">FEE RECEIPT</div>
                 </div>
                 
-                <div class="ref-section">
-                    <div class="ref-item"><strong>Receipt No:</strong> ${window.lastPaymentId || Math.floor(Math.random() * 10000)}/2025</div>
-                    <div class="ref-item"><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</div>
-                    <div class="ref-item"><strong>Fiscal Year:</strong> 2081/82</div>
+                <div class="ref-info">
+                    <div class="ref-item">Receipt No: #${window.lastPaymentId || Math.floor(Math.random() * 10000)}</div>
+                    <div class="ref-item">Date: ${new Date().toLocaleDateString('en-GB')}</div>
+                    <div class="ref-item">Status: PAID</div>
                 </div>
                 
                 <div class="content">
-                    <table class="info-table">
-                        <tr>
-                            <td class="label">Student Name:</td>
-                            <td>{{ student.name|default:"RAM JEE" }}</td>
-                            <td class="label">Class/Section:</td>
-                            <td>{{ student.student_class|default:"Nursery" }}/{{ student.section|default:"A" }}</td>
-                        </tr>
-                        <tr>
-                            <td class="label">Father's Name:</td>
-                            <td>{{ student.father_name|default:"SURESH JEE" }}</td>
-                            <td class="label">Roll No:</td>
-                            <td>001</td>
-                        </tr>
-                        <tr>
-                            <td class="label">Registration No:</td>
-                            <td>{{ student.reg_number|default:"REG2025001" }}</td>
-                            <td class="label">Academic Year:</td>
-                            <td>2025-26</td>
-                        </tr>
-                    </table>
+                    <div class="student-info">
+                        <h3 style="margin: 0 0 15px 0; text-decoration: underline;">STUDENT DETAILS</h3>
+                        <table class="info-table">
+                            <tr>
+                                <td class="label">Student Name:</td>
+                                <td>{{ student.name|default:"RAM JEE" }}</td>
+                                <td class="label">Class:</td>
+                                <td>{{ student.student_class|default:"Nursery" }}-{{ student.section|default:"A" }}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Father's Name:</td>
+                                <td>{{ student.father_name|default:"SURESH JEE" }}</td>
+                                <td class="label">Roll No:</td>
+                                <td>001</td>
+                            </tr>
+                            <tr>
+                                <td class="label">Registration No:</td>
+                                <td>{{ student.reg_number|default:"REG2025001" }}</td>
+                                <td class="label">Session:</td>
+                                <td>2025-26</td>
+                            </tr>
+                        </table>
+                    </div>
                     
+                    <h3 style="margin: 25px 0 15px 0; text-decoration: underline;">FEE BREAKDOWN</h3>
                     <table class="fee-table">
                         <thead>
                             <tr>
                                 <th>S.N.</th>
                                 <th>Fee Description</th>
                                 <th>Period</th>
-                                <th class="amount-col">Amount (Rs.)</th>
+                                <th>Amount (Rs.)</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -1107,14 +1107,14 @@ function printBill() {
                                 const monthsText = selectedMonths.length === 1 ? selectedMonths[0] : 
                                     selectedMonths.length === 2 ? selectedMonths.join(', ') :
                                     `${selectedMonths[0]} to ${selectedMonths[selectedMonths.length-1]}`;
-                                return `<tr><td>${index + 1}</td><td>${fee.type.replace('_', ' ').toUpperCase()}</td><td>${monthsText}</td><td class="amount-col">${fee.total}</td></tr>`;
+                                return `<tr><td style="text-align: center;">${index + 1}</td><td>${fee.type.replace('_', ' ').toUpperCase()}</td><td style="text-align: center;">${monthsText}</td><td class="amount-col">${fee.total.toLocaleString()}</td></tr>`;
                             }).join('')}
                             ${JSON.parse(paymentData.custom_fees).map((fee, index) => 
-                                `<tr><td>${JSON.parse(paymentData.fee_types).length + index + 1}</td><td>${fee.name}</td><td>One Time</td><td class="amount-col">${fee.amount}</td></tr>`
+                                `<tr><td style="text-align: center;">${JSON.parse(paymentData.fee_types).length + index + 1}</td><td>${fee.name.toUpperCase()}</td><td style="text-align: center;">One Time</td><td class="amount-col">${fee.amount.toLocaleString()}</td></tr>`
                             ).join('')}
                             <tr class="total-row">
-                                <td colspan="3"><strong>TOTAL AMOUNT</strong></td>
-                                <td class="amount-col"><strong>${paymentData.total_fee}</strong></td>
+                                <td colspan="3" style="text-align: center;">TOTAL AMOUNT</td>
+                                <td class="amount-col">Rs. ${paymentData.total_fee.toLocaleString()}</td>
                             </tr>
                         </tbody>
                     </table>
@@ -1123,19 +1123,33 @@ function printBill() {
                         <strong>Amount in Words:</strong> ${numberToWords(paymentData.total_fee)} Rupees Only
                     </div>
                     
-                    <div class="certification">
-                        This is to certify that the above mentioned student has paid the fee amount as detailed above. This receipt is issued under the authority of the Government of Nepal, Ministry of Education. Payment Method: ${paymentData.payment_method} | Amount Paid: Rs.${paymentData.payment_amount} | Balance: Rs.${paymentData.balance}
+                    <div class="payment-info">
+                        <div class="payment-box">
+                            <strong>Payment Method</strong><br>
+                            ${paymentData.payment_method}
+                        </div>
+                        <div class="payment-box">
+                            <strong>Amount Paid</strong><br>
+                            Rs. ${paymentData.payment_amount.toLocaleString()}
+                        </div>
+                        <div class="payment-box">
+                            <strong>Balance</strong><br>
+                            Rs. ${paymentData.balance.toLocaleString()}
+                        </div>
                     </div>
                     
                     <div class="footer">
-                        <div class="signature-box">
-                            <div class="signature-line">Accounts Officer</div>
-                            <div class="official-stamp">OFFICIAL STAMP</div>
+                        <div class="signature">
+                            <div class="signature-line">Cashier</div>
                         </div>
-                        <div class="signature-box">
-                            <div class="signature-line">Principal/Head Teacher</div>
-                            <div style="font-size: 8px; margin-top: 10px;">Date: ${new Date().toLocaleDateString('en-GB')}</div>
+                        <div class="signature">
+                            <div class="signature-line">Principal</div>
                         </div>
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 30px; font-size: 12px; border-top: 1px solid #000; padding-top: 15px;">
+                        <p><strong>Thank you for your payment!</strong></p>
+                        <p>This is a computer generated receipt.</p>
                     </div>
                 </div>
             </div>
@@ -1145,8 +1159,9 @@ function printBill() {
     
     billWindow.document.write(billHTML);
     billWindow.document.close();
+    
+    billWindow.document.close();
     billWindow.print();
-    setTimeout(() => location.reload(), 1000);
 }
 </script>
 {% endblock %}

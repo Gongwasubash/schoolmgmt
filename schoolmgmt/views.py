@@ -4,6 +4,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from .models import Student, FeeStructure, FeePayment
+from django.db import models
 import json
 from datetime import datetime, date
 from django.db.models import Count
@@ -571,6 +572,84 @@ def get_fee_structure(request, class_name):
         })
     except FeeStructure.DoesNotExist:
         return JsonResponse({'success': False, 'error': 'Fee structure not found'})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def search_student_page(request):
+    return render(request, 'search_student.html')
+
+def search_student_api(request):
+    try:
+        # Get search parameters
+        query = request.GET.get('q', '').strip()
+        name = request.GET.get('name', '').strip()
+        student_class = request.GET.get('class', '').strip()
+        section = request.GET.get('section', '').strip()
+        reg_number = request.GET.get('reg', '').strip()
+        
+        # Build query conditions
+        conditions = models.Q()
+        
+        # Quick search (backward compatibility)
+        if query:
+            # Try to find by ID format (STU001)
+            if query.upper().startswith('STU'):
+                try:
+                    student_id = int(query[3:])  # Extract number after STU
+                    conditions |= models.Q(id=student_id)
+                except ValueError:
+                    pass
+            
+            # Add other search conditions
+            conditions |= models.Q(reg_number__icontains=query)
+            conditions |= models.Q(name__icontains=query)
+            conditions |= models.Q(student_class__icontains=query)
+            conditions |= models.Q(father_name__icontains=query)
+        
+        # Advanced search
+        if name:
+            conditions &= models.Q(name__icontains=name)
+        if student_class:
+            conditions &= models.Q(student_class=student_class)
+        if section:
+            conditions &= models.Q(section=section)
+        if reg_number:
+            conditions &= models.Q(reg_number__icontains=reg_number)
+        
+        # If no search criteria provided
+        if not any([query, name, student_class, section, reg_number]):
+            return JsonResponse({'success': False, 'error': 'No search criteria provided'})
+        
+        # Execute search
+        students = Student.objects.filter(conditions).order_by('name')[:20]  # Limit to 20 results
+        
+        if students:
+            students_data = []
+            for student in students:
+                students_data.append({
+                    'id': student.id,
+                    'name': student.name,
+                    'reg_number': student.reg_number,
+                    'student_class': student.student_class,
+                    'section': student.section,
+                    'father_name': student.father_name
+                })
+            
+            # For backward compatibility, if only one result and it's a quick search, return single student
+            if len(students_data) == 1 and query and not any([name, student_class, section, reg_number]):
+                return JsonResponse({
+                    'success': True,
+                    'student': students_data[0],
+                    'students': students_data
+                })
+            else:
+                return JsonResponse({
+                    'success': True,
+                    'students': students_data
+                })
+        else:
+            return JsonResponse({'success': False, 'error': 'No students found'})
+            
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
 
