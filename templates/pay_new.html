@@ -1,0 +1,791 @@
+{% extends "base.html" %}
+
+{% block title %}Fee Payment{% endblock %}
+
+{% block content %}
+<div class="container">
+    <header class="header">
+        <h1>Fee Payment</h1>
+        <span class="session">2025-26</span>
+    </header>
+
+    <!-- Student Selection Section -->
+    <div class="card student-selection">
+        <h3>Select Student</h3>
+        <div class="search-section">
+            <input type="text" id="studentSearch" placeholder="Search by name, reg number, or class..." onkeyup="filterStudents()">
+            <select id="classFilter" onchange="filterStudents()">
+                <option value="">All Classes</option>
+                <option value="Nursery">Nursery</option>
+                <option value="LKG">LKG</option>
+                <option value="UKG">UKG</option>
+                <option value="1st">1st</option>
+                <option value="2nd">2nd</option>
+                <option value="3rd">3rd</option>
+                <option value="4th">4th</option>
+                <option value="5th">5th</option>
+                <option value="6th">6th</option>
+                <option value="7th">7th</option>
+                <option value="8th">8th</option>
+                <option value="9th">9th</option>
+                <option value="10th">10th</option>
+                <option value="11th">11th</option>
+                <option value="12th">12th</option>
+            </select>
+        </div>
+        
+        <div class="student-grid" id="studentGrid">
+            {% for student in students %}
+            <div class="student-card" data-student-id="{{ student.id }}" data-class="{{ student.student_class }}" 
+                 data-name="{{ student.name|lower }}" data-reg="{{ student.reg_number|lower }}" onclick="selectStudent({{ student.id }})">
+                <div class="student-avatar">👤</div>
+                <div class="student-info">
+                    <h4>{{ student.name }}</h4>
+                    <p>{{ student.student_class }} ({{ student.section }})</p>
+                    <p>Reg: {{ student.reg_number }}</p>
+                    <p>Father: {{ student.father_name }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Payment Form (Initially Hidden) -->
+    <div class="card payment-form" id="paymentForm" style="display: none;">
+        <div class="student-info" id="selectedStudentInfo">
+            <!-- Student info will be populated here -->
+        </div>
+
+        <div class="fee-section">
+            <div class="fee-types-section">
+                <div class="section-header">
+                    <h4>Fee Types</h4>
+                </div>
+                
+                <div class="fee-types-grid" id="feeTypesGrid">
+                    <!-- Fee types will be populated here -->
+                </div>
+                
+                <div class="months-subsection">
+                    <h5>Months</h5>
+                    <div class="month-grid">
+                        <label><input type="checkbox" class="month-checkbox" value="Baisakh" onchange="calculateFees()"> Baisakh</label>
+                        <label><input type="checkbox" class="month-checkbox" value="Jestha" onchange="calculateFees()"> Jestha</label>
+                        <label><input type="checkbox" class="month-checkbox" value="Ashadh" onchange="calculateFees()"> Ashadh</label>
+                        <label><input type="checkbox" class="month-checkbox" value="Shrawan" onchange="calculateFees()"> Shrawan</label>
+                        <label><input type="checkbox" class="month-checkbox" value="Bhadra" onchange="calculateFees()"> Bhadra</label>
+                        <label><input type="checkbox" class="month-checkbox" value="Ashwin" onchange="calculateFees()"> Ashwin</label>
+                        <label><input type="checkbox" class="month-checkbox" value="Kartik" onchange="calculateFees()"> Kartik</label>
+                        <label><input type="checkbox" class="month-checkbox" value="Mangsir" onchange="calculateFees()"> Mangsir</label>
+                        <label><input type="checkbox" class="month-checkbox" value="Poush" onchange="calculateFees()"> Poush</label>
+                        <label><input type="checkbox" class="month-checkbox" value="Magh" onchange="calculateFees()"> Magh</label>
+                        <label><input type="checkbox" class="month-checkbox" value="Falgun" onchange="calculateFees()"> Falgun</label>
+                        <label><input type="checkbox" class="month-checkbox" value="Chaitra" onchange="calculateFees()"> Chaitra</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="custom-fees-section">
+                <h4>Custom Fees</h4>
+                <div class="custom-fee-container">
+                    <div class="custom-fee-row">
+                        <input type="text" class="customFeeName" placeholder="Fee Name" onchange="calculateFees()">
+                        <input type="number" class="customFeePrice" placeholder="Price" onchange="calculateFees()">
+                        <button type="button" class="add-btn" onclick="addCustomFee()">+</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="fee-summary">
+                <div class="fee-grid">
+                    <div class="field">
+                        <label>Total Fee</label>
+                        <input type="text" id="totalFee" value="0" readonly>
+                    </div>
+                    <div class="field">
+                        <label>Payment Amount</label>
+                        <input type="number" id="paymentAmount" value="0" onchange="updateBalance()">
+                    </div>
+                    <div class="field">
+                        <label>Balance</label>
+                        <input type="text" id="balanceAmount" value="0" readonly>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="payment">
+            <h3>Payment Details</h3>
+            <div class="payment-grid">
+                <select id="paymentMethod">
+                    <option value="Cash">Cash</option>
+                    <option value="Cheque">Cheque</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                </select>
+                <input type="text" id="bankName" placeholder="Bank Name">
+                <input type="text" id="chequeNo" placeholder="Cheque/DD No.">
+                <input type="date" id="chequeDate">
+            </div>
+            <textarea id="remarks" placeholder="Remarks" rows="2"></textarea>
+            <div class="notifications">
+                <label><input type="checkbox" id="smsNotification"> SMS</label>
+                <label><input type="checkbox" id="whatsappNotification"> WhatsApp</label>
+            </div>
+            <div class="action-buttons">
+                <button class="submit" onclick="submitPayment()">Submit Payment</button>
+                <button class="print-bill" onclick="printBill()">Print Bill</button>
+                <button class="back-btn" onclick="backToSelection()">Back to Selection</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedStudent = null;
+let feeStructures = {{ fee_structures|safe }};
+let currentFeeStructure = null;
+
+function filterStudents() {
+    const searchTerm = document.getElementById('studentSearch').value.toLowerCase();
+    const classFilter = document.getElementById('classFilter').value;
+    const studentCards = document.querySelectorAll('.student-card');
+    
+    studentCards.forEach(card => {
+        const name = card.dataset.name;
+        const reg = card.dataset.reg;
+        const studentClass = card.dataset.class;
+        
+        const matchesSearch = name.includes(searchTerm) || reg.includes(searchTerm);
+        const matchesClass = !classFilter || studentClass === classFilter;
+        
+        card.style.display = (matchesSearch && matchesClass) ? 'flex' : 'none';
+    });
+}
+
+function selectStudent(studentId) {
+    // Find student data
+    const studentCard = document.querySelector(`[data-student-id="${studentId}"]`);
+    const studentData = {
+        id: studentId,
+        name: studentCard.querySelector('h4').textContent,
+        class: studentCard.dataset.class,
+        reg: studentCard.dataset.reg.toUpperCase()
+    };
+    
+    selectedStudent = studentData;
+    
+    // Hide selection, show payment form
+    document.querySelector('.student-selection').style.display = 'none';
+    document.getElementById('paymentForm').style.display = 'block';
+    
+    // Populate student info
+    populateStudentInfo(studentData);
+    
+    // Load fee structure for student's class
+    loadFeeStructure(studentData.class);
+}
+
+function populateStudentInfo(student) {
+    const today = new Date().toLocaleDateString('en-GB');
+    document.getElementById('selectedStudentInfo').innerHTML = `
+        <div class="info-grid">
+            <span class="date">${today}</span>
+            <span>Class: ${student.class}</span>
+            <span>Reg: ${student.reg}</span>
+            <span>Roll: 1</span>
+        </div>
+        <div class="student-details">
+            <div class="avatar">👤</div>
+            <div>
+                <h3>${student.name}</h3>
+                <p>Student ID: STU${student.id.toString().padStart(3, '0')}</p>
+            </div>
+        </div>
+    `;
+}
+
+function loadFeeStructure(className) {
+    fetch(`/get_fee_structure/${className}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                currentFeeStructure = data.data;
+                populateFeeTypes(data.data);
+            }
+        })
+        .catch(error => console.error('Error loading fee structure:', error));
+}
+
+function populateFeeTypes(feeStructure) {
+    const feeTypesGrid = document.getElementById('feeTypesGrid');
+    const feeTypes = [
+        { key: 'admission_fee', name: 'Admission Fee' },
+        { key: 'monthly_fee', name: 'Monthly Fee' },
+        { key: 'tuition_fee', name: 'Tuition Fee' },
+        { key: 'examination_fee', name: 'Examination Fee' },
+        { key: 'library_fee', name: 'Library Fee' },
+        { key: 'sports_fee', name: 'Sports Fee' },
+        { key: 'laboratory_fee', name: 'Laboratory Fee' },
+        { key: 'computer_fee', name: 'Computer Fee' },
+        { key: 'transportation_fee', name: 'Transportation Fee' }
+    ];
+    
+    feeTypesGrid.innerHTML = feeTypes.map(fee => `
+        <div class="fee-type-item">
+            <label>
+                <input type="checkbox" class="fee-checkbox" data-fee-type="${fee.key}" 
+                       data-fee-amount="${feeStructure[fee.key]}" onchange="calculateFees()">
+                ${fee.name}
+            </label>
+            <span class="fee-amount">Rs.${feeStructure[fee.key]}</span>
+        </div>
+    `).join('');
+}
+
+function calculateFees() {
+    const selectedFees = document.querySelectorAll('.fee-checkbox:checked');
+    const selectedMonths = document.querySelectorAll('.month-checkbox:checked');
+    const customFees = document.querySelectorAll('.custom-fee-row');
+    
+    let totalFee = 0;
+    
+    // Calculate standard fees
+    selectedFees.forEach(fee => {
+        const feeAmount = parseFloat(fee.dataset.feeAmount);
+        const monthCount = selectedMonths.length;
+        
+        if (fee.dataset.feeType === 'admission_fee') {
+            totalFee += feeAmount; // One-time fee
+        } else {
+            totalFee += feeAmount * monthCount; // Monthly fees
+        }
+    });
+    
+    // Calculate custom fees
+    customFees.forEach(row => {
+        const priceInput = row.querySelector('.customFeePrice');
+        if (priceInput && priceInput.value) {
+            totalFee += parseFloat(priceInput.value) || 0;
+        }
+    });
+    
+    document.getElementById('totalFee').value = totalFee.toFixed(2);
+    updateBalance();
+}
+
+function updateBalance() {
+    const totalFee = parseFloat(document.getElementById('totalFee').value) || 0;
+    const paymentAmount = parseFloat(document.getElementById('paymentAmount').value) || 0;
+    const balance = totalFee - paymentAmount;
+    
+    document.getElementById('balanceAmount').value = balance.toFixed(2);
+}
+
+function addCustomFee() {
+    const container = document.querySelector('.custom-fee-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'custom-fee-row';
+    newRow.innerHTML = `
+        <input type="text" class="customFeeName" placeholder="Fee Name" onchange="calculateFees()">
+        <input type="number" class="customFeePrice" placeholder="Price" onchange="calculateFees()">
+        <button type="button" class="remove-btn" onclick="removeCustomFee(this)">-</button>
+    `;
+    container.appendChild(newRow);
+}
+
+function removeCustomFee(button) {
+    button.parentElement.remove();
+    calculateFees();
+}
+
+function submitPayment() {
+    if (!selectedStudent) {
+        alert('Please select a student first');
+        return;
+    }
+    
+    const selectedFees = Array.from(document.querySelectorAll('.fee-checkbox:checked')).map(fee => ({
+        type: fee.dataset.feeType,
+        amount: parseFloat(fee.dataset.feeAmount),
+        months: Array.from(document.querySelectorAll('.month-checkbox:checked')).map(m => m.value)
+    }));
+    
+    const customFees = Array.from(document.querySelectorAll('.custom-fee-row')).map(row => ({
+        name: row.querySelector('.customFeeName').value,
+        amount: parseFloat(row.querySelector('.customFeePrice').value) || 0
+    })).filter(fee => fee.name && fee.amount > 0);
+    
+    const paymentData = {
+        student_id: selectedStudent.id,
+        selected_months: JSON.stringify(Array.from(document.querySelectorAll('.month-checkbox:checked')).map(m => m.value)),
+        fee_types: JSON.stringify(selectedFees),
+        custom_fees: JSON.stringify(customFees),
+        total_fee: parseFloat(document.getElementById('totalFee').value),
+        payment_amount: parseFloat(document.getElementById('paymentAmount').value),
+        balance: parseFloat(document.getElementById('balanceAmount').value),
+        payment_method: document.getElementById('paymentMethod').value,
+        bank_name: document.getElementById('bankName').value,
+        cheque_dd_no: document.getElementById('chequeNo').value,
+        cheque_date: document.getElementById('chequeDate').value,
+        remarks: document.getElementById('remarks').value,
+        sms_sent: document.getElementById('smsNotification').checked,
+        whatsapp_sent: document.getElementById('whatsappNotification').checked
+    };
+    
+    fetch('/submit_payment/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(paymentData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Payment submitted successfully!');
+            resetForm();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while submitting payment');
+    });
+}
+
+function printBill() {
+    window.print();
+}
+
+function backToSelection() {
+    document.querySelector('.student-selection').style.display = 'block';
+    document.getElementById('paymentForm').style.display = 'none';
+    resetForm();
+}
+
+function resetForm() {
+    selectedStudent = null;
+    document.querySelectorAll('.fee-checkbox').forEach(cb => cb.checked = false);
+    document.querySelectorAll('.month-checkbox').forEach(cb => cb.checked = false);
+    document.getElementById('totalFee').value = '0';
+    document.getElementById('paymentAmount').value = '0';
+    document.getElementById('balanceAmount').value = '0';
+    document.getElementById('remarks').value = '';
+    document.getElementById('smsNotification').checked = false;
+    document.getElementById('whatsappNotification').checked = false;
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+* { box-sizing: border-box; }
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem;
+    font-family: system-ui, -apple-system, sans-serif;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.header h1 {
+    margin: 0;
+    color: #2563eb;
+    font-size: 1.5rem;
+}
+
+.session {
+    background: #f1f5f9;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.card {
+    background: white;
+    border-radius: 0.75rem;
+    border: 1px solid #e2e8f0;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 1.5rem;
+}
+
+.student-selection h3 {
+    margin: 0 0 1rem 0;
+    color: #374151;
+}
+
+.search-section {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.search-section input, .search-section select {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.student-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.student-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.student-card:hover {
+    border-color: #2563eb;
+    background: #f8fafc;
+}
+
+.student-avatar {
+    width: 3rem;
+    height: 3rem;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.student-info h4 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1rem;
+    color: #374151;
+}
+
+.student-info p {
+    margin: 0.125rem 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.info-grid span {
+    background: #f8fafc;
+    padding: 0.5rem;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.date {
+    background: #2563eb !important;
+    color: white !important;
+}
+
+.student-details {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.avatar {
+    width: 3rem;
+    height: 3rem;
+    background: #f1f5f9;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+}
+
+.student-details h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 1.125rem;
+}
+
+.student-details p {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.875rem;
+}
+
+.fee-section {
+    margin-bottom: 1.5rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.fee-types-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.fee-type-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.375rem;
+}
+
+.fee-type-item label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.fee-amount {
+    font-weight: 500;
+    color: #059669;
+}
+
+.months-subsection {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 0.375rem;
+    border: 1px solid #e5e7eb;
+}
+
+.months-subsection h5 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.5rem;
+}
+
+.month-grid label {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    cursor: pointer;
+}
+
+.custom-fees-section {
+    margin-bottom: 1.5rem;
+}
+
+.custom-fees-section h4 {
+    margin: 0 0 1rem 0;
+    color: #374151;
+}
+
+.custom-fee-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.custom-fee-row input {
+    flex: 1;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.add-btn, .remove-btn {
+    width: 2rem;
+    height: 2rem;
+    border: none;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.add-btn {
+    background: #10b981;
+    color: white;
+}
+
+.remove-btn {
+    background: #ef4444;
+    color: white;
+}
+
+.fee-summary {
+    padding: 1rem;
+    background: #f8fafc;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.fee-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.field label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.field input {
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.payment {
+    border-top: 1px solid #e5e7eb;
+    padding-top: 1.5rem;
+}
+
+.payment h3 {
+    margin: 0 0 1rem 0;
+    color: #374151;
+}
+
+.payment-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.payment-grid select, .payment-grid input {
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.payment textarea {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    resize: vertical;
+}
+
+.notifications {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.notifications label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.submit, .print-bill, .back-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.submit {
+    background: #10b981;
+    color: white;
+}
+
+.submit:hover {
+    background: #059669;
+}
+
+.print-bill {
+    background: #3b82f6;
+    color: white;
+}
+
+.print-bill:hover {
+    background: #2563eb;
+}
+
+.back-btn {
+    background: #6b7280;
+    color: white;
+}
+
+.back-btn:hover {
+    background: #4b5563;
+}
+
+@media (max-width: 768px) {
+    .search-section {
+        flex-direction: column;
+    }
+    
+    .student-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .fee-types-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+    }
+}
+</style>
+{% endblock %}
