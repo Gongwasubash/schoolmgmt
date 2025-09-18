@@ -20,6 +20,17 @@
 
     <!-- Summary Stats -->
     <div class="summary-stats">
+        <div class="stat-card students">
+            <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16,4C16,2.89 15.11,2 14,2H10C8.89,2 8,2.89 8,4H5C3.89,4 3,4.89 3,6V20C3,21.11 3.89,22 5,22H19C20.11,22 21,21.11 21,20V6C21,4.89 20.11,4 19,4H16M10,4H14V6H10V4Z"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">TOTAL STUDENTS</div>
+                <div class="stat-value">{{ total_students }}</div>
+            </div>
+        </div>
         <div class="stat-card session">
             <div class="stat-icon">
                 <svg viewBox="0 0 24 24" fill="currentColor">
@@ -39,7 +50,7 @@
             </div>
             <div class="stat-content">
                 <div class="stat-label">TODAY'S BIRTHDAY</div>
-                <div class="stat-value">0</div>
+                <div class="stat-value">{{ todays_birthdays }}</div>
             </div>
         </div>
         <div class="stat-card enquiry">
@@ -73,7 +84,7 @@
             <div class="collection-card">
                 <h3>Today's Collection</h3>
                 <div class="collection-amount">
-                    <span class="currency">₹</span>
+                    <span class="currency">Rs.</span>
                     <span class="amount">0</span>
                 </div>
                 <div class="collection-label">Total Collection</div>
@@ -81,7 +92,7 @@
 
             <!-- Action Buttons -->
             <div class="action-buttons">
-                <button class="action-btn">
+                <button class="action-btn" onclick="window.location.href='{% url 'students' %}'">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
                     </svg>
@@ -99,7 +110,7 @@
                     </svg>
                     Fee By Search
                 </button>
-                <button class="action-btn">
+                <button class="action-btn" onclick="window.location.href='{% url 'studentlist' %}'">
                     <svg viewBox="0 0 24 24" fill="currentColor">
                         <path d="M16,4C16,2.89 15.11,2 14,2H10C8.89,2 8,2.89 8,4H5C3.89,4 3,4.89 3,6V20C3,21.11 3.89,22 5,22H19C20.11,22 21,21.11 21,20V6C21,4.89 20.11,4 19,4H16M10,4H14V6H10V4Z"/>
                     </svg>
@@ -135,7 +146,7 @@
         <div class="right-column">
             <!-- Total Students Chart -->
             <div class="student-chart-card">
-                <h3>Total Student : 173</h3>
+                <h3>Total Student : {{ total_students }}</h3>
                 <div class="chart-container" style="height: 300px; position: relative;">
                     <canvas id="studentChart"></canvas>
                     <div class="chart-center" style="position: absolute; top: 50%; left: 35%; transform: translate(-50%, -50%); text-align: center;">
@@ -150,7 +161,7 @@
     <!-- Bottom Row Charts -->
     <div class="bottom-charts">
         <div class="chart-card">
-            <h3>Boys : 169 | Girls : 21</h3>
+            <h3>Boys : {{ boys_count }} | Girls : {{ girls_count }}</h3>
             <div class="chart-placeholder">
                 <canvas id="genderChart" width="150" height="150"></canvas>
             </div>
