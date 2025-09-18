@@ -1,0 +1,497 @@
+{% extends "base.html" %}
+
+{% block title %}Search Student - School Management{% endblock %}
+
+{% block content %}
+<div class="search-container">
+    <div class="search-header">
+        <h1>Search Student for Fee Payment</h1>
+        <p>Search by student name, ID, registration number, class, or roll number</p>
+    </div>
+
+    <div class="search-form">
+        <div class="search-tabs">
+            <button class="tab-btn active" onclick="switchTab('quick')">Quick Search</button>
+            <button class="tab-btn" onclick="switchTab('advanced')">Advanced Search</button>
+        </div>
+        
+        <div id="quickSearch" class="search-tab-content active">
+            <div class="search-input-group">
+                <input type="text" id="studentSearch" placeholder="Enter Name, Student ID (STU001), Registration Number, or Class" class="search-field">
+                <button onclick="searchStudent()" class="search-btn">Search</button>
+            </div>
+        </div>
+        
+        <div id="advancedSearch" class="search-tab-content">
+            <div class="advanced-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Student Name</label>
+                        <input type="text" id="searchName" placeholder="Enter student name">
+                    </div>
+                    <div class="form-group">
+                        <label>Class</label>
+                        <select id="searchClass">
+                            <option value="">Select Class</option>
+                            <option value="Nursery">Nursery</option>
+                            <option value="LKG">LKG</option>
+                            <option value="UKG">UKG</option>
+                            <option value="1">Class 1</option>
+                            <option value="2">Class 2</option>
+                            <option value="3">Class 3</option>
+                            <option value="4">Class 4</option>
+                            <option value="5">Class 5</option>
+                            <option value="6">Class 6</option>
+                            <option value="7">Class 7</option>
+                            <option value="8">Class 8</option>
+                            <option value="9">Class 9</option>
+                            <option value="10">Class 10</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Section</label>
+                        <select id="searchSection">
+                            <option value="">Select Section</option>
+                            <option value="A">A</option>
+                            <option value="B">B</option>
+                            <option value="C">C</option>
+                            <option value="D">D</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Registration Number</label>
+                        <input type="text" id="searchReg" placeholder="Enter registration number">
+                    </div>
+                </div>
+                <button onclick="advancedSearch()" class="search-btn">Search Students</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="searchResults" class="search-results" style="display: none;">
+        <div class="results-header">
+            <h3>Search Results</h3>
+            <span id="resultCount"></span>
+        </div>
+        <div id="studentsList"></div>
+    </div>
+
+    <div id="noResults" class="no-results" style="display: none;">
+        <p>No students found matching your search criteria.</p>
+        <button onclick="clearSearch()" class="clear-btn">Try Again</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.search-container {
+    max-width: 600px;
+    margin: 50px auto;
+    padding: 30px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.search-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.search-header h1 {
+    color: #2563eb;
+    margin-bottom: 10px;
+}
+
+.search-header p {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.search-form {
+    margin-bottom: 30px;
+}
+
+.search-tabs {
+    display: flex;
+    margin-bottom: 20px;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.tab-btn {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s;
+}
+
+.tab-btn.active {
+    color: #2563eb;
+    border-bottom-color: #2563eb;
+}
+
+.search-tab-content {
+    display: none;
+}
+
+.search-tab-content.active {
+    display: block;
+}
+
+.search-input-group {
+    display: flex;
+    gap: 10px;
+}
+
+.advanced-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-row {
+    display: flex;
+    gap: 15px;
+}
+
+.form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-group input,
+.form-group select {
+    padding: 10px 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.search-field {
+    flex: 1;
+    padding: 12px 15px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.search-field:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.search-btn {
+    padding: 12px 24px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.search-btn:hover {
+    background: #1d4ed8;
+}
+
+.search-results {
+    margin-top: 30px;
+}
+
+.results-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.results-header h3 {
+    margin: 0;
+    color: #1f2937;
+}
+
+#resultCount {
+    font-size: 14px;
+    color: #6b7280;
+}
+
+.student-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    transition: all 0.3s;
+}
+
+.student-card:hover {
+    border-color: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+.student-info h3 {
+    margin: 0 0 10px 0;
+    color: #1f2937;
+    font-size: 18px;
+}
+
+.student-details {
+    display: flex;
+    gap: 15px;
+    font-size: 14px;
+    color: #6b7280;
+    flex-wrap: wrap;
+}
+
+.student-details span {
+    background: #e5e7eb;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.proceed-btn {
+    padding: 10px 20px;
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.proceed-btn:hover {
+    background: #047857;
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px;
+    color: #6b7280;
+}
+
+.clear-btn {
+    padding: 8px 16px;
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.clear-btn:hover {
+    background: #4b5563;
+}
+
+@media (max-width: 768px) {
+    .search-container {
+        margin: 20px;
+        padding: 20px;
+    }
+    
+    .form-row {
+        flex-direction: column;
+    }
+    
+    .student-card {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .student-details {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let foundStudents = [];
+
+function switchTab(tabName) {
+    // Remove active class from all tabs
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    document.querySelectorAll('.search-tab-content').forEach(content => content.classList.remove('active'));
+    
+    // Add active class to selected tab
+    event.target.classList.add('active');
+    document.getElementById(tabName + 'Search').classList.add('active');
+    
+    // Clear previous results
+    clearSearch();
+}
+
+function searchStudent() {
+    const searchTerm = document.getElementById('studentSearch').value.trim();
+    if (!searchTerm) {
+        alert('Please enter a search term');
+        return;
+    }
+
+    performSearch({ q: searchTerm });
+}
+
+function advancedSearch() {
+    const name = document.getElementById('searchName').value.trim();
+    const studentClass = document.getElementById('searchClass').value;
+    const section = document.getElementById('searchSection').value;
+    const regNumber = document.getElementById('searchReg').value.trim();
+    
+    if (!name && !studentClass && !section && !regNumber) {
+        alert('Please enter at least one search criteria');
+        return;
+    }
+    
+    const params = {};
+    if (name) params.name = name;
+    if (studentClass) params.class = studentClass;
+    if (section) params.section = section;
+    if (regNumber) params.reg = regNumber;
+    
+    performSearch(params);
+}
+
+function performSearch(params) {
+    // Show loading state
+    const searchBtns = document.querySelectorAll('.search-btn');
+    searchBtns.forEach(btn => {
+        btn.textContent = 'Searching...';
+        btn.disabled = true;
+    });
+
+    // Build query string
+    const queryString = new URLSearchParams(params).toString();
+    
+    // Make API call to search students
+    fetch(`/api/search-student/?${queryString}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.students && data.students.length > 0) {
+                foundStudents = data.students;
+                showStudentResults(data.students);
+            } else if (data.success && data.student) {
+                // Handle single student result (backward compatibility)
+                foundStudents = [data.student];
+                showStudentResults([data.student]);
+            } else {
+                showNoResults();
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNoResults();
+        })
+        .finally(() => {
+            searchBtns.forEach(btn => {
+                btn.textContent = btn.textContent.includes('Advanced') ? 'Search Students' : 'Search';
+                btn.disabled = false;
+            });
+        });
+}
+
+function showStudentResults(students) {
+    const resultCount = document.getElementById('resultCount');
+    const studentsList = document.getElementById('studentsList');
+    
+    resultCount.textContent = `${students.length} student(s) found`;
+    
+    studentsList.innerHTML = '';
+    students.forEach(student => {
+        const studentCard = document.createElement('div');
+        studentCard.className = 'student-card';
+        studentCard.innerHTML = `
+            <div class="student-info">
+                <h3>${student.name}</h3>
+                <div class="student-details">
+                    <span>ID: STU${String(student.id).padStart(3, '0')}</span>
+                    <span>Class: ${student.student_class}-${student.section}</span>
+                    <span>Reg: ${student.reg_number}</span>
+                    <span>Father: ${student.father_name}</span>
+                </div>
+            </div>
+            <button onclick="proceedToFee(${student.id})" class="proceed-btn">Proceed to Fee Payment</button>
+        `;
+        studentsList.appendChild(studentCard);
+    });
+    
+    document.getElementById('searchResults').style.display = 'block';
+    document.getElementById('noResults').style.display = 'none';
+}
+
+function showNoResults() {
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('noResults').style.display = 'block';
+}
+
+function proceedToFee(studentId) {
+    if (studentId) {
+        window.location.href = `/pay-student/${studentId}/`;
+    }
+}
+
+function clearSearch() {
+    // Clear all input fields
+    document.getElementById('studentSearch').value = '';
+    document.getElementById('searchName').value = '';
+    document.getElementById('searchClass').value = '';
+    document.getElementById('searchSection').value = '';
+    document.getElementById('searchReg').value = '';
+    
+    // Hide results
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('noResults').style.display = 'none';
+    foundStudents = [];
+}
+
+// Allow Enter key to search in quick search
+document.getElementById('studentSearch').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        searchStudent();
+    }
+});
+
+// Allow Enter key to search in advanced search fields
+document.addEventListener('keypress', function(e) {
+    if (e.key === 'Enter' && document.getElementById('advancedSearch').classList.contains('active')) {
+        const target = e.target;
+        if (target.id === 'searchName' || target.id === 'searchReg') {
+            advancedSearch();
+        }
+    }
+});
+</script>
+{% endblock %}
