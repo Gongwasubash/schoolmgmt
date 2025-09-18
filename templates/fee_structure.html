@@ -94,48 +94,22 @@
                         <td><input type="number" name="laboratory_fee" value="{{ fee.laboratory_fee }}"></td>
                         <td><input type="number" name="computer_fee" value="{{ fee.computer_fee }}"></td>
                         <td><input type="number" name="transportation_fee" value="{{ fee.transportation_fee }}"></td>
-
                     </tr>
                     {% empty %}
+                    {% for class_num in "12345678910"|make_list %}
                     <tr>
-                        <td><input type="text" name="class_name" value="Nursery" readonly></td>
-                        <td><input type="number" name="admission_fee" value="5000"></td>
-                        <td><input type="number" name="monthly_fee" value="2500"></td>
-                        <td><input type="number" name="tuition_fee" value="2000"></td>
+                        <td><input type="text" name="class_name" value="{{ class_num }}" readonly></td>
+                        <td><input type="number" name="admission_fee" value="{% if class_num == '1' %}5000{% elif class_num == '2' %}5200{% elif class_num == '3' %}5400{% elif class_num == '4' %}5600{% elif class_num == '5' %}5800{% elif class_num == '6' %}6000{% elif class_num == '7' %}6200{% elif class_num == '8' %}6400{% elif class_num == '9' %}6600{% else %}6800{% endif %}"></td>
+                        <td><input type="number" name="monthly_fee" value="{% if class_num == '1' %}2500{% elif class_num == '2' %}2700{% elif class_num == '3' %}2900{% elif class_num == '4' %}3100{% elif class_num == '5' %}3300{% elif class_num == '6' %}3500{% elif class_num == '7' %}3700{% elif class_num == '8' %}3900{% elif class_num == '9' %}4100{% else %}4300{% endif %}"></td>
+                        <td><input type="number" name="tuition_fee" value="{% if class_num == '1' %}2000{% elif class_num == '2' %}2200{% elif class_num == '3' %}2400{% elif class_num == '4' %}2600{% elif class_num == '5' %}2800{% elif class_num == '6' %}3000{% elif class_num == '7' %}3200{% elif class_num == '8' %}3400{% elif class_num == '9' %}3600{% else %}3800{% endif %}"></td>
                         <td><input type="number" name="examination_fee" value="500"></td>
                         <td><input type="number" name="library_fee" value="200"></td>
                         <td><input type="number" name="sports_fee" value="300"></td>
-                        <td><input type="number" name="laboratory_fee" value="0"></td>
-                        <td><input type="number" name="computer_fee" value="0"></td>
+                        <td><input type="number" name="laboratory_fee" value="{% if class_num|add:0 >= 6 %}500{% else %}0{% endif %}"></td>
+                        <td><input type="number" name="computer_fee" value="{% if class_num|add:0 >= 3 %}200{% else %}0{% endif %}"></td>
                         <td><input type="number" name="transportation_fee" value="1200"></td>
-
                     </tr>
-                    <tr>
-                        <td><input type="text" name="class_name" value="LKG" readonly></td>
-                        <td><input type="number" name="admission_fee" value="5200"></td>
-                        <td><input type="number" name="monthly_fee" value="2700"></td>
-                        <td><input type="number" name="tuition_fee" value="2200"></td>
-                        <td><input type="number" name="examination_fee" value="500"></td>
-                        <td><input type="number" name="library_fee" value="200"></td>
-                        <td><input type="number" name="sports_fee" value="300"></td>
-                        <td><input type="number" name="laboratory_fee" value="0"></td>
-                        <td><input type="number" name="computer_fee" value="0"></td>
-                        <td><input type="number" name="transportation_fee" value="1200"></td>
-
-                    </tr>
-                    <tr>
-                        <td><input type="text" name="class_name" value="UKG" readonly></td>
-                        <td><input type="number" name="admission_fee" value="5400"></td>
-                        <td><input type="number" name="monthly_fee" value="2900"></td>
-                        <td><input type="number" name="tuition_fee" value="2400"></td>
-                        <td><input type="number" name="examination_fee" value="500"></td>
-                        <td><input type="number" name="library_fee" value="200"></td>
-                        <td><input type="number" name="sports_fee" value="300"></td>
-                        <td><input type="number" name="laboratory_fee" value="0"></td>
-                        <td><input type="number" name="computer_fee" value="200"></td>
-                        <td><input type="number" name="transportation_fee" value="1200"></td>
-
-                    </tr>
+                    {% endfor %}
                     {% endfor %}
                 </tbody>
             </table>

@@ -4,6 +4,7 @@
 
 {% block content %}
 {% csrf_token %}
+<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
 <div class="student-list-container">
     <!-- Header Section -->
     <div class="page-header">
@@ -11,8 +12,10 @@
         <div class="header-actions">
             <input type="text" id="searchInput" placeholder="Search students..." class="search-input">
             <button class="btn btn-secondary" onclick="downloadCSV()">Download CSV</button>
+            <button class="btn btn-secondary" onclick="downloadTemplate()">Download Template</button>
             <input type="file" id="csvFile" accept=".csv" style="display: none;" onchange="uploadCSV()">
             <button class="btn btn-secondary" onclick="document.getElementById('csvFile').click()">Upload CSV</button>
+            <button class="btn btn-danger" id="bulkDeleteBtn" onclick="bulkDelete()" style="display:none;">Delete Selected</button>
             <button class="btn btn-primary" onclick="window.location.href='{% url 'students' %}'">New Admission</button>
         </div>
     </div>
@@ -22,7 +25,8 @@
         <table class="table table-striped" id="studentTable">
             <thead>
                 <tr>
-                    <th onclick="sortTable(0)">S.No <span class="sort-icon">↕</span></th>
+                    <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                    <th onclick="sortTable(1)">S.No <span class="sort-icon">↕</span></th>
                     <th onclick="sortTable(1)">ID <span class="sort-icon">↕</span></th>
                     <th onclick="sortTable(2)">Reg. No. <span class="sort-icon">↕</span></th>
                     <th onclick="sortTable(3)">Name <span class="sort-icon">↕</span></th>
@@ -37,6 +41,7 @@
             <tbody id="studentTableBody">
                 {% for student in students %}
                 <tr>
+                    <td><input type="checkbox" class="student-checkbox" value="{{ student.id }}" onchange="updateBulkDeleteBtn()"></td>
                     <td>{{ forloop.counter }}</td>
                     <td>STU{{ student.id|stringformat:"03d" }}</td>
                     <td>{{ student.reg_number }}</td>
@@ -56,7 +61,7 @@
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="10" style="text-align: center; padding: 20px;">No students found. <a href="{% url 'students' %}">Add new student</a></td>
+                    <td colspan="11" style="text-align: center; padding: 20px;">No students found. <a href="{% url 'students' %}">Add new student</a></td>
                 </tr>
                 {% endfor %}
             </tbody>
@@ -238,6 +243,10 @@ function downloadCSV() {
     window.location.href = '/download-csv/';
 }
 
+function downloadTemplate() {
+    window.location.href = '/download-template/';
+}
+
 // Search functionality
 document.getElementById('searchInput').addEventListener('keyup', function() {
     const searchTerm = this.value.toLowerCase();
@@ -305,7 +314,24 @@ function editStudent(id) {
 
 function deleteStudent(id) {
     if (confirm('Are you sure you want to delete this student?')) {
-        window.location.href = '/delete-student/' + id + '/';
+        fetch('/delete-student/' + id + '/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Student deleted successfully!');
+                location.reload();
+            } else {
+                alert('Error deleting student: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            alert('Error deleting student. Please try again.');
+        });
     }
 }
 
@@ -318,27 +344,57 @@ function uploadCSV() {
         return;
     }
     
+    if (!file.name.toLowerCase().endsWith('.csv')) {
+        alert('Please select a valid CSV file.');
+        return;
+    }
+    
+    // Show loading message
+    const originalText = 'Upload CSV';
+    const uploadBtn = document.querySelector('button[onclick="document.getElementById(\'csvFile\').click()"]');
+    uploadBtn.textContent = 'Uploading...';
+    uploadBtn.disabled = true;
+    
     const formData = new FormData();
     formData.append('csv_file', file);
+    
+    // Get CSRF token from cookie or meta tag
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     
     fetch('/upload-csv/', {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
+            'X-CSRFToken': csrfToken
         }
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
-            alert('Students imported successfully from CSV file!');
+            let message = data.message || 'Students imported successfully from CSV file!';
+            if (data.errors && data.errors.length > 0) {
+                message += '\n\nSome rows had errors:\n' + data.errors.join('\n');
+            }
+            alert(message);
             location.reload();
         } else {
             alert('Failed to upload CSV: ' + (data.error || 'Please check file format'));
         }
     })
     .catch(error => {
-        alert('Error uploading CSV. Please try again.');
+        console.error('Upload error:', error);
+        alert('Error uploading CSV. Please check your file format and try again.');
+    })
+    .finally(() => {
+        // Reset button
+        uploadBtn.textContent = originalText;
+        uploadBtn.disabled = false;
+        fileInput.value = ''; // Clear file input
     });
 }
 
@@ -354,6 +410,48 @@ function nextPage() {
 
 function goToPage(page) {
     currentPage = page;
+}
+
+function toggleSelectAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.student-checkbox');
+    checkboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateBulkDeleteBtn();
+}
+
+function updateBulkDeleteBtn() {
+    const selected = document.querySelectorAll('.student-checkbox:checked');
+    const bulkBtn = document.getElementById('bulkDeleteBtn');
+    bulkBtn.style.display = selected.length > 0 ? 'inline-block' : 'none';
+}
+
+function bulkDelete() {
+    const selected = document.querySelectorAll('.student-checkbox:checked');
+    if (selected.length === 0) return;
+    
+    if (confirm(`Delete ${selected.length} selected students?`)) {
+        const ids = Array.from(selected).map(cb => cb.value);
+        fetch('/bulk-delete-students/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+            },
+            body: JSON.stringify({student_ids: ids})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`${data.deleted_count} students deleted successfully!`);
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        })
+        .catch(error => {
+            alert('Error deleting students. Please try again.');
+        });
+    }
 }
 </script>
 {% endblock %}

@@ -28,7 +28,82 @@
         </div>
 
         <div class="fee-section">
-            <button type="button" class="fee-btn" onclick="openFeePopup()">Select Fee</button>
+            <div class="fee-types-section">
+                <div class="section-header">
+                    <h4>Selected Fees & Months</h4>
+                    <button type="button" class="add-btn" onclick="duplicateFeeSection()">+</button>
+                </div>
+                
+                <div class="months-subsection">
+                    <h5>Months</h5>
+                    <div class="month-grid">
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Baisakh</label>
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Jestha</label>
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Ashadh</label>
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Shrawan</label>
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Bhadra</label>
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Ashwin</label>
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Kartik</label>
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Mangsir</label>
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Poush</label>
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Magh</label>
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Falgun</label>
+                        <label><input type="checkbox" class="month-checkbox" onchange="calculateFees()"> Chaitra</label>
+                    </div>
+                    <div class="month-range" id="monthRange"></div>
+                </div>
+                
+
+                <div class="fee-type-row">
+                    <select class="feeType" onchange="updateFeeAmount(this)">
+                        {% for fee in fee_headings %}
+                        <option value="{{ fee.field }}">{{ fee.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <span class="unitPrice">Rs.{{ fee_headings.0.value }}</span>
+                </div>
+                
+                <div class="fee-breakdown" id="feeBreakdown">
+                    <h5>Fee Breakdown</h5>
+                    <div class="breakdown-list" id="breakdownList"></div>
+                </div>
+            </div>
+            
+            <div class="custom-fees-section">
+                <h4>Custom Fees</h4>
+                <div class="custom-fee-container">
+                    <div class="custom-fee-row">
+                        <input type="text" class="customFeeName" placeholder="Fee Name" onchange="calculateFees()">
+                        <input type="number" class="customFeePrice" placeholder="Price" onchange="calculateFees()">
+                        <button type="button" class="add-btn" onclick="addCustomFee()">+</button>
+                    </div>
+                </div>
+                <div class="fee-breakdown">
+                    <h5>Custom Fee Breakdown</h5>
+                    <div class="breakdown-list"></div>
+                </div>
+            </div>
+            
+            <div class="fee-summary">
+                <div class="fee-grid">
+                    <div class="field">
+                        <label>Total Fee</label>
+                        <input type="text" id="totalFee" value="0" readonly>
+                    </div>
+                    <div class="field">
+                        <label>Payment Amount</label>
+                        <input type="number" id="paymentAmount" value="0" onchange="updateBalance()">
+                    </div>
+                    <div class="field">
+                        <label>Net Fee</label>
+                        <input type="text" id="netFee" value="0" readonly>
+                    </div>
+                </div>
+                <div class="amounts">
+                    <div class="amount received" id="receivedAmount">Rs.0</div>
+                    <div class="amount balance" id="balanceAmount">Rs.{{ student_balance|default:0 }}</div>
+                </div>
+            </div>
         </div>
 
         <div class="payment">
@@ -50,31 +125,6 @@
             </div>
             <button class="submit" onclick="submitPayment()">Submit Payment</button>
             <button class="print-bill" onclick="printBill()">Print Bill</button>
-        </div>
-    </div>
-</div>
-
-<!-- Fee Popup -->
-<div id="feePopup" class="popup-overlay">
-    <div class="popup-content">
-        <div class="popup-header">
-            <h3>Select Fee Type</h3>
-            <button class="close-btn" onclick="closeFeePopup()">&times;</button>
-        </div>
-        <div class="popup-body">
-            <select id="feeTypeSelect" onchange="updateFeeAmount()">
-                <option value="">Select Fee Type</option>
-                <option value="tuition" data-amount="2500">Tuition Fee - Rs.2500</option>
-                <option value="admission" data-amount="5000">Admission Fee - Rs.5000</option>
-                <option value="transport" data-amount="1500">Transport Fee - Rs.1500</option>
-                <option value="library" data-amount="500">Library Fee - Rs.500</option>
-                <option value="sports" data-amount="800">Sports Fee - Rs.800</option>
-                <option value="exam" data-amount="300">Exam Fee - Rs.300</option>
-            </select>
-            <div class="fee-amount" id="feeAmount">Rs.0</div>
-        </div>
-        <div class="popup-footer">
-            <button class="confirm-btn" onclick="confirmFeeSelection()">Confirm</button>
         </div>
     </div>
 </div>
@@ -172,194 +222,931 @@
     font-size: 0.875rem;
 }
 
-.fee-section {
+.months {
     margin-bottom: 1.5rem;
-    text-align: center;
 }
 
-.fee-btn {
-    background: #2563eb;
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.5rem;
-    cursor: pointer;
+.months h3 {
+    margin: 0 0 0.75rem 0;
+    color: #374151;
     font-size: 1rem;
 }
 
-.fee-btn:hover {
-    background: #1d4ed8;
+.month-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 0.5rem;
 }
 
-.popup-overlay {
-    display: none;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 1000;
+.month-grid label {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
+    cursor: pointer;
 }
 
-.popup-content {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    border-radius: 0.5rem;
-    width: 400px;
-    max-width: 90%;
+.month-grid label:has(input:disabled) {
+    opacity: 0.5;
+    cursor: not-allowed;
+    text-decoration: line-through;
 }
 
-.popup-header {
+.months-subsection {
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 0.375rem;
+    border: 1px solid #e5e7eb;
+}
+
+.months-subsection h5 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.month-range {
+    margin-top: 0.75rem;
+    padding: 0.5rem;
+    background: #f1f5f9;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    text-align: center;
+    min-height: 1.5rem;
+}
+
+.section-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1rem;
-    border-bottom: 1px solid #e2e8f0;
-}
-
-.popup-header h3 {
-    margin: 0;
-}
-
-.close-btn {
-    background: none;
-    border: none;
-    font-size: 1.5rem;
-    cursor: pointer;
-}
-
-.popup-body {
-    padding: 1rem;
-}
-
-.popup-body select {
-    width: 100%;
-    padding: 0.5rem;
-    border: 1px solid #e2e8f0;
-    border-radius: 0.375rem;
     margin-bottom: 1rem;
 }
 
-.fee-amount {
-    text-align: center;
-    font-size: 1.25rem;
-    font-weight: bold;
-    color: #2563eb;
+.fee-types-section h5 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
-.popup-footer {
-    padding: 1rem;
-    border-top: 1px solid #e2e8f0;
-    text-align: right;
+.fee-section-item {
+    border: 1px solid #e2e8f0;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    position: relative;
 }
 
-.confirm-btn {
-    background: #10b981;
+.fee-section-item .delete-section-btn {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: #ef4444;
     color: white;
     border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 0.375rem;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
     cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-.confirm-btn:hover {
-    background: #059669;
+.fee-section-item .delete-section-btn:hover {
+    background: #dc2626;
 }
 
-.payment {
-    margin-top: 1.5rem;
+.fee-section {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.fee-types-section {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+}
+
+.fee-types-section h4 {
+    margin: 0 0 0.75rem 0;
+    color: #374151;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.fee-type-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 0.375rem;
+    border: 1px solid #d1d5db;
+    margin-bottom: 0.5rem;
+}
+
+.fee-type-row select {
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.unitPrice {
+    font-weight: 600;
+    color: #059669;
+    text-align: center;
+    padding: 0.5rem;
+    background: #ecfdf5;
+    border-radius: 0.375rem;
+    border: 1px solid #a7f3d0;
+}
+
+.add-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.add-btn:hover {
+    background: #45a049;
+}
+
+.delete-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.delete-btn:hover {
+    background: #dc2626;
+}
+
+.fee-breakdown {
+    margin-top: 1rem;
+    padding: 0.75rem;
+    background: #f9fafb;
+    border-radius: 0.375rem;
+    border: 1px solid #e5e7eb;
+}
+
+.fee-breakdown h5 {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.25rem 0;
+    font-size: 0.875rem;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.breakdown-item:last-child {
+    border-bottom: none;
+    font-weight: 600;
+    color: #059669;
+}
+
+.custom-fees-section {
+    background: #f8fafc;
+    padding: 1rem;
+    border-radius: 0.5rem;
+    border: 1px solid #e2e8f0;
+    margin-bottom: 1.5rem;
+}
+
+.custom-fees-section h4 {
+    margin: 0 0 0.75rem 0;
+    color: #374151;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.custom-fee-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 0.375rem;
+    border: 1px solid #d1d5db;
+    margin-bottom: 0.5rem;
+}
+
+.custom-fee-row input {
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.custom-fee-row input:focus {
+    outline: 2px solid #4CAF50;
+    border-color: #4CAF50;
+}
+
+.fee-summary {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+.fee-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+.field {
+    display: flex;
+    flex-direction: column;
+}
+
+.field label {
+    font-size: 0.75rem;
+    color: #64748b;
+    margin-bottom: 0.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+}
+
+.field input {
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.375rem;
+    font-size: 0.875rem;
+}
+
+.field input[readonly] {
+    background: #f9fafb;
+    color: #374151;
+}
+
+.amounts {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.amount {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    text-align: center;
+    font-weight: 600;
+    min-width: 100px;
+}
+
+.received {
+    background: #10b981;
+    color: white;
+}
+
+.balance {
+    background: #ef4444;
+    color: white;
 }
 
 .payment h3 {
-    margin: 0 0 1rem 0;
+    margin: 0 0 0.75rem 0;
+    color: #374151;
+    font-size: 1rem;
 }
 
 .payment-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
     gap: 0.75rem;
-    margin-bottom: 1rem;
+    margin-bottom: 0.75rem;
 }
 
 .payment-grid select,
 .payment-grid input {
     padding: 0.5rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #d1d5db;
     border-radius: 0.375rem;
+    font-size: 0.875rem;
 }
 
-.payment textarea {
+textarea {
     width: 100%;
     padding: 0.5rem;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #d1d5db;
     border-radius: 0.375rem;
-    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    margin-bottom: 0.75rem;
+    resize: vertical;
 }
 
 .notifications {
+    display: flex;
+    gap: 1rem;
     margin-bottom: 1rem;
 }
 
 .notifications label {
-    margin-right: 1rem;
-}
-
-.submit, .print-bill {
-    padding: 0.75rem 1.5rem;
-    border: none;
-    border-radius: 0.375rem;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.875rem;
     cursor: pointer;
-    margin-right: 0.5rem;
 }
 
 .submit {
     background: #2563eb;
     color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+    margin-right: 0.5rem;
+}
+
+.submit:hover {
+    background: #1d4ed8;
 }
 
 .print-bill {
-    background: #6b7280;
+    background: #059669;
     color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.print-bill:hover {
+    background: #047857;
+}
+
+@media (max-width: 640px) {
+    .fee-section {
+        grid-template-columns: 1fr;
+    }
+    
+    .amounts {
+        flex-direction: row;
+        justify-content: center;
+    }
 }
 </style>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-function openFeePopup() {
-    document.getElementById('feePopup').style.display = 'block';
+// Initialize fee structure from backend data
+const feeStructure = {};
+{% for fee in fee_headings %}
+feeStructure['{{ fee.field }}'] = {{ fee.value }};
+{% endfor %}
+
+const studentClass = '{{ student.student_class|default:"Nursery" }}';
+const paidFeeMonths = {{ paid_fee_months|safe }};
+
+// Initialize month checkboxes for all fee selects
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.feeType').forEach(select => {
+        updateMonthCheckboxes(select);
+    });
+});
+
+function calculateFees() {
+    let totalFee = 0;
+    
+    // Sum all Selected Fees & Months sections
+    const feeSections = document.querySelectorAll('.fee-types-section');
+    feeSections.forEach(section => {
+        const checkedMonths = section.querySelectorAll('.month-checkbox:checked').length;
+        const feeSelect = section.querySelector('.feeType');
+        
+        if (feeSelect && checkedMonths > 0) {
+            const feeType = feeSelect.value;
+            const feeAmount = feeStructure[feeType] || 0;
+            totalFee += checkedMonths * feeAmount;
+        }
+    });
+    
+    // Add custom fees (no month multiplication)
+    const customFees = document.querySelectorAll('.custom-fee-row');
+    customFees.forEach(row => {
+        const priceInput = row.querySelector('.customFeePrice');
+        const feePrice = parseFloat(priceInput.value) || 0;
+        totalFee += feePrice;
+    });
+    
+    document.getElementById('totalFee').value = totalFee;
+    document.getElementById('netFee').value = totalFee;
+    updateBalance();
+    
+    updateMonthRange();
+    updateFeeBreakdown();
 }
 
-function closeFeePopup() {
-    document.getElementById('feePopup').style.display = 'none';
+function updateFeeBreakdown() {
+    // Update breakdown for all fee sections
+    const feeSections = document.querySelectorAll('.fee-types-section');
+    
+    feeSections.forEach(section => {
+        const checkedMonths = section.querySelectorAll('.month-checkbox:checked').length;
+        const feeSelect = section.querySelector('.feeType');
+        const breakdownList = section.querySelector('.breakdown-list');
+        
+        if (!breakdownList) return;
+        
+        let html = '';
+        let sectionTotal = 0;
+        
+        // Standard fee for this section
+        if (feeSelect && checkedMonths > 0) {
+            const feeType = feeSelect.value;
+            const feeAmount = feeStructure[feeType] || 0;
+            const subtotal = checkedMonths * feeAmount;
+            sectionTotal += subtotal;
+            
+            const feeLabel = feeSelect.options[feeSelect.selectedIndex].text;
+            html += `<div class="breakdown-item">
+                <span>${feeLabel} (${checkedMonths} months)</span>
+                <span>Rs.${subtotal}</span>
+            </div>`;
+        }
+        
+        html += `<div class="breakdown-item">
+            <span>Section Total</span>
+            <span>Rs.${sectionTotal}</span>
+        </div>`;
+        
+        breakdownList.innerHTML = html;
+    });
+    
+    // Update custom fees breakdown separately
+    updateCustomFeesBreakdown();
 }
 
-function updateFeeAmount() {
-    const select = document.getElementById('feeTypeSelect');
-    const amount = select.options[select.selectedIndex].getAttribute('data-amount') || '0';
-    document.getElementById('feeAmount').textContent = 'Rs.' + amount;
-}
-
-function confirmFeeSelection() {
-    const select = document.getElementById('feeTypeSelect');
-    if (select.value) {
-        alert('Fee selected: ' + select.options[select.selectedIndex].text);
-        closeFeePopup();
-    } else {
-        alert('Please select a fee type');
+function updateCustomFeesBreakdown() {
+    const customFees = document.querySelectorAll('.custom-fee-row');
+    const customBreakdown = document.querySelector('.custom-fees-section .breakdown-list');
+    
+    if (!customBreakdown) return;
+    
+    let customHtml = '';
+    let customTotal = 0;
+    
+    customFees.forEach(row => {
+        const nameInput = row.querySelector('.customFeeName');
+        const priceInput = row.querySelector('.customFeePrice');
+        const feeName = nameInput.value.trim();
+        const feePrice = parseFloat(priceInput.value) || 0;
+        
+        if (feeName && feePrice > 0) {
+            customTotal += feePrice;
+            customHtml += `<div class="breakdown-item">
+                <span>${feeName}</span>
+                <span>Rs.${feePrice}</span>
+            </div>`;
+        }
+    });
+    
+    if (customHtml) {
+        customHtml += `<div class="breakdown-item">
+            <span>Custom Total</span>
+            <span>Rs.${customTotal}</span>
+        </div>`;
     }
+    
+    customBreakdown.innerHTML = customHtml;
+}
+
+function updateMonthRange() {
+    const feeSections = document.querySelectorAll('.fee-types-section');
+    
+    feeSections.forEach(section => {
+        const checkedBoxes = section.querySelectorAll('.month-checkbox:checked');
+        const monthRange = section.querySelector('[id^="monthRange"]');
+        
+        if (!monthRange) return;
+        
+        if (checkedBoxes.length === 0) {
+            monthRange.textContent = '';
+            return;
+        }
+        
+        const selectedMonths = [];
+        checkedBoxes.forEach(checkbox => {
+            const monthName = checkbox.parentElement.textContent.trim();
+            selectedMonths.push(monthName);
+        });
+        
+        // Calculate total price for this section
+        const feeSelect = section.querySelector('.feeType');
+        let totalPrice = 0;
+        if (feeSelect) {
+            const feeType = feeSelect.value;
+            const feeAmount = feeStructure[feeType] || 0;
+            totalPrice = checkedBoxes.length * feeAmount;
+        }
+        
+        if (selectedMonths.length === 1) {
+            monthRange.textContent = `Selected: ${selectedMonths[0]} - Total: Rs.${totalPrice}`;
+        } else {
+            const firstMonth = selectedMonths[0];
+            const lastMonth = selectedMonths[selectedMonths.length - 1];
+            monthRange.textContent = `Selected: ${firstMonth} to ${lastMonth} (${selectedMonths.length} months) - Total: Rs.${totalPrice}`;
+        }
+    });
+}
+
+function updateFeeAmount(selectElement) {
+    const feeType = selectElement.value;
+    const unitPrice = feeStructure[feeType] || 0;
+    const unitPriceSpan = selectElement.closest('.fee-types-section').querySelector('.unitPrice');
+    if (unitPriceSpan) {
+        unitPriceSpan.textContent = 'Rs.' + unitPrice;
+    }
+    
+    // Update month checkboxes based on selected fee type
+    updateMonthCheckboxes(selectElement);
+    calculateFees();
+}
+
+function updateMonthCheckboxes(selectElement) {
+    const feeType = selectElement.value;
+    const section = selectElement.closest('.fee-types-section');
+    const monthCheckboxes = section.querySelectorAll('.month-checkbox');
+    const paidMonths = paidFeeMonths[feeType] || 0;
+    
+    monthCheckboxes.forEach((checkbox, index) => {
+        if (index < paidMonths) {
+            checkbox.disabled = true;
+            checkbox.checked = false;
+            checkbox.parentElement.style.opacity = '0.5';
+            checkbox.parentElement.style.textDecoration = 'line-through';
+        } else {
+            checkbox.disabled = false;
+            checkbox.parentElement.style.opacity = '1';
+            checkbox.parentElement.style.textDecoration = 'none';
+        }
+    });
+}
+
+function addCustomFee() {
+    const container = document.querySelector('.custom-fee-container');
+    const newRow = document.createElement('div');
+    newRow.className = 'custom-fee-row';
+    newRow.innerHTML = `
+        <input type="text" class="customFeeName" placeholder="Fee Name" onchange="calculateFees()">
+        <input type="number" class="customFeePrice" placeholder="Price" onchange="calculateFees()">
+        <button type="button" class="delete-btn" onclick="deleteCustomFee(this)">-</button>
+    `;
+    container.appendChild(newRow);
+}
+
+function deleteCustomFee(button) {
+    button.closest('.custom-fee-row').remove();
+    calculateFees();
+}
+
+function duplicateFeeSection() {
+    const originalSection = document.querySelector('.fee-types-section');
+    const newSection = originalSection.cloneNode(true);
+    const timestamp = Date.now();
+    
+    // Add wrapper and delete button for new section
+    const wrapper = document.createElement('div');
+    wrapper.className = 'fee-section-item';
+    wrapper.innerHTML = '<button type="button" class="delete-section-btn" onclick="deleteFeeSection(this)">×</button>';
+    wrapper.appendChild(newSection);
+    
+    // Clear month selections in new section
+    const checkboxes = wrapper.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(cb => cb.checked = false);
+    
+    // Update IDs to make them unique
+    const monthRange = wrapper.querySelector('#monthRange');
+    if (monthRange) {
+        monthRange.id = 'monthRange' + timestamp;
+        monthRange.textContent = '';
+    }
+    
+    const breakdownList = wrapper.querySelector('.breakdown-list');
+    if (breakdownList) {
+        breakdownList.innerHTML = '';
+    }
+    
+    // Reset fee dropdown to first option and update price
+    const feeSelect = wrapper.querySelector('.feeType');
+    const unitPriceSpan = wrapper.querySelector('.unitPrice');
+    if (feeSelect && unitPriceSpan) {
+        feeSelect.selectedIndex = 0;
+        const firstFeeType = feeSelect.value;
+        unitPriceSpan.textContent = 'Rs.' + (feeStructure[firstFeeType] || 0);
+    }
+    
+    // Insert after the original section
+    originalSection.parentNode.insertBefore(wrapper, originalSection.nextSibling);
+    calculateFees();
+}
+
+function deleteFeeSection(button) {
+    button.closest('.fee-section-item').remove();
+    calculateFees();
+}
+
+function updateBalance() {
+    const totalFee = parseFloat(document.getElementById('totalFee').value) || 0;
+    const paymentAmount = parseFloat(document.getElementById('paymentAmount').value) || 0;
+    const currentBalance = totalFee - paymentAmount;
+    const existingBalance = {{ student_balance|default:0 }};
+    const totalBalance = existingBalance + currentBalance;
+    
+    document.getElementById('receivedAmount').textContent = 'Rs.' + paymentAmount;
+    document.getElementById('balanceAmount').textContent = 'Rs.' + totalBalance;
 }
 
 function submitPayment() {
-    alert('Payment submitted');
+    const submitBtn = document.querySelector('.submit');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Processing...';
+    
+    const studentId = '{{ student.id|default:"" }}';
+    if (!studentId) {
+        alert('No student selected');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Payment';
+        return;
+    }
+    
+    // Collect selected months from main section
+    const mainSection = document.querySelector('.fee-types-section');
+    const selectedMonths = [];
+    mainSection.querySelectorAll('.month-checkbox:checked').forEach(cb => {
+        selectedMonths.push(cb.parentElement.textContent.trim());
+    });
+    
+    // Collect fee types from all sections
+    const feeTypes = [];
+    document.querySelectorAll('.fee-types-section').forEach(section => {
+        const feeSelect = section.querySelector('.feeType');
+        const checkedMonths = section.querySelectorAll('.month-checkbox:checked').length;
+        if (feeSelect && checkedMonths > 0) {
+            const feeType = feeSelect.value;
+            const feeAmount = feeStructure[feeType] || 0;
+            feeTypes.push({
+                type: feeType,
+                amount: feeAmount,
+                months: checkedMonths,
+                total: checkedMonths * feeAmount
+            });
+        }
+    });
+    
+    // Collect custom fees
+    const customFees = [];
+    document.querySelectorAll('.custom-fee-row').forEach(row => {
+        const nameInput = row.querySelector('.customFeeName');
+        const priceInput = row.querySelector('.customFeePrice');
+        const feeName = nameInput.value.trim();
+        const feePrice = parseFloat(priceInput.value) || 0;
+        if (feeName && feePrice > 0) {
+            customFees.push({
+                name: feeName,
+                amount: feePrice
+            });
+        }
+    });
+    
+    const paymentData = {
+        student_id: studentId,
+        selected_months: JSON.stringify(selectedMonths),
+        fee_types: JSON.stringify(feeTypes),
+        custom_fees: JSON.stringify(customFees),
+        total_fee: parseFloat(document.getElementById('totalFee').value) || 0,
+        payment_amount: parseFloat(document.getElementById('paymentAmount').value) || 0,
+        balance: (parseFloat(document.getElementById('totalFee').value) || 0) - (parseFloat(document.getElementById('paymentAmount').value) || 0),
+        payment_method: document.querySelector('.payment-grid select').value,
+        bank_name: document.querySelector('.payment-grid input[placeholder="Bank Name"]').value,
+        cheque_dd_no: document.querySelector('.payment-grid input[placeholder="Cheque/DD No."]').value,
+        cheque_date: document.querySelector('.payment-grid input[type="date"]').value,
+        remarks: document.querySelector('textarea').value,
+        sms_sent: document.querySelector('input[type="checkbox"]').checked,
+        whatsapp_sent: document.querySelectorAll('input[type="checkbox"]')[1].checked
+    };
+    
+    fetch('/submit-payment/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(paymentData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Payment submitted successfully!');
+            window.lastPaymentData = paymentData;
+            window.lastPaymentId = data.payment_id;
+        } else {
+            alert('Error: ' + (data.error || 'Unknown error'));
+            submitBtn.disabled = false;
+            submitBtn.textContent = 'Submit Payment';
+        }
+    })
+    .catch(error => {
+        alert('Error: ' + error.message);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Payment';
+    });
 }
 
 function printBill() {
-    window.print();
+    if (!window.lastPaymentData) {
+        alert('Please submit payment first');
+        return;
+    }
+    
+    const paymentData = window.lastPaymentData;
+    const selectedMonths = JSON.parse(paymentData.selected_months);
+    const billWindow = window.open('', '_blank');
+    
+    function numberToWords(num) {
+        const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+        const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+        const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+        
+        if (num === 0) return 'Zero';
+        if (num < 10) return ones[num];
+        if (num < 20) return teens[num - 10];
+        if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? ' ' + ones[num % 10] : '');
+        if (num < 1000) return ones[Math.floor(num / 100)] + ' Hundred' + (num % 100 ? ' ' + numberToWords(num % 100) : '');
+        if (num < 100000) return numberToWords(Math.floor(num / 1000)) + ' Thousand' + (num % 1000 ? ' ' + numberToWords(num % 1000) : '');
+        return num.toString();
+    }
+    
+    const billHTML = `
+        <html>
+        <head>
+            <title>Official Fee Receipt</title>
+            <style>
+                @page { size: A4; margin: 20mm; }
+                body { font-family: 'Times New Roman', serif; margin: 0; padding: 0; font-size: 11px; line-height: 1.3; color: #000; }
+                .bill-container { max-width: 210mm; margin: 0 auto; background: white; border: 2px solid #000; }
+                .header { text-align: center; padding: 15px; border-bottom: 2px solid #000; background: #f8f8f8; }
+                .govt-seal { width: 50px; height: 50px; border: 2px solid #000; border-radius: 50%; display: inline-block; margin-bottom: 10px; text-align: center; line-height: 46px; font-weight: bold; }
+                .dept-name { font-size: 16px; font-weight: bold; margin: 5px 0; text-transform: uppercase; }
+                .office-name { font-size: 14px; font-weight: bold; margin: 3px 0; }
+                .address { font-size: 10px; margin: 3px 0; }
+                .doc-title { font-size: 14px; font-weight: bold; text-decoration: underline; margin: 10px 0; }
+                .ref-section { display: flex; justify-content: space-between; padding: 10px 15px; border-bottom: 1px solid #000; }
+                .ref-item { font-size: 10px; }
+                .content { padding: 15px; }
+                .info-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                .info-table td { padding: 5px; border: 1px solid #000; font-size: 10px; }
+                .info-table .label { background: #f0f0f0; font-weight: bold; width: 30%; }
+                .fee-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
+                .fee-table th, .fee-table td { border: 1px solid #000; padding: 8px; text-align: center; font-size: 10px; }
+                .fee-table th { background: #e0e0e0; font-weight: bold; }
+                .amount-col { text-align: right; }
+                .total-row { background: #f0f0f0; font-weight: bold; }
+                .amount-words { border: 1px solid #000; padding: 10px; margin: 15px 0; background: #f8f8f8; }
+                .certification { margin: 20px 0; font-size: 10px; text-align: justify; }
+                .footer { display: flex; justify-content: space-between; margin-top: 30px; }
+                .signature-box { text-align: center; width: 200px; }
+                .signature-line { border-top: 1px solid #000; margin-top: 40px; padding-top: 5px; font-size: 10px; }
+                .official-stamp { border: 1px solid #000; width: 100px; height: 60px; margin: 10px auto; text-align: center; line-height: 60px; font-size: 8px; }
+            </style>
+        </head>
+        <body>
+            <div class="bill-container">
+                <div class="header">
+                    <div class="govt-seal">SEAL</div>
+                    <div class="dept-name">Government of Nepal</div>
+                    <div class="dept-name">Ministry of Education</div>
+                    <div class="office-name">Bright Future Secondary School</div>
+                    <div class="address">Kathmandu, Bagmati Province</div>
+                    <div class="address">Phone: +977-1-XXXXXXX | Reg. No: 12345/2020</div>
+                    <div class="doc-title">OFFICIAL FEE RECEIPT</div>
+                </div>
+                
+                <div class="ref-section">
+                    <div class="ref-item"><strong>Receipt No:</strong> ${window.lastPaymentId || Math.floor(Math.random() * 10000)}/2025</div>
+                    <div class="ref-item"><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</div>
+                    <div class="ref-item"><strong>Fiscal Year:</strong> 2081/82</div>
+                </div>
+                
+                <div class="content">
+                    <table class="info-table">
+                        <tr>
+                            <td class="label">Student Name:</td>
+                            <td>{{ student.name|default:"RAM JEE" }}</td>
+                            <td class="label">Class/Section:</td>
+                            <td>{{ student.student_class|default:"Nursery" }}/{{ student.section|default:"A" }}</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Father's Name:</td>
+                            <td>{{ student.father_name|default:"SURESH JEE" }}</td>
+                            <td class="label">Roll No:</td>
+                            <td>001</td>
+                        </tr>
+                        <tr>
+                            <td class="label">Registration No:</td>
+                            <td>{{ student.reg_number|default:"REG2025001" }}</td>
+                            <td class="label">Academic Year:</td>
+                            <td>2025-26</td>
+                        </tr>
+                    </table>
+                    
+                    <table class="fee-table">
+                        <thead>
+                            <tr>
+                                <th>S.N.</th>
+                                <th>Fee Description</th>
+                                <th>Period</th>
+                                <th class="amount-col">Amount (Rs.)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${JSON.parse(paymentData.fee_types).map((fee, index) => {
+                                const monthsText = selectedMonths.length === 1 ? selectedMonths[0] : 
+                                    selectedMonths.length === 2 ? selectedMonths.join(', ') :
+                                    `${selectedMonths[0]} to ${selectedMonths[selectedMonths.length-1]}`;
+                                return `<tr><td>${index + 1}</td><td>${fee.type.replace('_', ' ').toUpperCase()}</td><td>${monthsText}</td><td class="amount-col">${fee.total}</td></tr>`;
+                            }).join('')}
+                            ${JSON.parse(paymentData.custom_fees).map((fee, index) => 
+                                `<tr><td>${JSON.parse(paymentData.fee_types).length + index + 1}</td><td>${fee.name}</td><td>One Time</td><td class="amount-col">${fee.amount}</td></tr>`
+                            ).join('')}
+                            <tr class="total-row">
+                                <td colspan="3"><strong>TOTAL AMOUNT</strong></td>
+                                <td class="amount-col"><strong>${paymentData.total_fee}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div class="amount-words">
+                        <strong>Amount in Words:</strong> ${numberToWords(paymentData.total_fee)} Rupees Only
+                    </div>
+                    
+                    <div class="certification">
+                        This is to certify that the above mentioned student has paid the fee amount as detailed above. This receipt is issued under the authority of the Government of Nepal, Ministry of Education. Payment Method: ${paymentData.payment_method} | Amount Paid: Rs.${paymentData.payment_amount} | Balance: Rs.${paymentData.balance}
+                    </div>
+                    
+                    <div class="footer">
+                        <div class="signature-box">
+                            <div class="signature-line">Accounts Officer</div>
+                            <div class="official-stamp">OFFICIAL STAMP</div>
+                        </div>
+                        <div class="signature-box">
+                            <div class="signature-line">Principal/Head Teacher</div>
+                            <div style="font-size: 8px; margin-top: 10px;">Date: ${new Date().toLocaleDateString('en-GB')}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </body>
+        </html>
+    `;
+    
+    billWindow.document.write(billHTML);
+    billWindow.document.close();
+    billWindow.print();
+    setTimeout(() => location.reload(), 1000);
 }
 </script>
 {% endblock %}
