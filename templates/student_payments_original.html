@@ -1,0 +1,235 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ student.name }} - Payment History{% endblock %}
+
+{% block extra_css %}
+<style>
+.payment-history {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 30px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.student-info {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.student-info h1 {
+    color: #2d3748;
+    margin-bottom: 15px;
+    font-size: 2rem;
+}
+
+.student-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    color: #718096;
+}
+
+.back-btn {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
+    color: white;
+}
+
+.payments-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.payments-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.payments-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.payments-table td {
+    padding: 15px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.payments-table tr:hover {
+    background: #f8fafc;
+}
+
+.payment-amount {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #48bb78;
+}
+
+.payment-method {
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.method-cash {
+    background: rgba(72, 187, 120, 0.2);
+    color: #22543d;
+}
+
+.method-cheque {
+    background: rgba(102, 126, 234, 0.2);
+    color: #3c366b;
+}
+
+.method-dd {
+    background: rgba(237, 137, 54, 0.2);
+    color: #7b341e;
+}
+
+.balance {
+    font-weight: 600;
+    color: #ed8936;
+}
+
+.no-payments {
+    text-align: center;
+    padding: 60px 20px;
+    color: #718096;
+}
+
+.no-payments i {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    opacity: 0.6;
+}
+
+@media (max-width: 768px) {
+    .payment-history {
+        padding: 15px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .payments-container {
+        overflow-x: auto;
+    }
+    
+    .payments-table {
+        min-width: 600px;
+    }
+    
+    .payments-table th,
+    .payments-table td {
+        padding: 10px 8px;
+        font-size: 0.8rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-history">
+    <div class="header-content">
+        <div class="student-info">
+            <h1><i class="fas fa-user"></i> {{ student.name }}</h1>
+            <div class="student-details">
+                <div><strong>Roll Number:</strong> {{ student.reg_number }}</div>
+                <div><strong>Class:</strong> {{ student.student_class }} - {{ student.section }}</div>
+                <div><strong>Father:</strong> {{ student.father_name }}</div>
+                <div><strong>Mobile:</strong> {{ student.mobile }}</div>
+            </div>
+        </div>
+        <a href="{% url 'fee_receipt_book' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+            Back to Receipt Book
+        </a>
+    </div>
+
+    <div class="payments-container">
+        {% if payments %}
+        <table class="payments-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Payment Method</th>
+                    <th>Balance</th>
+                    <th>Months</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                    <td>
+                        <div class="payment-amount">₹{{ payment.payment_amount }}</div>
+                    </td>
+                    <td>
+                        <span class="payment-method method-{{ payment.payment_method|lower }}">
+                            {{ payment.payment_method }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="balance">₹{{ payment.balance }}</div>
+                    </td>
+                    <td>
+                        {% if payment.selected_months %}
+                            {{ payment.selected_months|slice:"1:-1"|cut:'"' }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ payment.remarks|default:"-" }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-payments">
+            <i class="fas fa-receipt"></i>
+            <h3>No Payment History</h3>
+            <p>No payments have been recorded for this student yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

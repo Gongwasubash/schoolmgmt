@@ -1,0 +1,512 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ student.name }} - Payment History{% endblock %}
+
+{% block extra_css %}
+<style>
+.payment-history {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 30px;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.student-info {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.student-info h1 {
+    color: #2d3748;
+    margin-bottom: 15px;
+    font-size: 2rem;
+}
+
+.student-details {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    color: #718096;
+}
+
+.back-btn {
+    background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    text-decoration: none;
+}
+
+.back-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(72, 187, 120, 0.3);
+    color: white;
+}
+
+.payments-container {
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.payments-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.payments-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px 12px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.payments-table td {
+    padding: 15px 12px;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.payments-table tr:hover {
+    background: #f8fafc;
+}
+
+.payment-amount {
+    font-size: 1.1rem;
+    font-weight: bold;
+    color: #48bb78;
+}
+
+.payment-method {
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.method-cash {
+    background: rgba(72, 187, 120, 0.2);
+    color: #22543d;
+}
+
+.method-cheque {
+    background: rgba(102, 126, 234, 0.2);
+    color: #3c366b;
+}
+
+.method-dd {
+    background: rgba(237, 137, 54, 0.2);
+    color: #7b341e;
+}
+
+.balance {
+    font-weight: 600;
+    color: #ed8936;
+}
+
+.no-payments {
+    text-align: center;
+    padding: 60px 20px;
+    color: #718096;
+}
+
+.no-payments i {
+    font-size: 3rem;
+    margin-bottom: 20px;
+    opacity: 0.6;
+}
+
+.print-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.print-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+}
+
+/* Print Receipt Styles */
+.receipt-modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+}
+
+.receipt-content {
+    background-color: white;
+    margin: 5% auto;
+    padding: 0;
+    border-radius: 10px;
+    width: 400px;
+    max-width: 90%;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.receipt {
+    padding: 20px;
+    font-family: 'Courier New', monospace;
+    line-height: 1.4;
+}
+
+.receipt-header {
+    text-align: center;
+    border-bottom: 2px solid #333;
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.receipt-header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #333;
+}
+
+.receipt-header p {
+    margin: 5px 0;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+.receipt-body {
+    margin-bottom: 15px;
+}
+
+.receipt-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+    font-size: 0.9rem;
+}
+
+.receipt-row strong {
+    color: #333;
+}
+
+.receipt-total {
+    border-top: 1px solid #333;
+    padding-top: 10px;
+    margin-top: 10px;
+}
+
+.receipt-total .receipt-row {
+    font-weight: bold;
+    font-size: 1rem;
+}
+
+.receipt-footer {
+    text-align: center;
+    border-top: 1px solid #333;
+    padding-top: 10px;
+    margin-top: 15px;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+.modal-actions {
+    padding: 15px 20px;
+    border-top: 1px solid #eee;
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.modal-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-print {
+    background: #48bb78;
+    color: white;
+}
+
+.btn-print:hover {
+    background: #38a169;
+}
+
+.btn-close {
+    background: #e53e3e;
+    color: white;
+}
+
+.btn-close:hover {
+    background: #c53030;
+}
+
+@media print {
+    body * {
+        visibility: hidden;
+    }
+    
+    .receipt, .receipt * {
+        visibility: visible;
+    }
+    
+    .receipt {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+    }
+    
+    .modal-actions {
+        display: none;
+    }
+}
+
+@media (max-width: 768px) {
+    .payment-history {
+        padding: 15px;
+    }
+    
+    .header-content {
+        flex-direction: column;
+        gap: 20px;
+    }
+    
+    .payments-container {
+        overflow-x: auto;
+    }
+    
+    .payments-table {
+        min-width: 700px;
+    }
+    
+    .payments-table th,
+    .payments-table td {
+        padding: 10px 8px;
+        font-size: 0.8rem;
+    }
+    
+    .receipt-content {
+        width: 95%;
+        margin: 2% auto;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="payment-history">
+    <div class="header-content">
+        <div class="student-info">
+            <h1><i class="fas fa-user"></i> {{ student.name }}</h1>
+            <div class="student-details">
+                <div><strong>Roll Number:</strong> {{ student.reg_number }}</div>
+                <div><strong>Class:</strong> {{ student.student_class }} - {{ student.section }}</div>
+                <div><strong>Father:</strong> {{ student.father_name }}</div>
+                <div><strong>Mobile:</strong> {{ student.mobile }}</div>
+            </div>
+        </div>
+        <a href="{% url 'fee_receipt_book' %}" class="back-btn">
+            <i class="fas fa-arrow-left"></i>
+            Back to Receipt Book
+        </a>
+    </div>
+
+    <div class="payments-container">
+        {% if payments %}
+        <table class="payments-table">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Amount</th>
+                    <th>Payment Method</th>
+                    <th>Balance</th>
+                    <th>Months</th>
+                    <th>Remarks</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>{{ payment.payment_date|date:"d M Y" }}</td>
+                    <td>
+                        <div class="payment-amount">₹{{ payment.payment_amount }}</div>
+                    </td>
+                    <td>
+                        <span class="payment-method method-{{ payment.payment_method|lower }}">
+                            {{ payment.payment_method }}
+                        </span>
+                    </td>
+                    <td>
+                        <div class="balance">₹{{ payment.balance }}</div>
+                    </td>
+                    <td>
+                        {% if payment.selected_months %}
+                            {{ payment.selected_months|slice:"1:-1"|cut:'"' }}
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                    <td>{{ payment.remarks|default:"-" }}</td>
+                    <td>
+                        <a href="{% url 'fee_receipt' payment.id %}" class="print-btn" style="text-decoration: none; color: white;">
+                            <i class="fas fa-receipt"></i> Receipt
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="no-payments">
+            <i class="fas fa-receipt"></i>
+            <h3>No Payment History</h3>
+            <p>No payments have been recorded for this student yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Receipt Modal -->
+<div id="receiptModal" class="receipt-modal">
+    <div class="receipt-content">
+        <div class="receipt" id="receiptContent">
+            <div class="receipt-header">
+                <h2>SCHOOL MANAGEMENT SYSTEM</h2>
+                <p>Fee Payment Receipt</p>
+                <p>Phone: +91-XXXXXXXXXX | Email: school@example.com</p>
+            </div>
+            
+            <div class="receipt-body">
+                <div class="receipt-row">
+                    <span>Receipt No:</span>
+                    <span id="receiptNo"></span>
+                </div>
+                <div class="receipt-row">
+                    <span>Date:</span>
+                    <span id="receiptDate"></span>
+                </div>
+                <div class="receipt-row">
+                    <span>Student Name:</span>
+                    <span id="receiptStudentName"></span>
+                </div>
+                <div class="receipt-row">
+                    <span>Class:</span>
+                    <span>{{ student.student_class }} - {{ student.section }}</span>
+                </div>
+                <div class="receipt-row">
+                    <span>Father Name:</span>
+                    <span>{{ student.father_name }}</span>
+                </div>
+                <div class="receipt-row">
+                    <span>Mobile:</span>
+                    <span>{{ student.mobile }}</span>
+                </div>
+            </div>
+            
+            <div class="receipt-body">
+                <div class="receipt-row">
+                    <span>Payment Method:</span>
+                    <span id="receiptPaymentMethod"></span>
+                </div>
+                <div class="receipt-row">
+                    <span>Months:</span>
+                    <span id="receiptMonths"></span>
+                </div>
+            </div>
+            
+            <div class="receipt-total">
+                <div class="receipt-row">
+                    <span>Amount Paid:</span>
+                    <span id="receiptAmount"></span>
+                </div>
+            </div>
+            
+            <div class="receipt-footer">
+                <p>Thank you for your payment!</p>
+                <p>This is a computer generated receipt.</p>
+            </div>
+        </div>
+        
+        <div class="modal-actions">
+            <button class="modal-btn btn-print" onclick="printReceiptContent()">Print Receipt</button>
+            <button class="modal-btn btn-close" onclick="closeReceiptModal()">Close</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function printReceipt(paymentId, studentName, paymentDate, amount, paymentMethod, months) {
+    // Populate receipt data
+    document.getElementById('receiptNo').textContent = 'RCP' + paymentId.toString().padStart(6, '0');
+    document.getElementById('receiptDate').textContent = paymentDate;
+    document.getElementById('receiptStudentName').textContent = studentName;
+    document.getElementById('receiptPaymentMethod').textContent = paymentMethod.toUpperCase();
+    document.getElementById('receiptMonths').textContent = months || 'N/A';
+    document.getElementById('receiptAmount').textContent = '₹' + amount;
+    
+    // Show modal
+    document.getElementById('receiptModal').style.display = 'block';
+}
+
+function closeReceiptModal() {
+    document.getElementById('receiptModal').style.display = 'none';
+}
+
+function printReceiptContent() {
+    window.print();
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('receiptModal');
+    if (event.target === modal) {
+        modal.style.display = 'none';
+    }
+}
+
+// Close modal with Escape key
+document.addEventListener('keydown', function(event) {
+    if (event.key === 'Escape') {
+        closeReceiptModal();
+    }
+});
+</script>
+{% endblock %}

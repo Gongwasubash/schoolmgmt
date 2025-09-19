@@ -7,7 +7,8 @@ from .models import Student, FeeStructure, FeePayment
 from django.db import models
 import json
 from datetime import datetime, date
-from django.db.models import Count
+from django.db.models import Count, Sum, Max
+from decimal import Decimal
 import csv
 import io
 
@@ -370,59 +371,71 @@ def download_template(request):
     return response
 
 def download_csv(request):
+    from django.db.models import Sum
+    
     response = HttpResponse(content_type='text/csv')
-    response['Content-Disposition'] = 'attachment; filename="students.csv"'
+    response['Content-Disposition'] = 'attachment; filename="fee_receipt_book.csv"'
     
     writer = csv.writer(response)
     writer.writerow([
-        'S.No', 'ID', 'Registration Number', 'Name', 'Father Name', 'Mother Name', 
-        'Class', 'Section', 'Gender', 'Mobile', 'Father Mobile', 'Mother Mobile',
-        'Address1', 'Address2', 'City', 'Religion', 'DOB', 'Admission Date',
-        'Session', 'Transport', 'Last School', 'Marks', 'Exam Result',
-        'Father Email', 'Father Occupation', 'Father Qualification', 'Father DOB', 'Father Citizen',
-        'Mother Occupation', 'Mother Qualification', 'Mother DOB', 'Mother Citizen',
-        'Character Cert', 'Report Card', 'DOB Cert', 'Old Balance'
+        'S.No', 'Student ID', 'Name', 'Class', 'Section', 'Roll Number',
+        'Total Fee', 'Amount Paid', 'Amount Pending', 'Payment Status',
+        'Last Payment Date', 'Father Name', 'Mobile', 'Paid Months'
     ])
     
-    students = Student.objects.all()
+    students = Student.objects.annotate(
+        total_paid=Sum('feepayment__payment_amount'),
+        last_payment_date=Max('feepayment__payment_date')
+    ).order_by('name')
+    
     for index, student in enumerate(students, 1):
+        # Calculate total fee
+        try:
+            fee_structure = FeeStructure.objects.get(class_name=student.student_class)
+            total_fee = (
+                float(fee_structure.admission_fee) +
+                float(fee_structure.monthly_fee) * 12 +
+                float(fee_structure.tuition_fee) * 12 +
+                float(fee_structure.examination_fee) +
+                float(fee_structure.library_fee) +
+                float(fee_structure.sports_fee) +
+                float(fee_structure.laboratory_fee) +
+                float(fee_structure.computer_fee) +
+                float(fee_structure.transportation_fee) * 12
+            )
+        except FeeStructure.DoesNotExist:
+            total_fee = 5000 + (2500 * 12) + (2000 * 12) + 1000 + 500 + 800 + 1200 + 1500 + (1500 * 12)
+        
+        paid_amount = student.total_paid or 0
+        pending_amount = max(0, total_fee - paid_amount)
+        payment_status = 'Paid' if pending_amount == 0 else 'Pending'
+        
+        # Get paid months
+        payments = FeePayment.objects.filter(student=student)
+        paid_months = set()
+        for payment in payments:
+            if payment.selected_months:
+                try:
+                    months = json.loads(payment.selected_months)
+                    paid_months.update(months)
+                except json.JSONDecodeError:
+                    pass
+        
         writer.writerow([
             index,
             f'STU{student.id:03d}',
-            student.reg_number,
             student.name,
-            student.father_name,
-            student.mother_name,
             student.student_class,
             student.section,
-            student.gender,
+            student.reg_number,
+            f'₹{total_fee:,.2f}',
+            f'₹{paid_amount:,.2f}',
+            f'₹{pending_amount:,.2f}',
+            payment_status,
+            student.last_payment_date.strftime('%Y-%m-%d') if student.last_payment_date else 'No payments',
+            student.father_name,
             student.mobile,
-            student.father_mobile,
-            student.mother_mobile or '',
-            student.address1,
-            student.address2 or '',
-            student.city,
-            student.religion,
-            student.dob,
-            student.admission_date,
-            student.session,
-            student.transport,
-            student.last_school or '',
-            student.marks or '',
-            student.exam_result or '',
-            student.father_email or '',
-            student.father_occupation or '',
-            student.father_qualification or '',
-            student.father_dob or '',
-            student.father_citizen or '',
-            student.mother_occupation or '',
-            student.mother_qualification or '',
-            student.mother_dob or '',
-            student.mother_citizen or '',
-            'Yes' if student.character_cert else 'No',
-            'Yes' if student.report_card else 'No',
-            'Yes' if student.dob_cert else 'No',
-            student.old_balance
+            ', '.join(sorted(paid_months)) if paid_months else 'None'
         ])
     
     return response
@@ -684,8 +697,707 @@ def submit_payment(request):
                 whatsapp_sent=data.get('whatsapp_sent', False)
             )
             
+            # Update admission status if admission fee is paid
+            fee_types = json.loads(data['fee_types'])
+            for fee_type in fee_types:
+                if fee_type['type'] == 'admission_fee':
+                    student.admission_paid = True
+                    student.save()
+                    break
+            
             return JsonResponse({'success': True, 'payment_id': payment.id})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def fee_receipt_book(request):
+    from django.db.models import Sum, Max
+    from decimal import Decimal
+    
+    # Handle search functionality
+    search_query = request.GET.get('search', '').strip()
+    students_query = Student.objects.all()
+    
+    if search_query:
+        students_query = students_query.filter(
+            models.Q(name__icontains=search_query) |
+            models.Q(reg_number__icontains=search_query) |
+            models.Q(student_class__icontains=search_query) |
+            models.Q(father_name__icontains=search_query)
+        )
+    
+    students = students_query.annotate(
+        total_paid=Sum('feepayment__payment_amount'),
+        last_payment_date=Max('feepayment__payment_date')
+    ).order_by('name')
+    
+    # Calculate statistics
+    total_students = students.count()
+    total_collected = Decimal('0')
+    total_pending = Decimal('0')
+    
+    # Process each student
+    students_with_data = []
+    for student in students:
+        payments = FeePayment.objects.filter(student=student)
+        
+        # Calculate total fee for student based on fee structure
+        try:
+            fee_structure = FeeStructure.objects.get(class_name=student.student_class)
+            student_total_fee = (
+                fee_structure.admission_fee +
+                fee_structure.monthly_fee * 12 +
+                fee_structure.tuition_fee * 12 +
+                fee_structure.examination_fee +
+                fee_structure.library_fee +
+                fee_structure.sports_fee +
+                fee_structure.laboratory_fee +
+                fee_structure.computer_fee +
+                fee_structure.transportation_fee * 12
+            )
+        except FeeStructure.DoesNotExist:
+            student_total_fee = Decimal('5000') + (Decimal('2500') * 12) + (Decimal('2000') * 12) + Decimal('1000') + Decimal('500') + Decimal('800') + Decimal('1200') + Decimal('1500') + (Decimal('1500') * 12)
+        
+        # Calculate paid amount
+        student_paid = student.total_paid or Decimal('0')
+        student_pending = max(Decimal('0'), student_total_fee - student_paid)
+        
+        # Add to totals
+        total_collected += student_paid
+        total_pending += student_pending
+        
+        # Set student attributes for template
+        student.total_fee = float(student_total_fee)
+        student.paid_amount = float(student_paid)
+        student.pending_amount = float(student_pending)
+        student.payment_status = 'paid' if student_pending == 0 else 'pending'
+        student.class_name = student.student_class
+        student.roll_number = student.reg_number
+        
+        # Calculate monthly fee amount
+        try:
+            fee_structure = FeeStructure.objects.get(class_name=student.student_class)
+            monthly_fee_amount = float(fee_structure.monthly_fee + fee_structure.tuition_fee)
+        except FeeStructure.DoesNotExist:
+            monthly_fee_amount = 4500.0  # 2500 + 2000
+        
+        # Create fee breakdown with months
+        months_data = [
+            {'name': 'Baisakh', 'short': 'B', 'paid': False, 'amount': monthly_fee_amount},
+            {'name': 'Jestha', 'short': 'J', 'paid': False, 'amount': monthly_fee_amount},
+            {'name': 'Ashadh', 'short': 'A', 'paid': False, 'amount': monthly_fee_amount},
+            {'name': 'Shrawan', 'short': 'S', 'paid': False, 'amount': monthly_fee_amount},
+            {'name': 'Bhadra', 'short': 'B', 'paid': False, 'amount': monthly_fee_amount},
+            {'name': 'Ashwin', 'short': 'A', 'paid': False, 'amount': monthly_fee_amount},
+            {'name': 'Kartik', 'short': 'K', 'paid': False, 'amount': monthly_fee_amount},
+            {'name': 'Mangsir', 'short': 'M', 'paid': False, 'amount': monthly_fee_amount},
+            {'name': 'Poush', 'short': 'P', 'paid': False, 'amount': monthly_fee_amount},
+            {'name': 'Magh', 'short': 'M', 'paid': False, 'amount': monthly_fee_amount},
+            {'name': 'Falgun', 'short': 'F', 'paid': False, 'amount': monthly_fee_amount},
+            {'name': 'Chaitra', 'short': 'C', 'paid': False, 'amount': monthly_fee_amount}
+        ]
+        
+        # Mark paid months based on payments
+        paid_months = set()
+        for payment in payments:
+            if payment.selected_months:
+                try:
+                    months = json.loads(payment.selected_months)
+                    paid_months.update(months)
+                except json.JSONDecodeError:
+                    pass
+        
+        # Update months data
+        month_names = ['Baisakh', 'Jestha', 'Ashadh', 'Shrawan', 'Bhadra', 'Ashwin',
+                      'Kartik', 'Mangsir', 'Poush', 'Magh', 'Falgun', 'Chaitra']
+        
+        for i, month_name in enumerate(month_names):
+            if month_name in paid_months or str(i+1) in paid_months:
+                months_data[i]['paid'] = True
+        
+        student.fee_breakdown = [{'months': months_data}]
+        
+        students_with_data.append(student)
+    
+    context = {
+        'students': students_with_data,
+        'total_students': total_students,
+        'total_collected': float(total_collected),
+        'total_pending': float(total_pending),
+        'search_query': search_query
+    }
+    
+    return render(request, 'fee_receipt_book.html', context)
+
+def student_payments(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+    payments = FeePayment.objects.filter(student=student).order_by('-payment_date')
+    
+    # Process payments for better display
+    processed_payments = []
+    for payment in payments:
+        payment_data = {
+            'id': payment.id,
+            'payment_date': payment.payment_date,
+            'payment_amount': payment.payment_amount,
+            'payment_method': payment.payment_method,
+            'balance': payment.balance,
+            'remarks': payment.remarks,
+            'fee_types': [],
+            'months': []
+        }
+        
+        # Parse fee types
+        if payment.fee_types:
+            try:
+                fee_types = json.loads(payment.fee_types)
+                payment_data['fee_types'] = fee_types
+            except json.JSONDecodeError:
+                pass
+        
+        # Parse months
+        if payment.selected_months:
+            try:
+                months = json.loads(payment.selected_months)
+                payment_data['months'] = months
+            except json.JSONDecodeError:
+                pass
+        
+        processed_payments.append(payment_data)
+    
+    return render(request, 'student_payments.html', {
+        'student': student,
+        'payments': processed_payments
+    })
+
+def student_payments_api(request, student_id):
+    try:
+        student = get_object_or_404(Student, id=student_id)
+        payments = FeePayment.objects.filter(student=student).order_by('-payment_date')
+        
+        student_data = {
+            'id': student.id,
+            'name': student.name,
+            'student_class': student.student_class,
+            'section': student.section,
+            'father_name': student.father_name,
+            'mobile': student.mobile
+        }
+        
+        payments_data = []
+        for payment in payments:
+            payments_data.append({
+                'payment_date': payment.payment_date.strftime('%Y-%m-%d'),
+                'selected_months': payment.selected_months,
+                'payment_amount': float(payment.payment_amount),
+                'payment_method': payment.payment_method,
+                'balance': float(payment.balance),
+                'remarks': payment.remarks
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'student': student_data,
+            'payments': payments_data
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def admission_fee_table(request):
+    students = Student.objects.all().order_by('name')
+    
+    # Add paid months data for each student
+    students_with_months = []
+    for student in students:
+        payments = FeePayment.objects.filter(student=student)
+        paid_months = set()
+        admission_fee_paid = student.admission_paid
+        
+        for payment in payments:
+            if payment.selected_months:
+                try:
+                    months = json.loads(payment.selected_months)
+                    paid_months.update(months)
+                except json.JSONDecodeError:
+                    pass
+            
+            # Check if admission fee was paid in this payment
+            if not admission_fee_paid and payment.fee_types:
+                try:
+                    fee_types = json.loads(payment.fee_types)
+                    for fee_type in fee_types:
+                        if fee_type.get('type') == 'admission_fee':
+                            admission_fee_paid = True
+                            break
+                except json.JSONDecodeError:
+                    pass
+        
+        student.admission_paid = admission_fee_paid
+        student.paid_months = list(paid_months)
+        # If at least one month is paid, mark admission as paid
+        student.has_monthly_payment = len(paid_months) > 0
+        students_with_months.append(student)
+    
+    return render(request, 'admission_fee_table.html', {'students': students_with_months})
+
+def fee_receipt(request, payment_id):
+    payment = get_object_or_404(FeePayment, id=payment_id)
+    student = payment.student
+    
+    # Process payment data for display
+    payment_data = {
+        'id': payment.id,
+        'payment_date': payment.payment_date,
+        'payment_amount': payment.payment_amount,
+        'payment_method': payment.payment_method,
+        'balance': payment.balance,
+        'remarks': payment.remarks,
+        'bank_name': payment.bank_name,
+        'cheque_dd_no': payment.cheque_dd_no,
+        'cheque_date': payment.cheque_date,
+        'fee_types': [],
+        'months': []
+    }
+    
+    # Parse fee types
+    if payment.fee_types:
+        try:
+            fee_types = json.loads(payment.fee_types)
+            payment_data['fee_types'] = fee_types
+        except json.JSONDecodeError:
+            pass
+    
+    # Parse months
+    if payment.selected_months:
+        try:
+            months = json.loads(payment.selected_months)
+            payment_data['months'] = months
+        except json.JSONDecodeError:
+            pass
+    
+    context = {
+        'student': student,
+        'payment': payment_data,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    return render(request, 'fee_receipt.html', context)
+
+def generate_receipt_pdf(request, payment_id):
+    """Generate PDF receipt for a payment"""
+    try:
+        from reportlab.pdfgen import canvas
+        from reportlab.lib.pagesizes import letter
+        from reportlab.lib.units import inch
+        from io import BytesIO
+        
+        payment = get_object_or_404(FeePayment, id=payment_id)
+        student = payment.student
+        
+        # Create PDF
+        buffer = BytesIO()
+        p = canvas.Canvas(buffer, pagesize=letter)
+        width, height = letter
+        
+        # Header
+        p.setFont("Helvetica-Bold", 20)
+        p.drawCentredText(width/2, height-50, "School Management System")
+        p.setFont("Helvetica", 14)
+        p.drawCentredText(width/2, height-70, "Fee Payment Receipt")
+        
+        # Student Info
+        y = height - 120
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, y, "Student Information:")
+        p.setFont("Helvetica", 10)
+        y -= 20
+        p.drawString(70, y, f"Name: {student.name}")
+        y -= 15
+        p.drawString(70, y, f"Class: {student.student_class} - {student.section}")
+        y -= 15
+        p.drawString(70, y, f"Roll Number: {student.reg_number}")
+        y -= 15
+        p.drawString(70, y, f"Father's Name: {student.father_name}")
+        
+        # Payment Info
+        y -= 30
+        p.setFont("Helvetica-Bold", 12)
+        p.drawString(50, y, "Payment Information:")
+        p.setFont("Helvetica", 10)
+        y -= 20
+        p.drawString(70, y, f"Receipt No: RCP{payment.id:04d}")
+        y -= 15
+        p.drawString(70, y, f"Payment Date: {payment.payment_date}")
+        y -= 15
+        p.drawString(70, y, f"Payment Method: {payment.payment_method}")
+        y -= 15
+        p.drawString(70, y, f"Amount Paid: ₹{payment.payment_amount}")
+        
+        # Fee Details
+        if payment.fee_types:
+            try:
+                fee_types = json.loads(payment.fee_types)
+                y -= 30
+                p.setFont("Helvetica-Bold", 12)
+                p.drawString(50, y, "Fee Details:")
+                p.setFont("Helvetica", 10)
+                
+                for fee_type in fee_types:
+                    y -= 20
+                    fee_name = fee_type.get('type', '').replace('_', ' ').title()
+                    fee_amount = fee_type.get('amount', 0)
+                    p.drawString(70, y, f"{fee_name}: ₹{fee_amount}")
+            except json.JSONDecodeError:
+                pass
+        
+        # Footer
+        p.setFont("Helvetica", 8)
+        p.drawCentredText(width/2, 50, "This is a computer-generated receipt. No signature required.")
+        p.drawCentredText(width/2, 35, f"Generated on {datetime.now().strftime('%B %d, %Y')}")
+        
+        p.showPage()
+        p.save()
+        
+        buffer.seek(0)
+        response = HttpResponse(buffer.getvalue(), content_type='application/pdf')
+        response['Content-Disposition'] = f'attachment; filename="receipt_{payment.id}.pdf"'
+        return response
+        
+    except ImportError:
+        # Fallback if reportlab is not installed
+        messages.error(request, 'PDF generation not available. Please install reportlab.')
+        return redirect('fee_receipt', payment_id=payment_id)
+
+def credit_slip(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+    
+    selected_months = [m.strip() for m in request.GET.get('months', '').split(',') if m.strip()]
+    selected_fee_types = [f.strip() for f in request.GET.get('fee_types', '').split(',') if f.strip()]
+    
+    try:
+        fee_structure = FeeStructure.objects.get(class_name=student.student_class)
+    except FeeStructure.DoesNotExist:
+        fee_structure = None
+    
+    pending_fees = []
+    total_pending = 0
+    
+    if fee_structure:
+        # Get paid months and fee types
+        payments = FeePayment.objects.filter(student=student)
+        paid_months = set()
+        paid_fee_types = set()
+        
+        for payment in payments:
+            if payment.selected_months:
+                try:
+                    months = json.loads(payment.selected_months)
+                    paid_months.update(months)
+                except json.JSONDecodeError:
+                    pass
+            if payment.fee_types:
+                try:
+                    fee_types = json.loads(payment.fee_types)
+                    for fee_data in fee_types:
+                        paid_fee_types.add(fee_data.get('type'))
+                except json.JSONDecodeError:
+                    pass
+        
+        # Show only selected unpaid items
+        if selected_months or selected_fee_types:
+            if selected_months and ('monthly_fee' in selected_fee_types or 'tuition_fee' in selected_fee_types or not selected_fee_types):
+                unpaid_months = [month for month in selected_months if month not in paid_months]
+                if unpaid_months:
+                    if 'monthly_fee' in selected_fee_types and 'tuition_fee' in selected_fee_types:
+                        monthly_fee = fee_structure.monthly_fee + fee_structure.tuition_fee
+                        pending_fees.append({'name': f'Monthly + Tuition Fee ({', '.join(unpaid_months)})', 'amount': float(monthly_fee) * len(unpaid_months)})
+                        total_pending += float(monthly_fee) * len(unpaid_months)
+                    elif 'monthly_fee' in selected_fee_types:
+                        monthly_fee = fee_structure.monthly_fee
+                        pending_fees.append({'name': f'Monthly Fee ({', '.join(unpaid_months)})', 'amount': float(monthly_fee) * len(unpaid_months)})
+                        total_pending += float(monthly_fee) * len(unpaid_months)
+                    elif 'tuition_fee' in selected_fee_types:
+                        tuition_fee = fee_structure.tuition_fee
+                        pending_fees.append({'name': f'Tuition Fee ({', '.join(unpaid_months)})', 'amount': float(tuition_fee) * len(unpaid_months)})
+                        total_pending += float(tuition_fee) * len(unpaid_months)
+                    elif not selected_fee_types:
+                        monthly_fee = fee_structure.monthly_fee + fee_structure.tuition_fee
+                        pending_fees.append({'name': f'Monthly + Tuition Fee ({', '.join(unpaid_months)})', 'amount': float(monthly_fee) * len(unpaid_months)})
+                        total_pending += float(monthly_fee) * len(unpaid_months)
+            
+            if selected_fee_types:
+                for fee_type in selected_fee_types:
+                    if fee_type not in paid_fee_types and fee_type not in ['monthly_fee', 'tuition_fee']:
+                        fee_amount = getattr(fee_structure, fee_type, 0)
+                        if fee_amount > 0:
+                            fee_name = fee_type.replace('_', ' ').title()
+                            pending_fees.append({'name': fee_name, 'amount': float(fee_amount)})
+                            total_pending += float(fee_amount)
+        else:
+            # No filters - show total pending like fee receipt book
+            student_total_fee = (
+                fee_structure.admission_fee +
+                fee_structure.monthly_fee * 12 +
+                fee_structure.tuition_fee * 12 +
+                fee_structure.examination_fee +
+                fee_structure.library_fee +
+                fee_structure.sports_fee +
+                fee_structure.laboratory_fee +
+                fee_structure.computer_fee +
+                fee_structure.transportation_fee * 12
+            )
+            student_paid = sum(float(payment.payment_amount) for payment in payments)
+            total_pending = max(0, float(student_total_fee) - student_paid)
+            
+            if total_pending > 0:
+                pending_fees.append({'name': 'Pending Fees', 'amount': total_pending})
+    
+    context = {
+        'student': student,
+        'pending_fees': pending_fees,
+        'total_pending': total_pending,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    return render(request, 'credit_slip.html', context)
+
+def fee_receipt_book_api(request):
+    try:
+        selected_months = [m.strip() for m in request.GET.get('months', '').split(',') if m.strip()]
+        class_filter = request.GET.get('class', '').strip()
+        status_filter = request.GET.get('status', '').strip()
+        fee_types_filter = [f.strip() for f in request.GET.get('fee_types', '').split(',') if f.strip()]
+        
+        students = Student.objects.annotate(
+            total_paid=Sum('feepayment__payment_amount'),
+            last_payment_date=Max('feepayment__payment_date')
+        )
+        
+        if class_filter:
+            students = students.filter(student_class=class_filter)
+        
+        students = students.order_by('name')
+        
+        students_data = []
+        total_collected = Decimal('0')
+        total_pending = Decimal('0')
+        
+        for student in students:
+            try:
+                fee_structure = FeeStructure.objects.get(class_name=student.student_class)
+            except FeeStructure.DoesNotExist:
+                fee_structure = None
+            
+            if fee_types_filter and fee_structure:
+                # Calculate fee for selected fee types only
+                student_total_fee = Decimal('0')
+                for fee_type in fee_types_filter:
+                    fee_amount = getattr(fee_structure, fee_type, 0)
+                    if fee_type in ['monthly_fee', 'tuition_fee', 'transportation_fee']:
+                        student_total_fee += fee_amount * (len(selected_months) if selected_months else 12)
+                    else:
+                        student_total_fee += fee_amount
+                
+                # Calculate paid amount for selected fee types
+                payments = FeePayment.objects.filter(student=student)
+                student_paid = Decimal('0')
+                for payment in payments:
+                    if payment.fee_types:
+                        try:
+                            payment_fee_types = json.loads(payment.fee_types)
+                            for fee_data in payment_fee_types:
+                                if fee_data.get('type') in fee_types_filter:
+                                    student_paid += Decimal(str(fee_data.get('amount', 0)))
+                        except json.JSONDecodeError:
+                            pass
+            elif selected_months and fee_structure:
+                # Calculate fee only for selected months
+                monthly_fee = fee_structure.monthly_fee + fee_structure.tuition_fee
+                student_total_fee = monthly_fee * len(selected_months)
+                
+                # Calculate paid amount for selected months only
+                payments = FeePayment.objects.filter(student=student)
+                paid_months = set()
+                for payment in payments:
+                    if payment.selected_months:
+                        try:
+                            months = json.loads(payment.selected_months)
+                            paid_months.update(months)
+                        except json.JSONDecodeError:
+                            pass
+                
+                paid_selected_months = len([m for m in selected_months if m in paid_months])
+                student_paid = monthly_fee * paid_selected_months
+            else:
+                # Default calculation (all months)
+                if fee_structure:
+                    student_total_fee = (
+                        fee_structure.admission_fee +
+                        fee_structure.monthly_fee * 12 +
+                        fee_structure.tuition_fee * 12 +
+                        fee_structure.examination_fee +
+                        fee_structure.library_fee +
+                        fee_structure.sports_fee +
+                        fee_structure.laboratory_fee +
+                        fee_structure.computer_fee +
+                        fee_structure.transportation_fee * 12
+                    )
+                else:
+                    student_total_fee = Decimal('60000')
+                
+                student_paid = student.total_paid or Decimal('0')
+            
+            student_pending = max(Decimal('0'), student_total_fee - student_paid)
+            payment_status = 'paid' if student_pending == 0 else 'pending'
+            
+            # Apply status filter
+            if status_filter and payment_status != status_filter:
+                continue
+            
+            total_collected += student_paid
+            total_pending += student_pending
+            
+            students_data.append({
+                'id': student.id,
+                'name': student.name,
+                'class_name': student.student_class,
+                'section': student.section,
+                'roll_number': student.reg_number,
+                'total_fee': float(student_total_fee),
+                'paid_amount': float(student_paid),
+                'pending_amount': float(student_pending),
+                'payment_status': payment_status,
+                'last_payment_date': student.last_payment_date.strftime('%Y-%m-%d') if student.last_payment_date else None
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'students': students_data,
+            'total_students': len(students_data),
+            'total_collected': float(total_collected),
+            'total_pending': float(total_pending)
+        })
+        
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def bulk_print_receipts(request):
+    class_filter = request.GET.get('class', '').strip()
+    status_filter = request.GET.get('status', '').strip()
+    selected_months = [m.strip() for m in request.GET.get('months', '').split(',') if m.strip()]
+    selected_fee_types = [f.strip() for f in request.GET.get('fee_types', '').split(',') if f.strip()]
+    
+    if not class_filter:
+        return HttpResponse('Class selection is required for bulk printing.')
+    
+    students = Student.objects.filter(student_class=class_filter).order_by('name')
+    
+    # Process each student with fee calculations
+    students_with_data = []
+    for student in students:
+        try:
+            fee_structure = FeeStructure.objects.get(class_name=student.student_class)
+        except FeeStructure.DoesNotExist:
+            fee_structure = None
+        
+        # Get payments for this student
+        payments = FeePayment.objects.filter(student=student)
+        paid_months = set()
+        paid_fee_types = set()
+        total_paid = Decimal('0')
+        
+        for payment in payments:
+            total_paid += payment.payment_amount
+            if payment.selected_months:
+                try:
+                    months = json.loads(payment.selected_months)
+                    paid_months.update(months)
+                except json.JSONDecodeError:
+                    pass
+            if payment.fee_types:
+                try:
+                    fee_types = json.loads(payment.fee_types)
+                    for fee_data in fee_types:
+                        paid_fee_types.add(fee_data.get('type'))
+                except json.JSONDecodeError:
+                    pass
+        
+        # Calculate pending fees based on filters
+        pending_fees = []
+        total_pending = Decimal('0')
+        
+        if fee_structure:
+            # If specific months are selected, only show those months
+            if selected_months:
+                # Filter to only selected months that are unpaid
+                target_months = [month for month in selected_months if month not in paid_months]
+                
+                if target_months and (fee_structure.monthly_fee > 0 or fee_structure.tuition_fee > 0):
+                    monthly_amount = fee_structure.monthly_fee + fee_structure.tuition_fee
+                    pending_amount = monthly_amount * len(target_months)
+                    pending_fees.append({
+                        'name': f'Monthly Fee ({', '.join(target_months)})',
+                        'amount': float(pending_amount)
+                    })
+                    total_pending += pending_amount
+            else:
+                # Show all unpaid months if no specific months selected
+                all_months = ['Baisakh', 'Jestha', 'Ashadh', 'Shrawan', 'Bhadra', 'Ashwin',
+                             'Kartik', 'Mangsir', 'Poush', 'Magh', 'Falgun', 'Chaitra']
+                unpaid_months = [month for month in all_months if month not in paid_months]
+                
+                if unpaid_months and (fee_structure.monthly_fee > 0 or fee_structure.tuition_fee > 0):
+                    monthly_amount = fee_structure.monthly_fee + fee_structure.tuition_fee
+                    pending_amount = monthly_amount * len(unpaid_months)
+                    pending_fees.append({
+                        'name': f'Monthly Fee ({len(unpaid_months)} months)',
+                        'amount': float(pending_amount)
+                    })
+                    total_pending += pending_amount
+            
+            # Add other fees if selected or if no specific fee types selected
+            if not selected_fee_types or 'admission_fee' in selected_fee_types:
+                if 'admission_fee' not in paid_fee_types and fee_structure.admission_fee > 0:
+                    pending_fees.append({'name': 'Admission Fee', 'amount': float(fee_structure.admission_fee)})
+                    total_pending += fee_structure.admission_fee
+            
+            # Other fees
+            other_fees = [
+                ('examination_fee', 'Examination Fee'),
+                ('library_fee', 'Library Fee'),
+                ('sports_fee', 'Sports Fee'),
+                ('laboratory_fee', 'Laboratory Fee'),
+                ('computer_fee', 'Computer Fee')
+            ]
+            
+            for fee_field, fee_name in other_fees:
+                if (not selected_fee_types or fee_field in selected_fee_types) and fee_field not in paid_fee_types:
+                    fee_amount = getattr(fee_structure, fee_field, 0)
+                    if fee_amount > 0:
+                        pending_fees.append({'name': fee_name, 'amount': float(fee_amount)})
+                        total_pending += fee_amount
+        
+        # Apply status filter
+        payment_status = 'paid' if total_pending == 0 else 'pending'
+        if status_filter and payment_status != status_filter:
+            continue
+        
+        # Add calculated data to student
+        student.pending_fees = pending_fees
+        student.total_pending = float(total_pending)
+        student.total_paid = float(total_paid)
+        student.payment_status = payment_status
+        
+        students_with_data.append(student)
+    
+    context = {
+        'students': students_with_data,
+        'class_filter': class_filter,
+        'selected_months': selected_months,
+        'selected_fee_types': selected_fee_types,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    return render(request, 'bulk_print_receipts.html', context)
+

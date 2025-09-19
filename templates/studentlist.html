@@ -11,7 +11,7 @@
         <h1>Student List</h1>
         <div class="header-actions">
             <input type="text" id="searchInput" placeholder="Search students..." class="search-input">
-            <button class="btn btn-secondary" onclick="downloadCSV()">Download CSV</button>
+            <a href="{% url 'download_csv' %}" class="btn btn-secondary">Download CSV</a>
             <button class="btn btn-secondary" onclick="downloadTemplate()">Download Template</button>
             <input type="file" id="csvFile" accept=".csv" style="display: none;" onchange="uploadCSV()">
             <button class="btn btn-secondary" onclick="document.getElementById('csvFile').click()">Upload CSV</button>
