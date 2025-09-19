@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Credit Slip - {{ student.name }}</title>
+    <style>
+        @page { size: A5; margin: 8mm; }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: white;
+            color: black;
+            font-size: 11px;
+            line-height: 1.4;
+        }
+        
+        .receipt {
+            width: 132mm;
+            min-height: 194mm;
+            margin: 0 auto;
+            background: white;
+            border: 3px solid black;
+            overflow: hidden;
+        }
+        
+        .header {
+            background: white;
+            color: black;
+            text-align: center;
+            padding: 12px 8px;
+        }
+        
+        .school-title {
+            font-size: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        
+        .receipt-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-decoration: underline;
+        }
+        
+        .receipt-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            font-weight: 600;
+            padding: 4px 8px;
+            margin-top: 6px;
+        }
+        
+        .content {
+            padding: 12px;
+        }
+        
+        .student-section {
+            margin-bottom: 12px;
+            background: white;
+            padding: 10px;
+        }
+        
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            color: black;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            text-decoration: underline;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            font-size: 9px;
+            color: black;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            font-weight: 700;
+            font-size: 11px;
+            color: black;
+            padding: 3px 6px;
+            background: white;
+            min-height: 16px;
+            border-bottom: 1px dotted black;
+        }
+        
+        .fees-section {
+            margin: 12px 0;
+        }
+        
+        .fees-header {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            padding: 6px;
+            background: black;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .pending-message {
+            text-align: center;
+            padding: 20px 10px;
+            background: white;
+            color: black;
+            font-size: 14px;
+            font-weight: 700;
+        }
+        
+        .signatures {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 15px;
+            padding-top: 10px;
+        }
+        
+        .signature {
+            text-align: center;
+            width: 45%;
+        }
+        
+        .signature-line {
+            height: 25px;
+            border-bottom: 1px solid black;
+            margin-bottom: 4px;
+        }
+        
+        .signature-label {
+            font-weight: 600;
+            font-size: 9px;
+            color: black;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        @media print {
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            
+            .receipt {
+                border: 3px solid black;
+                margin-bottom: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="receipt">
+        <div class="header">
+            <div class="school-title">School Management System</div>
+            <div class="receipt-title">Credit Slip</div>
+            <div class="receipt-meta">
+                <span>Slip No: CS{{ student.id|stringformat:"04d" }}</span>
+                <span id="nepali-date">Date: </span>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="student-section">
+                <h3 class="section-title">Student Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Student Name</span>
+                        <span class="info-value">{{ student.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Father's Name</span>
+                        <span class="info-value">{{ student.father_name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Class</span>
+                        <span class="info-value">{{ student.student_class }} - {{ student.section }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Roll Number</span>
+                        <span class="info-value">{{ student.reg_number }}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="fees-section">
+                <div class="fees-header">Pending Fee Details</div>
+                {% if pending_fees %}
+                    <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+                        <thead>
+                            <tr style="background: #f0f0f0;">
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 10px;">Fee Type</th>
+                                <th style="border: 1px solid #ddd; padding: 8px; text-align: right; font-size: 10px;">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fee in pending_fees %}
+                            <tr>
+                                <td style="border: 1px solid #ddd; padding: 6px; font-size: 10px;">{{ fee.name }}</td>
+                                <td style="border: 1px solid #ddd; padding: 6px; text-align: right; font-size: 10px;">Rs {{ fee.amount|floatformat:0 }}</td>
+                            </tr>
+                            {% endfor %}
+                            <tr style="background: #f9f9f9; font-weight: bold;">
+                                <td style="border: 1px solid #ddd; padding: 8px; font-size: 11px;">Total Pending</td>
+                                <td style="border: 1px solid #ddd; padding: 8px; text-align: right; font-size: 11px;">Rs {{ total_pending|floatformat:0 }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                {% else %}
+                    <div class="pending-message">
+                        All fees have been paid. No pending amount.
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="signatures">
+                <div class="signature">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Accounts Officer</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Nepali BS Date Converter
+        function getNepaliDate() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = today.getMonth() + 1;
+            const day = today.getDate();
+            
+            const bsYear = year + 57;
+            let bsMonth = month + 8;
+            let bsDay = day + 17;
+            
+            if (bsMonth > 12) {
+                bsMonth -= 12;
+            }
+            
+            if (bsDay > 30) {
+                bsDay -= 30;
+                bsMonth += 1;
+                if (bsMonth > 12) {
+                    bsMonth = 1;
+                }
+            }
+            
+            return `${bsYear}/${String(bsMonth).padStart(2, '0')}/${String(bsDay).padStart(2, '0')} BS`;
+        }
+        
+        window.onload = function() {
+            document.getElementById('nepali-date').textContent = 'Date: ' + getNepaliDate();
+            window.print();
+        }
+    </script>
+</body>
+</html>

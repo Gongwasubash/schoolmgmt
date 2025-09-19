@@ -1,0 +1,829 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Fee Receipt Book{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Dashboard-style Fee Receipt Book */
+.receipt-book {
+    background: #f5f5f5;
+    min-height: 100vh;
+    padding: 2rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Top Header */
+.top-header {
+    background: white;
+    padding: 1.5rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.header-left h1 {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.header-left h1 i {
+    color: #28a745;
+    margin-right: 0.75rem;
+}
+
+.header-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.header-subtitle span {
+    color: #666;
+    font-size: 0.875rem;
+}
+
+.search-container {
+    position: relative;
+    min-width: 300px;
+}
+
+.search-container i {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0;
+    z-index: 2;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.search-container input:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+}
+
+.btn-primary {
+    background: #28a745;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary:hover {
+    background: #218838;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+/* Summary Stats */
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    animation: slideInUp 0.6s ease-out;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.stat-card.students { border-left: 4px solid #007bff; }
+.stat-card.collected { border-left: 4px solid #28a745; }
+.stat-card.pending { border-left: 4px solid #ffc107; }
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.stat-card.students .stat-icon { background: #007bff; }
+.stat-card.collected .stat-icon { background: #28a745; }
+.stat-card.pending .stat-icon { background: #ffc107; }
+
+.stat-icon svg {
+    width: 20px;
+    height: 20px;
+}
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 0.25rem;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+}
+
+/* Filter Section */
+.filter-section {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filter-title {
+    color: #333;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+.filter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.filter-group label {
+    color: #333;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.filter-group select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: white;
+    font-size: 0.875rem;
+    transition: all 0.3s ease;
+}
+
+.filter-group select:focus {
+    outline: none;
+    border-color: #28a745;
+    box-shadow: 0 0 0 3px rgba(40, 167, 69, 0.1);
+}
+
+.month-filters, .fee-type-filters {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 0.75rem;
+}
+
+.month-filter, .fee-type-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #333;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.month-filter input, .fee-type-filter input {
+    width: 1rem;
+    height: 1rem;
+    accent-color: #28a745;
+}
+
+/* Students Container */
+.students-container {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.fee-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.fee-table th {
+    background: #f8f9fa;
+    color: #333;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 2px solid #e9ecef;
+}
+
+.fee-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f3f4;
+    vertical-align: middle;
+}
+
+.fee-table tr:hover {
+    background: #f8f9fa;
+    transition: all 0.3s ease;
+}
+
+.student-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #28a745;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: 700;
+    font-size: 1rem;
+}
+
+.student-details h3 {
+    margin: 0 0 0.25rem 0;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #333;
+}
+
+.student-meta {
+    display: flex;
+    gap: 1rem;
+    color: #666;
+    font-size: 0.75rem;
+}
+
+.student-meta span {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.fee-amount {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #28a745;
+}
+
+.payment-tracker {
+    display: flex;
+    gap: 0.25rem;
+    flex-wrap: wrap;
+}
+
+.month-box {
+    width: 24px;
+    height: 24px;
+    border-radius: 4px;
+    background: #f1f3f4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.625rem;
+    font-weight: 600;
+    color: #666;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.month-box.paid {
+    background: #28a745;
+    color: white;
+}
+
+.month-box:hover {
+    transform: scale(1.1);
+}
+
+.badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.badge.success {
+    background: rgba(40, 167, 69, 0.1);
+    color: #28a745;
+}
+
+.badge.warning {
+    background: rgba(255, 193, 7, 0.1);
+    color: #856404;
+}
+
+.last-payment {
+    color: #666;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-outline, .btn-success {
+    padding: 0.375rem 0.75rem;
+    border-radius: 4px;
+    font-weight: 500;
+    cursor: pointer;
+    font-size: 0.75rem;
+    border: none;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.btn-outline {
+    background: #f8f9fa;
+    color: #007bff;
+    border: 1px solid #dee2e6;
+}
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-outline:hover {
+    background: #007bff;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #666;
+}
+
+.empty-state i {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.5;
+    color: #999;
+}
+
+.empty-state h3 {
+    font-size: 1.25rem;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.empty-state p {
+    font-size: 0.875rem;
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+    .receipt-book { padding: 1.5rem; }
+    .summary-stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .receipt-book { padding: 1rem; }
+    .top-header { flex-direction: column; gap: 1rem; padding: 1rem; }
+    .search-container { min-width: 100%; }
+    .summary-stats { grid-template-columns: 1fr; }
+    .filter-row { grid-template-columns: 1fr; }
+    .students-container { overflow-x: auto; }
+    .fee-table { min-width: 800px; }
+    .action-buttons { flex-direction: column; gap: 0.25rem; }
+}
+
+@media (max-width: 480px) {
+    .receipt-book { padding: 0.5rem; }
+    .top-header { padding: 0.75rem; }
+    .header-left h1 { font-size: 1.25rem; }
+    .stat-card { padding: 1rem; }
+    .fee-table th, .fee-table td { padding: 0.5rem; font-size: 0.75rem; }
+    .student-info { gap: 0.5rem; }
+    .avatar { width: 32px; height: 32px; font-size: 0.875rem; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="receipt-book">
+    <div class="top-header">
+        <div class="header-left">
+            <h1><i class="fas fa-receipt"></i>Fee Receipt Book</h1>
+            <div class="header-subtitle">
+                <span>Manage and track student fee payments</span>
+            </div>
+        </div>
+        <div class="search-container">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search" placeholder="Search students..." value="{{ search_query }}">
+        </div>
+        <button class="btn-primary" onclick="exportData()">
+            <i class="fas fa-download"></i>
+            Export
+        </button>
+        <button class="btn-primary" onclick="bulkPrint()" style="background: #dc3545; margin-left: 0.5rem;">
+            <i class="fas fa-print"></i>
+            Bulk Print
+        </button>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-title">Filters:</div>
+        <div class="filter-row">
+            <div class="filter-group">
+                <label>Class:</label>
+                <select id="class-filter" onchange="feeBook.applyFilters()">
+                    <option value="">All Classes</option>
+                    <option value="Nursery">Nursery</option>
+                    <option value="LKG">LKG</option>
+                    <option value="UKG">UKG</option>
+                    <option value="1st">Class 1st</option>
+                    <option value="2nd">Class 2nd</option>
+                    <option value="3rd">Class 3rd</option>
+                    <option value="4th">Class 4th</option>
+                    <option value="5th">Class 5th</option>
+                    <option value="6th">Class 6th</option>
+                    <option value="7th">Class 7th</option>
+                    <option value="8th">Class 8th</option>
+                    <option value="9th">Class 9th</option>
+                    <option value="10th">Class 10th</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Status:</label>
+                <select id="status-filter" onchange="feeBook.applyFilters()">
+                    <option value="">All Status</option>
+                    <option value="paid">Paid</option>
+                    <option value="pending">Pending</option>
+                </select>
+            </div>
+        </div>
+        <div class="filter-title" style="margin-top: 15px;">Filter by Fee Types:</div>
+        <div class="fee-type-filters">
+            <label class="fee-type-filter"><input type="checkbox" value="admission_fee" onchange="feeBook.applyFilters()"> Admission Fee</label>
+            <label class="fee-type-filter"><input type="checkbox" value="monthly_fee" onchange="feeBook.applyFilters()"> Monthly Fee</label>
+            <label class="fee-type-filter"><input type="checkbox" value="tuition_fee" onchange="feeBook.applyFilters()"> Tuition Fee</label>
+            <label class="fee-type-filter"><input type="checkbox" value="examination_fee" onchange="feeBook.applyFilters()"> Examination Fee</label>
+            <label class="fee-type-filter"><input type="checkbox" value="library_fee" onchange="feeBook.applyFilters()"> Library Fee</label>
+            <label class="fee-type-filter"><input type="checkbox" value="sports_fee" onchange="feeBook.applyFilters()"> Sports Fee</label>
+            <label class="fee-type-filter"><input type="checkbox" value="laboratory_fee" onchange="feeBook.applyFilters()"> Laboratory Fee</label>
+            <label class="fee-type-filter"><input type="checkbox" value="computer_fee" onchange="feeBook.applyFilters()"> Computer Fee</label>
+            <label class="fee-type-filter"><input type="checkbox" value="transportation_fee" onchange="feeBook.applyFilters()"> Transportation Fee</label>
+        </div>
+        <div class="filter-title" style="margin-top: 15px;">Filter by Months:</div>
+        <div class="month-filters">
+            <label class="month-filter"><input type="checkbox" value="Baisakh" onchange="feeBook.applyFilters()"> Baisakh</label>
+            <label class="month-filter"><input type="checkbox" value="Jestha" onchange="feeBook.applyFilters()"> Jestha</label>
+            <label class="month-filter"><input type="checkbox" value="Ashadh" onchange="feeBook.applyFilters()"> Ashadh</label>
+            <label class="month-filter"><input type="checkbox" value="Shrawan" onchange="feeBook.applyFilters()"> Shrawan</label>
+            <label class="month-filter"><input type="checkbox" value="Bhadra" onchange="feeBook.applyFilters()"> Bhadra</label>
+            <label class="month-filter"><input type="checkbox" value="Ashwin" onchange="feeBook.applyFilters()"> Ashwin</label>
+            <label class="month-filter"><input type="checkbox" value="Kartik" onchange="feeBook.applyFilters()"> Kartik</label>
+            <label class="month-filter"><input type="checkbox" value="Mangsir" onchange="feeBook.applyFilters()"> Mangsir</label>
+            <label class="month-filter"><input type="checkbox" value="Poush" onchange="feeBook.applyFilters()"> Poush</label>
+            <label class="month-filter"><input type="checkbox" value="Magh" onchange="feeBook.applyFilters()"> Magh</label>
+            <label class="month-filter"><input type="checkbox" value="Falgun" onchange="feeBook.applyFilters()"> Falgun</label>
+            <label class="month-filter"><input type="checkbox" value="Chaitra" onchange="feeBook.applyFilters()"> Chaitra</label>
+        </div>
+    </div>
+
+    <div class="summary-stats">
+        <div class="stat-card students">
+            <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16,4C16,2.89 15.11,2 14,2H10C8.89,2 8,2.89 8,4H5C3.89,4 3,4.89 3,6V20C3,21.11 3.89,22 5,22H19C20.11,22 21,21.11 21,20V6C21,4.89 20.11,4 19,4H16M10,4H14V6H10V4Z"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">TOTAL STUDENTS</div>
+                <div class="stat-value" id="total-students">{{ total_students }}</div>
+            </div>
+        </div>
+        <div class="stat-card collected">
+            <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">FEES COLLECTED</div>
+                <div class="stat-value" id="total-collected">Rs{{ total_collected|floatformat:0 }}</div>
+            </div>
+        </div>
+        <div class="stat-card pending">
+            <div class="stat-icon">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12,6A3,3 0 0,1 15,9A3,3 0 0,1 12,12A3,3 0 0,1 9,9A3,3 0 0,1 12,6M12,20A8,8 0 0,1 4,12A8,8 0 0,1 12,4A8,8 0 0,1 20,12A8,8 0 0,1 12,20M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+                </svg>
+            </div>
+            <div class="stat-content">
+                <div class="stat-label">FEES PENDING</div>
+                <div class="stat-value" id="total-pending">Rs{{ total_pending|floatformat:0 }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="students-container">
+        {% if students %}
+        <table class="fee-table">
+            <thead>
+                <tr>
+                    <th>Student</th>
+                    <th>Total Fee</th>
+                    <th>Status</th>
+                    <th>Payment Tracker</th>
+                    <th>Last Payment</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr data-student-id="{{ student.id }}">
+                    <td>
+                        <div class="student-info">
+                            <div class="avatar">{{ student.name|first|upper }}</div>
+                            <div class="student-details">
+                                <h3>{{ student.name }}</h3>
+                                <div class="student-meta">
+                                    <span><i class="fas fa-id-card"></i>{{ student.roll_number }}</span>
+                                    <span><i class="fas fa-graduation-cap"></i>{{ student.class_name }}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td><div class="fee-amount">Rs{{ student.pending_amount|floatformat:0 }}</div></td>
+                    <td><span class="badge {{ student.payment_status|yesno:'success,warning' }}">{{ student.payment_status }}</span></td>
+                    <td>
+                        <div class="payment-tracker">
+                            {% for fee in student.fee_breakdown %}
+                                {% for month in fee.months %}
+                                <div class="month-box{% if month.paid %} paid{% endif %}" title="{{ month.name }} - Rs{{ month.amount|floatformat:0 }}">
+                                    {{ month.short }}
+                                </div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="last-payment">
+                            <i class="fas fa-calendar"></i>
+                            {{ student.last_payment_date|default:'No payments yet' }}
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-outline" onclick="feeBook.navigate('student-payments', {{ student.id }})">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn-success" onclick="feeBook.navigate('pay-student', {{ student.id }})">
+                                <i class="fas fa-plus"></i> Pay
+                            </button>
+                            <button class="btn-primary" onclick="feeBook.printReceipt({{ student.id }})">
+                                <i class="fas fa-print"></i> Print
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <div class="empty-state">
+            <i class="fas fa-receipt"></i>
+            <h3>No Students Found</h3>
+            <p>{% if search_query %}No students match "{{ search_query }}"{% else %}Add students to start managing fee receipts{% endif %}</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+class FeeReceiptBook {
+    constructor() {
+        this.searchTimeout = null;
+        this.init();
+    }
+
+    init() {
+        this.setupSearch();
+        this.addStyles();
+    }
+
+    setupSearch() {
+        const searchInput = document.getElementById('search');
+        if (!searchInput) return;
+
+        searchInput.addEventListener('input', (e) => {
+            clearTimeout(this.searchTimeout);
+            this.searchTimeout = setTimeout(() => {
+                this.performSearch(e.target.value.trim());
+            }, 500);
+        });
+    }
+
+    performSearch(query) {
+        const params = new URLSearchParams(window.location.search);
+        if (query) {
+            params.set('search', query);
+        } else {
+            params.delete('search');
+        }
+        window.location.search = params.toString();
+    }
+
+    navigate(path, id) {
+        window.location.href = `/${path}/${id}/`;
+    }
+
+    printReceipt(studentId) {
+        const months = Array.from(document.querySelectorAll('.month-filter input:checked'), cb => cb.value);
+        const feeTypes = Array.from(document.querySelectorAll('.fee-type-filter input:checked'), cb => cb.value);
+        
+        const params = new URLSearchParams();
+        if (months.length) params.append('months', months.join(','));
+        if (feeTypes.length) params.append('fee_types', feeTypes.join(','));
+        
+        window.open(`/credit-slip/${studentId}/?${params}`, '_blank');
+    }
+
+    exportData() {
+        window.location.href = '/download-csv/';
+    }
+
+    bulkPrint() {
+        const classFilter = document.getElementById('class-filter').value;
+        const statusFilter = document.getElementById('status-filter').value;
+        const months = Array.from(document.querySelectorAll('.month-filter input:checked'), cb => cb.value);
+        const feeTypes = Array.from(document.querySelectorAll('.fee-type-filter input:checked'), cb => cb.value);
+        
+        if (!classFilter) {
+            alert('Please select a class to print receipts for.');
+            return;
+        }
+        
+        const params = new URLSearchParams();
+        params.append('class', classFilter);
+        if (statusFilter) params.append('status', statusFilter);
+        if (months.length) params.append('months', months.join(','));
+        if (feeTypes.length) params.append('fee_types', feeTypes.join(','));
+        
+        window.open(`/bulk-print-receipts/?${params}`, '_blank');
+    }
+
+    async applyFilters() {
+        const months = Array.from(document.querySelectorAll('.month-filter input:checked'), cb => cb.value);
+        const classFilter = document.getElementById('class-filter').value;
+        const statusFilter = document.getElementById('status-filter').value;
+        const feeTypes = Array.from(document.querySelectorAll('.fee-type-filter input:checked'), cb => cb.value);
+        
+        try {
+            const params = new URLSearchParams();
+            if (months.length) params.append('months', months.join(','));
+            if (classFilter) params.append('class', classFilter);
+            if (statusFilter) params.append('status', statusFilter);
+            if (feeTypes.length) params.append('fee_types', feeTypes.join(','));
+            
+            const response = await fetch(`/api/fee-receipt-book/?${params}`);
+            const data = await response.json();
+            
+            if (data.success) {
+                this.updateTable(data.students);
+                this.updateStats(data.total_students, data.total_collected, data.total_pending);
+            }
+        } catch (error) {
+            console.error('Filter error:', error);
+        }
+    }
+
+    updateTable(students) {
+        const tbody = document.querySelector('.fee-table tbody');
+        if (!tbody) return;
+        
+        tbody.innerHTML = students.map(student => `
+            <tr data-student-id="${student.id}">
+                <td>
+                    <div class="student-info">
+                        <div class="avatar">${student.name.charAt(0).toUpperCase()}</div>
+                        <div class="student-details">
+                            <h3>${student.name}</h3>
+                            <div class="student-meta">
+                                <span><i class="fas fa-id-card"></i>${student.roll_number}</span>
+                                <span><i class="fas fa-graduation-cap"></i>${student.class_name}</span>
+                            </div>
+                        </div>
+                    </div>
+                </td>
+                <td><div class="fee-amount">Rs${Math.round(student.pending_amount).toLocaleString()}</div></td>
+                <td><span class="badge ${student.payment_status === 'paid' ? 'success' : 'warning'}">${student.payment_status}</span></td>
+                <td><div class="payment-tracker">Monthly tracker</div></td>
+                <td><div class="last-payment"><i class="fas fa-calendar"></i>${student.last_payment_date || 'No payments yet'}</div></td>
+                <td>
+                    <div class="action-buttons">
+                        <button class="btn-outline" onclick="feeBook.navigate('student-payments', ${student.id})"><i class="fas fa-eye"></i> View</button>
+                        <button class="btn-success" onclick="feeBook.navigate('pay-student', ${student.id})"><i class="fas fa-plus"></i> Pay</button>
+                        <button class="btn-primary" onclick="feeBook.printReceipt(${student.id})"><i class="fas fa-print"></i> Print</button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+    }
+
+    updateStats(totalStudents, totalCollected, totalPending) {
+        document.getElementById('total-students').textContent = totalStudents;
+        document.getElementById('total-collected').textContent = `Rs${Math.round(totalCollected).toLocaleString()}`;
+        document.getElementById('total-pending').textContent = `Rs${Math.round(totalPending).toLocaleString()}`;
+    }
+
+    addStyles() {
+        if (document.getElementById('fee-book-styles')) return;
+        
+        const style = document.createElement('style');
+        style.id = 'fee-book-styles';
+        style.textContent = `@keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }`;
+        document.head.appendChild(style);
+    }
+}
+
+// Initialize
+let feeBook;
+document.addEventListener('DOMContentLoaded', () => {
+    feeBook = new FeeReceiptBook();
+});
+
+// Global functions
+function viewReceipts(studentId) { feeBook.navigate('student-payments', studentId); }
+function payFee(studentId) { feeBook.navigate('pay-student', studentId); }
+function printReceipt(studentId) { feeBook.printReceipt(studentId); }
+function exportData() { feeBook.exportData(); }
+function applyFilters() { feeBook.applyFilters(); }
+function bulkPrint() { feeBook.bulkPrint(); }
+</script>
+{% endblock %}
