@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grade Sheet Certificate - {{ exam.name }}</title>
+    <style>
+        @page { size: A4 portrait; margin: 8mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            .sidebar { display: none !important; }
+            .main-content { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
+            .grade-sheet { margin: 0 !important; box-shadow: none !important; }
+            body { background: white !important; }
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: #f5f5f5;
+            display: flex;
+            color: #2c3e50;
+            line-height: 1.2;
+        }
+
+        .sidebar {
+            width: 250px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            z-index: 1001;
+        }
+
+        .sidebar h3 {
+            margin: 0 0 20px 0;
+            color: #ecf0f1;
+            border-bottom: 2px solid rgba(255,255,255,0.3);
+            padding-bottom: 10px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar-nav a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+            transition: all 0.3s;
+        }
+
+        .sidebar-nav a:hover {
+            background: rgba(255,255,255,0.2);
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        .grade-sheet {
+            width: 200mm;
+            min-height: 287mm;
+            margin: 0 auto 20px auto;
+            background: white;
+            padding: 5mm;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            position: relative;
+            page-break-after: always;
+            border: 1px solid #ddd;
+        }
+        
+        .grade-sheet:last-child {
+            page-break-after: avoid;
+        }
+
+        .header {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4mm;
+            margin: -5mm -5mm 3mm -5mm;
+            position: relative;
+        }
+
+        .logo {
+            width: 12mm;
+            height: 12mm;
+            margin: 0 auto 2mm;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+        }
+
+        .school-info h1 {
+            font-size: 14px;
+            margin: 1mm 0;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        .school-info p {
+            font-size: 8px;
+            margin: 0.5mm 0;
+            opacity: 0.9;
+        }
+
+        .certificate-title {
+            font-size: 12px;
+            font-weight: 600;
+            margin: 2mm 0 1mm 0;
+            background: rgba(255,255,255,0.2);
+            padding: 1mm 4mm;
+            border-radius: 15px;
+            display: inline-block;
+        }
+
+        .exam-session {
+            font-size: 12px;
+            margin-top: 2mm;
+            opacity: 0.9;
+        }
+
+        .student-info {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 3mm;
+            margin: 2mm 0;
+            border-left: 3px solid #667eea;
+        }
+
+        .info-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2mm;
+            margin: 1.5mm 0;
+        }
+
+        .info-item {
+            display: flex;
+            align-items: center;
+            background: white;
+            padding: 1.5mm;
+            border-radius: 3px;
+        }
+
+        .label {
+            font-weight: 600;
+            color: #495057;
+            min-width: 20mm;
+            font-size: 8px;
+        }
+
+        .value {
+            color: #2c3e50;
+            padding: 0.5mm 2mm;
+            font-size: 9px;
+            font-weight: 500;
+        }
+
+        .marks-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 2mm 0;
+            background: white;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+            font-size: 7px;
+        }
+
+        .marks-table th {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2mm 1mm;
+            text-align: center;
+            font-weight: 600;
+            font-size: 7px;
+        }
+
+        .marks-table td {
+            padding: 1.5mm 1mm;
+            text-align: center;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .marks-table tr:nth-child(even) td {
+            background: #f8f9fa;
+        }
+
+        .subject-name {
+            text-align: left !important;
+            font-weight: 500;
+            padding-left: 2mm !important;
+            color: #495057;
+        }
+
+        .gpa-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 4px;
+            padding: 2mm;
+            margin: 2mm 0;
+            text-align: center;
+            font-size: 9px;
+        }
+
+        .gpa-title {
+            font-weight: 600;
+            display: block;
+            margin-bottom: 1mm;
+        }
+
+        .gpa-value {
+            font-weight: 700;
+            font-size: 12px;
+            background: rgba(255,255,255,0.2);
+            padding: 1mm 3mm;
+            border-radius: 10px;
+            display: inline-block;
+        }
+
+        .eca-section {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 2mm;
+            margin: 2mm 0;
+        }
+
+        .eca-title {
+            font-size: 8px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 1.5mm;
+            text-align: center;
+        }
+
+        .eca-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5mm;
+        }
+
+        .eca-item {
+            background: white;
+            padding: 1.5mm;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .eca-name {
+            font-weight: 500;
+            color: #495057;
+            font-size: 6px;
+        }
+
+        .eca-grades {
+            display: flex;
+            gap: 1mm;
+        }
+
+        .eca-grade {
+            width: 4mm;
+            height: 4mm;
+            border: 1px solid #dee2e6;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 6px;
+            font-weight: 600;
+        }
+
+        .attendance-section {
+            background: #e8f5e8;
+            border-radius: 4px;
+            padding: 2mm;
+            margin: 2mm 0;
+        }
+
+        .attendance-title {
+            font-size: 8px;
+            font-weight: 600;
+            color: #2e7d32;
+            margin-bottom: 1.5mm;
+            text-align: center;
+        }
+
+        .attendance-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1.5mm;
+        }
+
+        .attendance-item {
+            background: white;
+            padding: 1.5mm;
+            border-radius: 3px;
+            text-align: center;
+        }
+
+        .attendance-label {
+            font-size: 6px;
+            color: #495057;
+            margin-bottom: 1mm;
+        }
+
+        .attendance-value {
+            font-size: 10px;
+            font-weight: 700;
+            color: #2e7d32;
+            border-bottom: 1px solid #4caf50;
+            padding-bottom: 0.5mm;
+        }
+
+        .grading-scale {
+            background: #fff3e0;
+            border-radius: 4px;
+            padding: 2mm;
+            margin: 2mm 0;
+        }
+
+        .scale-title {
+            font-size: 8px;
+            font-weight: 600;
+            color: #ef6c00;
+            margin-bottom: 1.5mm;
+            text-align: center;
+        }
+
+        .scale-grid {
+            display: grid;
+            grid-template-columns: repeat(8, 1fr);
+            gap: 1mm;
+        }
+
+        .scale-item {
+            background: white;
+            padding: 1mm;
+            border-radius: 2px;
+            text-align: center;
+            border-left: 2px solid #ff9800;
+        }
+
+        .scale-range {
+            font-size: 5px;
+            color: #495057;
+        }
+
+        .scale-grade {
+            font-size: 7px;
+            font-weight: 600;
+            color: #ef6c00;
+        }
+
+        .scale-desc {
+            font-size: 4px;
+            color: #6c757d;
+        }
+
+        .scale-point {
+            font-size: 5px;
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .signature-section {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 3mm;
+            margin-top: 3mm;
+        }
+
+        .signature-box {
+            background: #f8f9fa;
+            border-radius: 4px;
+            padding: 2mm;
+            text-align: center;
+            border-top: 2px solid #667eea;
+        }
+
+        .signature-title {
+            font-size: 7px;
+            font-weight: 600;
+            color: #495057;
+            margin-bottom: 4mm;
+        }
+
+        .signature-line {
+            border-top: 1px solid #667eea;
+            padding-top: 1mm;
+            font-size: 6px;
+            color: #6c757d;
+        }
+
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: 600;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .sidebar-actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255,255,255,0.3);
+        }
+
+        .sidebar-btn {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .sidebar-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .student-list {
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+
+        .student-item {
+            padding: 8px;
+            margin-bottom: 5px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .student-item:hover {
+            background: rgba(255,255,255,0.2);
+        }
+    </style>
+    <script>
+        function calculateGPA() {
+            const gradeSheets = document.querySelectorAll('.grade-sheet');
+            
+            gradeSheets.forEach(sheet => {
+                const gradePointCells = sheet.querySelectorAll('.grade-point');
+                let totalGradePoints = 0;
+                let totalSubjects = 0;
+                
+                gradePointCells.forEach(cell => {
+                    const gradePoint = parseFloat(cell.textContent);
+                    if (!isNaN(gradePoint)) {
+                        totalGradePoints += gradePoint;
+                        totalSubjects++;
+                    }
+                });
+                
+                const gpa = totalSubjects > 0 ? (totalGradePoints / totalSubjects).toFixed(2) : '0.00';
+                const gpaElement = sheet.querySelector('.calculated-gpa');
+                if (gpaElement) {
+                    gpaElement.textContent = gpa;
+                }
+                
+                let overallGrade = 'NG';
+                const gpaValue = parseFloat(gpa);
+                if (gpaValue >= 3.8) overallGrade = 'A+';
+                else if (gpaValue >= 3.4) overallGrade = 'A';
+                else if (gpaValue >= 3.0) overallGrade = 'B+';
+                else if (gpaValue >= 2.6) overallGrade = 'B';
+                else if (gpaValue >= 2.2) overallGrade = 'C+';
+                else if (gpaValue >= 1.8) overallGrade = 'C';
+                else if (gpaValue >= 1.4) overallGrade = 'D';
+                
+                const gradeElement = sheet.querySelector('.calculated-grade');
+                if (gradeElement) {
+                    gradeElement.textContent = overallGrade;
+                }
+            });
+        }
+        
+        window.onload = calculateGPA;
+    </script>
+</head>
+<body>
+    <div class="sidebar no-print">
+        <h3>Grade Sheet Certificate</h3>
+        <ul class="sidebar-nav">
+            <li><a href="/">Dashboard</a></li>
+            <li><a href="/students">Students</a></li>
+            <li><a href="/classes">Classes</a></li>
+            <li><a href="/reports">Reports</a></li>
+        </ul>
+        
+        <div class="sidebar-actions">
+            <button class="sidebar-btn" onclick="window.print()">Print All</button>
+            <button class="sidebar-btn" onclick="location.reload()">Refresh</button>
+        </div>
+        
+        <div class="student-list">
+            <h4 style="margin-bottom: 10px; font-size: 14px;">Students</h4>
+            {% for data in marksheets_data %}
+            <div class="student-item">
+                {{ data.student.name }} - {{ data.student.student_class }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="main-content">
+        <button class="print-btn no-print" onclick="window.print()">Print All Certificates</button>
+        
+        {% for data in marksheets_data %}
+        <div class="grade-sheet">
+            <div class="header">
+                <div class="logo">SP</div>
+                <div class="school-info">
+                    <h1>SARATHI PATHSHALA</h1>
+                    <p>Budhanilkantha-8, Chyasal, Kathmandu</p>
+                    <p>Phone: 01-5912328 | Email: sarathipathshala@gmail.com</p>
+                </div>
+                <div class="certificate-title">GRADE SHEET CERTIFICATE</div>
+                <div class="exam-session">{{ exam.exam_type|upper }} EXAMINATION - {{ exam.session|default:"2024-25" }}</div>
+            </div>
+            
+            <div class="student-info">
+                <div class="info-row">
+                    <div class="info-item">
+                        <span class="label">Student Name</span>
+                        <span class="value">{{ data.student.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Registration No</span>
+                        <span class="value">{{ data.student.reg_number }}</span>
+                    </div>
+                </div>
+                <div class="info-row">
+                    <div class="info-item">
+                        <span class="label">Grade</span>
+                        <span class="value">{{ data.student.student_class }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Section</span>
+                        <span class="value">{{ data.student.section }}</span>
+                    </div>
+                </div>
+            </div>
+                
+            <table class="marks-table">
+                <thead>
+                    <tr>
+                        <th style="width: 6%;">S.No</th>
+                        <th style="width: 32%;">Subject</th>
+                        <th style="width: 10%;">Max</th>
+                        <th style="width: 10%;">Obtained</th>
+                        <th style="width: 10%;">%</th>
+                        <th style="width: 8%;">Grade</th>
+                        <th style="width: 8%;">GP</th>
+                        <th style="width: 16%;">Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for marksheet in data.marksheets %}
+                    <tr>
+                        <td style="font-weight: 600;">{{ forloop.counter }}</td>
+                        <td class="subject-name">{{ marksheet.subject.name|default:"N/A" }}</td>
+                        <td>{{ marksheet.subject.max_marks|default:"100" }}</td>
+                        <td style="font-weight: 600;">{{ marksheet.marks_obtained|default:"0" }}</td>
+                        <td>{{ marksheet.percentage|floatformat:1|default:"0.0" }}</td>
+                        <td style="font-weight: 600; color: #667eea;">{{ marksheet.grade|default:"NG" }}</td>
+                        <td class="grade-point" style="font-weight: 600;">{{ marksheet.grade_point|default:"0.0" }}</td>
+                        <td style="color: {% if marksheet.status == 'Pass' %}#28a745{% else %}#dc3545{% endif %}; font-weight: 600;">{{ marksheet.status|default:"Pass" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 4mm; color: #6c757d; font-style: italic;">
+                            No examination data available
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+                
+            <div class="gpa-section">
+                <div class="gpa-title">Overall Performance</div>
+                <div class="gpa-value"><span class="calculated-gpa">0.00</span> GPA (<span class="calculated-grade">NG</span>)</div>
+            </div>
+
+            <div class="eca-section">
+                <div class="eca-title">Extra-Curricular Activities Assessment</div>
+                <div class="eca-grid">
+                    <div class="eca-item">
+                        <span class="eca-name">Handwriting</span>
+                        <div class="eca-grades">
+                            <div class="eca-grade">A</div>
+                            <div class="eca-grade">B</div>
+                            <div class="eca-grade">C</div>
+                        </div>
+                    </div>
+                    <div class="eca-item">
+                        <span class="eca-name">Speaking</span>
+                        <div class="eca-grades">
+                            <div class="eca-grade">A</div>
+                            <div class="eca-grade">B</div>
+                            <div class="eca-grade">C</div>
+                        </div>
+                    </div>
+                    <div class="eca-item">
+                        <span class="eca-name">Behaviour</span>
+                        <div class="eca-grades">
+                            <div class="eca-grade">A</div>
+                            <div class="eca-grade">B</div>
+                            <div class="eca-grade">C</div>
+                        </div>
+                    </div>
+                    <div class="eca-item">
+                        <span class="eca-name">Homework</span>
+                        <div class="eca-grades">
+                            <div class="eca-grade">A</div>
+                            <div class="eca-grade">B</div>
+                            <div class="eca-grade">C</div>
+                        </div>
+                    </div>
+                    <div class="eca-item">
+                        <span class="eca-name">Sports</span>
+                        <div class="eca-grades">
+                            <div class="eca-grade">A</div>
+                            <div class="eca-grade">B</div>
+                            <div class="eca-grade">C</div>
+                        </div>
+                    </div>
+                    <div class="eca-item">
+                        <span class="eca-name">Arts</span>
+                        <div class="eca-grades">
+                            <div class="eca-grade">A</div>
+                            <div class="eca-grade">B</div>
+                            <div class="eca-grade">C</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="attendance-section">
+                <div class="attendance-title">Attendance Record</div>
+                <div class="attendance-grid">
+                    <div class="attendance-item">
+                        <div class="attendance-label">Working Days</div>
+                        <div class="attendance-value">___</div>
+                    </div>
+                    <div class="attendance-item">
+                        <div class="attendance-label">Present Days</div>
+                        <div class="attendance-value">___</div>
+                    </div>
+                    <div class="attendance-item">
+                        <div class="attendance-label">Absent Days</div>
+                        <div class="attendance-value">___</div>
+                    </div>
+                </div>
+            </div>
+                
+            <div class="grading-scale">
+                <div class="scale-title">Grading Scale Reference</div>
+                <div class="scale-grid">
+                    <div class="scale-item">
+                        <div class="scale-range">90-100</div>
+                        <div class="scale-grade">A+</div>
+                        <div class="scale-desc">Outstanding</div>
+                        <div class="scale-point">4.0</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-range">80-89</div>
+                        <div class="scale-grade">A</div>
+                        <div class="scale-desc">Excellent</div>
+                        <div class="scale-point">3.6</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-range">70-79</div>
+                        <div class="scale-grade">B+</div>
+                        <div class="scale-desc">Very Good</div>
+                        <div class="scale-point">3.2</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-range">60-69</div>
+                        <div class="scale-grade">B</div>
+                        <div class="scale-desc">Good</div>
+                        <div class="scale-point">2.8</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-range">50-59</div>
+                        <div class="scale-grade">C+</div>
+                        <div class="scale-desc">Satisfactory</div>
+                        <div class="scale-point">2.4</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-range">40-49</div>
+                        <div class="scale-grade">C</div>
+                        <div class="scale-desc">Acceptable</div>
+                        <div class="scale-point">2.0</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-range">30-39</div>
+                        <div class="scale-range">D</div>
+                        <div class="scale-desc">Basic</div>
+                        <div class="scale-point">1.6</div>
+                    </div>
+                    <div class="scale-item">
+                        <div class="scale-range">0-29</div>
+                        <div class="scale-grade">NG</div>
+                        <div class="scale-desc">Not Graded</div>
+                        <div class="scale-point">0.0</div>
+                    </div>
+                </div>
+            </div>
+                
+            <div class="signature-section">
+                <div class="signature-box">
+                    <div class="signature-title">Class Teacher</div>
+                    <div class="signature-line">Signature & Date</div>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-title">Principal</div>
+                    <div class="signature-line">Signature & Seal</div>
+                </div>
+                <div class="signature-box">
+                    <div class="signature-title">Academic Office</div>
+                    <div class="signature-line">Official Stamp</div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html>

@@ -595,6 +595,7 @@
             <thead>
                 <tr>
                     <th>Student</th>
+                    <th>Subject</th>
                     <th>Total Fee</th>
                     <th>Status</th>
                     <th>Payment Tracker</th>
@@ -617,6 +618,7 @@
                             </div>
                         </div>
                     </td>
+                    <td>{{ student.subject|default:'N/A' }}</td>
                     <td><div class="fee-amount">Rs{{ student.pending_amount|floatformat:0 }}</div></td>
                     <td><span class="badge {{ student.payment_status|yesno:'success,warning' }}">{{ student.payment_status }}</span></td>
                     <td>

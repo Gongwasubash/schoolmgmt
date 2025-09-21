@@ -141,9 +141,11 @@
                         <label for="session">Session *</label>
                         <select id="session" name="session" required>
                             <option value="">Select Session</option>
-                            <option value="2025-26">2025-26</option>
-                            <option value="2024-25">2024-25</option>
-                            <option value="2023-24">2023-24</option>
+                            {% for session in sessions %}
+                            <option value="{{ session.name }}" {% if session.is_active or session.name == student.session %}selected{% endif %}>
+                                {{ session.name }} {% if session.is_active %}(Active){% endif %}
+                            </option>
+                            {% endfor %}
                         </select>
                     </div>
                 </div>

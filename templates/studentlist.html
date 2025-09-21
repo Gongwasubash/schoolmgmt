@@ -1,84 +1,83 @@
 {% extends "base.html" %}
 
-{% block title %}Student List - School Management{% endblock %}
+{% block title %}Students - School Management{% endblock %}
 
 {% block content %}
-{% csrf_token %}
-<input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
-<div class="student-list-container">
-    <!-- Header Section -->
+<div class="students-page">
     <div class="page-header">
-        <h1>Student List</h1>
+        <div class="header-content">
+            <h1>👥 Students</h1>
+            <p>{{ students|length }} students enrolled</p>
+        </div>
         <div class="header-actions">
-            <input type="text" id="searchInput" placeholder="Search students..." class="search-input">
-            <a href="{% url 'download_csv' %}" class="btn btn-secondary">Download CSV</a>
-            <button class="btn btn-secondary" onclick="downloadTemplate()">Download Template</button>
+            <div class="search-box">
+                <input type="text" id="searchInput" placeholder="Search students...">
+                <span class="search-icon">🔍</span>
+            </div>
+            <button class="btn btn-outline" onclick="downloadCSV()">📥 Export</button>
             <input type="file" id="csvFile" accept=".csv" style="display: none;" onchange="uploadCSV()">
-            <button class="btn btn-secondary" onclick="document.getElementById('csvFile').click()">Upload CSV</button>
-            <button class="btn btn-danger" id="bulkDeleteBtn" onclick="bulkDelete()" style="display:none;">Delete Selected</button>
-            <button class="btn btn-primary" onclick="window.location.href='{% url 'students' %}'">New Admission</button>
+            <button class="btn btn-outline" onclick="document.getElementById('csvFile').click()">📤 Import</button>
+            <button class="btn btn-primary" onclick="window.location.href='{% url 'students' %}'">➕ Add Student</button>
         </div>
     </div>
 
-    <!-- Student Table -->
-    <div class="table-container">
-        <table class="table table-striped" id="studentTable">
+    <div class="table-card">
+        <table class="modern-table" id="studentTable">
             <thead>
                 <tr>
-                    <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
-                    <th onclick="sortTable(1)">S.No <span class="sort-icon">↕</span></th>
-                    <th onclick="sortTable(1)">ID <span class="sort-icon">↕</span></th>
-                    <th onclick="sortTable(2)">Reg. No. <span class="sort-icon">↕</span></th>
-                    <th onclick="sortTable(3)">Name <span class="sort-icon">↕</span></th>
-                    <th onclick="sortTable(4)">Father Name <span class="sort-icon">↕</span></th>
-                    <th onclick="sortTable(5)">Class <span class="sort-icon">↕</span></th>
-                    <th onclick="sortTable(6)">Section <span class="sort-icon">↕</span></th>
-                    <th onclick="sortTable(7)">Gender <span class="sort-icon">↕</span></th>
-                    <th onclick="sortTable(8)">Mobile <span class="sort-icon">↕</span></th>
-                    <th>Action</th>
+                    <th onclick="sortTable(0)">#</th>
+                    <th onclick="sortTable(1)">ID</th>
+                    <th onclick="sortTable(2)">Reg. No.</th>
+                    <th onclick="sortTable(3)">Name</th>
+                    <th onclick="sortTable(4)">Father</th>
+                    <th onclick="sortTable(5)">Class</th>
+                    <th onclick="sortTable(6)">Section</th>
+                    <th onclick="sortTable(7)">Gender</th>
+                    <th onclick="sortTable(8)">Mobile</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
-            <tbody id="studentTableBody">
+            <tbody>
                 {% for student in students %}
                 <tr>
-                    <td><input type="checkbox" class="student-checkbox" value="{{ student.id }}" onchange="updateBulkDeleteBtn()"></td>
                     <td>{{ forloop.counter }}</td>
-                    <td>STU{{ student.id|stringformat:"03d" }}</td>
+                    <td><span class="student-id">STU{{ student.id|stringformat:"03d" }}</span></td>
                     <td>{{ student.reg_number }}</td>
-                    <td>{{ student.name }}</td>
+                    <td><strong>{{ student.name }}</strong></td>
                     <td>{{ student.father_name }}</td>
-                    <td>{{ student.student_class }}</td>
+                    <td><span class="class-badge">{{ student.student_class }}</span></td>
                     <td>{{ student.section }}</td>
                     <td>{{ student.gender|first }}</td>
                     <td>{{ student.mobile }}</td>
                     <td>
-                        <button class="action-btn view-btn" onclick="viewStudent({{ student.id }})" title="View">V</button>
-                        <button class="action-btn print-btn" onclick="printStudent({{ student.id }})" title="Print">P</button>
-                        <button class="action-btn fee-btn" onclick="feeStudent({{ student.id }})" title="Fee">Fee</button>
-                        <button class="action-btn edit-btn" onclick="editStudent({{ student.id }})" title="Edit">Edit</button>
-                        <button class="action-btn delete-btn" onclick="deleteStudent({{ student.id }})" title="Delete">Del</button>
+                        <div class="action-buttons">
+                            <button class="action-btn view" onclick="viewStudent({{ student.id }})" title="View">👁️</button>
+                            <button class="action-btn print" onclick="printStudent({{ student.id }})" title="Print">🖨️</button>
+                            <button class="action-btn fee" onclick="feeStudent({{ student.id }})" title="Fee">💰</button>
+                            <button class="action-btn edit" onclick="editStudent({{ student.id }})" title="Edit">✏️</button>
+                            <button class="action-btn delete" onclick="deleteStudent({{ student.id }})" title="Delete">🗑️</button>
+                        </div>
                     </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="11" style="text-align: center; padding: 20px;">No students found. <a href="{% url 'students' %}">Add new student</a></td>
+                    <td colspan="10" class="empty-state">
+                        <div class="empty-content">
+                            <span class="empty-icon">👥</span>
+                            <h3>No students found</h3>
+                            <p>Start by adding your first student</p>
+                            <button class="btn btn-primary" onclick="window.location.href='{% url 'students' %}'">Add Student</button>
+                        </div>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>
         </table>
     </div>
 
-    <!-- Pagination -->
-    <div class="pagination-container">
+    <div class="table-footer">
         <div class="pagination-info">
-            Showing <span id="startRecord">1</span> to <span id="endRecord">{{ students|length }}</span> of <span id="totalRecords">{{ students|length }}</span> entries
-        </div>
-        <div class="pagination">
-            <button class="page-btn" onclick="previousPage()" id="prevBtn">Previous</button>
-            <span class="page-numbers" id="pageNumbers">
-                <button class="page-btn active" onclick="goToPage(1)">1</button>
-            </span>
-            <button class="page-btn" onclick="nextPage()" id="nextBtn">Next</button>
+            Showing {{ students|length }} of {{ students|length }} students
         </div>
     </div>
 </div>
@@ -86,148 +85,278 @@
 
 {% block extra_css %}
 <style>
-.student-list-container {
-    padding: 20px;
+.students-page {
+    padding: 2rem;
+    background: #f8fafc;
+    min-height: 100vh;
 }
 
 .page-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    padding-bottom: 15px;
-    border-bottom: 2px solid #e2e8f0;
+    margin-bottom: 2rem;
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.header-content h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #1a202c;
+}
+
+.header-content p {
+    margin: 0.5rem 0 0 0;
+    color: #718096;
+    font-size: 0.9rem;
 }
 
 .header-actions {
     display: flex;
-    gap: 15px;
+    gap: 1rem;
     align-items: center;
 }
 
-.search-input {
-    padding: 8px 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    width: 250px;
-    font-size: 14px;
+.search-box {
+    position: relative;
 }
 
-.table-container {
-    background: white;
+.search-box input {
+    padding: 0.75rem 1rem 0.75rem 2.5rem;
+    border: 2px solid #e2e8f0;
     border-radius: 8px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    overflow-x: auto;
-    max-height: 600px;
-    overflow-y: auto;
+    width: 300px;
+    font-size: 0.9rem;
+    transition: all 0.2s;
 }
 
-.table {
-    margin: 0;
-    font-size: 14px;
+.search-box input:focus {
+    outline: none;
+    border-color: #4299e1;
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
 }
 
-.table th {
-    background: #f8fafc;
-    position: sticky;
-    top: 0;
-    z-index: 10;
-    cursor: pointer;
-    user-select: none;
-    white-space: nowrap;
-    padding: 12px 8px;
+.search-icon {
+    position: absolute;
+    left: 0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #a0aec0;
 }
 
-.table th:hover {
-    background: #e2e8f0;
-}
-
-.sort-icon {
-    margin-left: 5px;
-    color: #666;
-    font-size: 12px;
-}
-
-.table td {
-    padding: 10px 8px;
-    vertical-align: middle;
-}
-
-.action-btn {
-    padding: 4px 8px;
-    margin: 0 2px;
+.btn {
+    padding: 0.75rem 1.5rem;
     border: none;
-    border-radius: 3px;
-    font-size: 11px;
-    font-weight: bold;
+    border-radius: 8px;
+    font-weight: 600;
     cursor: pointer;
-    min-width: 30px;
+    transition: all 0.2s;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
-.view-btn { background: #3182ce; color: white; }
-.print-btn { background: #63b3ed; color: white; }
-.fee-btn { background: #38a169; color: white; }
-.edit-btn { background: #ed8936; color: white; }
-.delete-btn { background: #e53e3e; color: white; }
+.btn-primary {
+    background: #4299e1;
+    color: white;
+}
 
-.action-btn:hover {
-    opacity: 0.8;
+.btn-primary:hover {
+    background: #3182ce;
     transform: translateY(-1px);
 }
 
-.pagination-container {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-top: 20px;
-    padding: 15px 0;
-}
-
-.pagination {
-    display: flex;
-    gap: 5px;
-    align-items: center;
-}
-
-.page-btn {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
+.btn-outline {
     background: white;
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: 14px;
+    color: #4a5568;
+    border: 2px solid #e2e8f0;
 }
 
-.page-btn:hover, .page-btn.active {
-    background: #3182ce;
-    color: white;
-    border-color: #3182ce;
+.btn-outline:hover {
+    border-color: #cbd5e0;
+    background: #f7fafc;
+}
+
+.table-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.modern-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.modern-table th {
+    background: #f7fafc;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #4a5568;
+    border-bottom: 2px solid #e2e8f0;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.modern-table th:hover {
+    background: #edf2f7;
+}
+
+.modern-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f1f5f9;
+    vertical-align: middle;
+}
+
+.modern-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.student-id {
+    background: #e6fffa;
+    color: #234e52;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.class-badge {
+    background: #e6f3ff;
+    color: #1e40af;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.action-btn {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    transition: all 0.2s;
+}
+
+.action-btn.view {
+    background: #e6f3ff;
+    color: #1e40af;
+}
+
+.action-btn.print {
+    background: #f0f9ff;
+    color: #0369a1;
+}
+
+.action-btn.fee {
+    background: #ecfdf5;
+    color: #059669;
+}
+
+.action-btn.edit {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.action-btn.delete {
+    background: #fee2e2;
+    color: #dc2626;
+}
+
+.action-btn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+}
+
+.empty-icon {
+    font-size: 4rem;
+    opacity: 0.5;
+}
+
+.empty-content h3 {
+    margin: 0;
+    color: #4a5568;
+}
+
+.empty-content p {
+    margin: 0;
+    color: #718096;
+}
+
+.table-footer {
+    background: white;
+    padding: 1rem 2rem;
+    border-radius: 0 0 12px 12px;
+    border-top: 1px solid #f1f5f9;
+    margin-top: -1px;
+}
+
+.pagination-info {
+    color: #718096;
+    font-size: 0.9rem;
 }
 
 @media (max-width: 768px) {
-    .student-list-container {
-        margin-left: 0;
-        padding: 10px;
+    .students-page {
+        padding: 1rem;
     }
     
     .page-header {
         flex-direction: column;
-        gap: 15px;
+        gap: 1.5rem;
         align-items: stretch;
     }
     
     .header-actions {
-        justify-content: space-between;
+        flex-wrap: wrap;
+        justify-content: center;
     }
     
-    .search-input {
+    .search-box input {
         width: 100%;
-        max-width: 200px;
+        max-width: 300px;
     }
     
-    .pagination-container {
-        flex-direction: column;
-        gap: 10px;
+    .modern-table {
+        font-size: 0.8rem;
+    }
+    
+    .modern-table th,
+    .modern-table td {
+        padding: 0.5rem;
+    }
+    
+    .action-buttons {
+        flex-wrap: wrap;
     }
 }
 </style>
@@ -235,52 +364,29 @@
 
 {% block extra_js %}
 <script>
-let currentPage = 1;
-let recordsPerPage = 10;
-let sortDirection = {};
-
-function downloadCSV() {
-    window.location.href = '/download-csv/';
-}
-
-function downloadTemplate() {
-    window.location.href = '/download-template/';
-}
-
 // Search functionality
 document.getElementById('searchInput').addEventListener('keyup', function() {
     const searchTerm = this.value.toLowerCase();
-    const table = document.getElementById('studentTable');
-    const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    const rows = document.querySelectorAll('#studentTable tbody tr');
     
-    for (let i = 0; i < rows.length; i++) {
-        const row = rows[i];
-        const cells = row.getElementsByTagName('td');
-        let found = false;
-        
-        for (let j = 0; j < cells.length - 1; j++) {
-            if (cells[j].textContent.toLowerCase().includes(searchTerm)) {
-                found = true;
-                break;
-            }
-        }
-        
-        row.style.display = found ? '' : 'none';
-    }
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm) ? '' : 'none';
+    });
 });
 
 // Sort functionality
+let sortDirection = {};
 function sortTable(columnIndex) {
-    const table = document.getElementById('studentTable');
-    const tbody = table.getElementsByTagName('tbody')[0];
-    const rows = Array.from(tbody.getElementsByTagName('tr'));
+    const tbody = document.querySelector('#studentTable tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
     
     const isAscending = sortDirection[columnIndex] !== 'asc';
     sortDirection[columnIndex] = isAscending ? 'asc' : 'desc';
     
     rows.sort((a, b) => {
-        const aValue = a.getElementsByTagName('td')[columnIndex].textContent.trim();
-        const bValue = b.getElementsByTagName('td')[columnIndex].textContent.trim();
+        const aValue = a.cells[columnIndex].textContent.trim();
+        const bValue = b.cells[columnIndex].textContent.trim();
         
         if (columnIndex === 0) {
             return isAscending ? parseInt(aValue) - parseInt(bValue) : parseInt(bValue) - parseInt(aValue);
@@ -291,167 +397,86 @@ function sortTable(columnIndex) {
     
     tbody.innerHTML = '';
     rows.forEach(row => tbody.appendChild(row));
-    
-    document.querySelectorAll('.sort-icon').forEach(icon => icon.textContent = '↕');
-    document.querySelectorAll('th')[columnIndex].querySelector('.sort-icon').textContent = isAscending ? '↑' : '↓';
 }
 
+// Action functions
 function viewStudent(id) {
-    window.location.href = '/edit-student/' + id + '/';
+    window.location.href = `/students/${id}/`;
 }
 
 function printStudent(id) {
-    window.print();
+    window.open(`/student-result/${id}/`, '_blank');
 }
 
 function feeStudent(id) {
-    window.location.href = '/pay-student/' + id + '/';
+    window.location.href = `/pay-student/${id}/`;
 }
 
 function editStudent(id) {
-    window.location.href = '/edit-student/' + id + '/';
+    window.location.href = `/edit-student/${id}/`;
 }
 
 function deleteStudent(id) {
     if (confirm('Are you sure you want to delete this student?')) {
-        fetch('/delete-student/' + id + '/', {
+        fetch(`/delete-student/${id}/`, {
             method: 'POST',
             headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || getCookie('csrftoken')
             }
         })
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                alert('Student deleted successfully!');
                 location.reload();
             } else {
-                alert('Error deleting student: ' + (data.error || 'Unknown error'));
+                alert('Error deleting student');
             }
-        })
-        .catch(error => {
-            alert('Error deleting student. Please try again.');
         });
     }
 }
 
+function downloadCSV() {
+    window.location.href = '/download-csv/';
+}
+
 function uploadCSV() {
-    const fileInput = document.getElementById('csvFile');
-    const file = fileInput.files[0];
-    
-    if (!file) {
-        alert('Please select a CSV file.');
-        return;
-    }
-    
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-        alert('Please select a valid CSV file.');
-        return;
-    }
-    
-    // Show loading message
-    const originalText = 'Upload CSV';
-    const uploadBtn = document.querySelector('button[onclick="document.getElementById(\'csvFile\').click()"]');
-    uploadBtn.textContent = 'Uploading...';
-    uploadBtn.disabled = true;
+    const file = document.getElementById('csvFile').files[0];
+    if (!file) return;
     
     const formData = new FormData();
     formData.append('csv_file', file);
-    
-    // Get CSRF token from cookie or meta tag
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
     
     fetch('/upload-csv/', {
         method: 'POST',
         body: formData,
         headers: {
-            'X-CSRFToken': csrfToken
+            'X-CSRFToken': getCookie('csrftoken')
         }
     })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
-        }
-        return response.json();
-    })
+    .then(response => response.json())
     .then(data => {
         if (data.success) {
-            let message = data.message || 'Students imported successfully from CSV file!';
-            if (data.errors && data.errors.length > 0) {
-                message += '\n\nSome rows had errors:\n' + data.errors.join('\n');
-            }
-            alert(message);
+            alert(data.message);
             location.reload();
         } else {
-            alert('Failed to upload CSV: ' + (data.error || 'Please check file format'));
+            alert('Error: ' + data.error);
         }
-    })
-    .catch(error => {
-        console.error('Upload error:', error);
-        alert('Error uploading CSV. Please check your file format and try again.');
-    })
-    .finally(() => {
-        // Reset button
-        uploadBtn.textContent = originalText;
-        uploadBtn.disabled = false;
-        fileInput.value = ''; // Clear file input
     });
 }
 
-function previousPage() {
-    if (currentPage > 1) {
-        currentPage--;
-    }
-}
-
-function nextPage() {
-    currentPage++;
-}
-
-function goToPage(page) {
-    currentPage = page;
-}
-
-function toggleSelectAll() {
-    const selectAll = document.getElementById('selectAll');
-    const checkboxes = document.querySelectorAll('.student-checkbox');
-    checkboxes.forEach(cb => cb.checked = selectAll.checked);
-    updateBulkDeleteBtn();
-}
-
-function updateBulkDeleteBtn() {
-    const selected = document.querySelectorAll('.student-checkbox:checked');
-    const bulkBtn = document.getElementById('bulkDeleteBtn');
-    bulkBtn.style.display = selected.length > 0 ? 'inline-block' : 'none';
-}
-
-function bulkDelete() {
-    const selected = document.querySelectorAll('.student-checkbox:checked');
-    if (selected.length === 0) return;
-    
-    if (confirm(`Delete ${selected.length} selected students?`)) {
-        const ids = Array.from(selected).map(cb => cb.value);
-        fetch('/bulk-delete-students/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({student_ids: ids})
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(`${data.deleted_count} students deleted successfully!`);
-                location.reload();
-            } else {
-                alert('Error: ' + (data.error || 'Unknown error'));
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
             }
-        })
-        .catch(error => {
-            alert('Error deleting students. Please try again.');
-        });
+        }
     }
+    return cookieValue;
 }
 </script>
 {% endblock %}

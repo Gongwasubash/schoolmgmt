@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Grade Sheet Certificate</title>
+    <style>
+        @page { size: A4 portrait; margin: 10mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Times New Roman', serif; background: #e6f3ff; color: #000; }
+        
+        .certificate {
+            width: 190mm; margin: 0 auto; background: #e6f3ff;
+            padding: 8mm; border: 2px solid #000;
+        }
+        
+        .header {
+            text-align: center; margin-bottom: 6mm;
+            border-bottom: 1px solid #000; padding-bottom: 4mm;
+        }
+        .logo { width: 15mm; height: 15mm; border: 1px solid #000; float: left; }
+        .school-name { font-size: 20px; font-weight: bold; text-transform: uppercase; }
+        .school-details { font-size: 12px; margin: 2mm 0; }
+        .title { font-size: 18px; font-weight: bold; text-transform: uppercase; margin: 3mm 0; }
+        .subtitle { font-size: 14px; font-weight: bold; text-transform: uppercase; }
+        
+        .student-info { margin: 6mm 0; font-size: 12px; }
+        .info-line { margin: 2mm 0; }
+        .underline { border-bottom: 1px solid #000; display: inline-block; min-width: 40mm; }
+        
+        .marks-table {
+            width: 100%; border-collapse: collapse; margin: 4mm 0;
+            border: 2px solid #000; font-size: 10px;
+        }
+        .marks-table th, .marks-table td {
+            border: 1px solid #000; padding: 2mm; text-align: center;
+        }
+        .marks-table th { background: #cce7ff; font-weight: bold; }
+        .subject-col { text-align: left; }
+        
+        .gpa-section { margin: 4mm 0; font-size: 12px; font-weight: bold; }
+        
+        .eca-section { margin: 4mm 0; }
+        .eca-title { font-size: 12px; font-weight: bold; text-align: center; margin-bottom: 3mm; }
+        .eca-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        .eca-table th, .eca-table td { border: 1px solid #000; padding: 2mm; }
+        .eca-table th { background: #cce7ff; font-weight: bold; }
+        
+        .grading-scale { margin: 4mm 0; }
+        .scale-title { font-size: 12px; font-weight: bold; text-align: center; margin-bottom: 3mm; }
+        .scale-table { width: 100%; border-collapse: collapse; font-size: 10px; }
+        .scale-table th, .scale-table td { border: 1px solid #000; padding: 2mm; text-align: center; }
+        .scale-table th { background: #cce7ff; font-weight: bold; }
+        
+        .remarks { margin: 4mm 0; font-size: 12px; }
+        
+        .signatures {
+            display: flex; justify-content: space-between; margin-top: 8mm;
+            font-size: 11px; text-align: center;
+        }
+        .signature-box { width: 30%; }
+        .signature-line { border-top: 1px solid #000; margin-top: 8mm; padding-top: 2mm; }
+        
+        @media print {
+            body { background: #e6f3ff !important; }
+            .certificate { margin: 0; }
+        }
+    </style>
+</head>
+<body>
+    <div class="certificate">
+        <div class="header">
+            <div class="logo"></div>
+            <div class="school-name">SARATHI PATHSHALA</div>
+            <div class="school-details">Budhanilkantha-8, Chyasal, Kathmandu<br>Phone: 01-5912328 | Email: sarathipathshala@gmail.com</div>
+            <div class="title">GRADE - SHEET</div>
+            <div class="subtitle">FIRST TERM EXAMINATION</div>
+        </div>
+        
+        <div class="student-info">
+            <div class="info-line">The grade(s) secured by: <span class="underline">{{ data.student.name|default:"_________________" }}</span></div>
+            <br>
+            <div class="info-line">Student Name: <span class="underline">{{ data.student.name|default:"_________________" }}</span></div>
+            <div class="info-line">Roll No: <span class="underline">{{ data.student.reg_number|default:"_________________" }}</span></div>
+            <div class="info-line">Grade: <span class="underline">{{ data.student.student_class|default:"_________________" }}</span></div>
+            <div class="info-line">Section: <span class="underline">{{ data.student.section|default:"_________________" }}</span></div>
+            <br>
+            <div class="info-line">The First Term Examination conducted in: <span class="underline">{{ exam.session|default:"_________________" }}</span> BS</div>
+        </div>
+        
+        <table class="marks-table">
+            <thead>
+                <tr>
+                    <th>S.No</th>
+                    <th>Subjects</th>
+                    <th>Credit Hours</th>
+                    <th>Obtained Grade (TH)</th>
+                    <th>Obtained Grade (PR)</th>
+                    <th>Total</th>
+                    <th>Grade</th>
+                    <th>Final Grade</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for marksheet in data.marksheets %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td class="subject-col">{{ marksheet.subject.name|default:"Comp. English" }}</td>
+                    <td>{{ marksheet.subject.credit_hours|default:"4" }}</td>
+                    <td>{{ marksheet.theory_grade|default:"" }}</td>
+                    <td>{{ marksheet.practical_grade|default:"" }}</td>
+                    <td>{{ marksheet.marks_obtained|default:"" }}</td>
+                    <td>{{ marksheet.grade|default:"" }}</td>
+                    <td>{{ marksheet.final_grade|default:"" }}</td>
+                    <td>{{ marksheet.remarks|default:"" }}</td>
+                </tr>
+                {% empty %}
+                <tr><td>1</td><td class="subject-col">Comp. English</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td>2</td><td class="subject-col">Comp. Nepali</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td>3</td><td class="subject-col">Comp. Mathematics</td><td>4</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td>4</td><td class="subject-col">Comp. Science</td><td>3</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td>5</td><td class="subject-col">Comp. Social Studies</td><td>3</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td>6</td><td class="subject-col">Comp. Health</td><td>2</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td>7</td><td class="subject-col">Opt. Computer Science</td><td>2</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td>8</td><td class="subject-col">Opt. Modern English</td><td>2</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                <tr><td>9</td><td class="subject-col">Opt. G.K.</td><td>1</td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="gpa-section">
+            Grade Point Average (GPA): <span class="underline">{{ calculated_gpa|default:"_________________" }}</span>
+        </div>
+        
+        <div class="eca-section">
+            <div class="eca-title">ECA / CCA / OVERALL GRADE</div>
+            <table class="eca-table">
+                <thead>
+                    <tr>
+                        <th>Description</th><th>A</th><th>B</th><th>C</th>
+                        <th>Description</th><th>A</th><th>B</th><th>C</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr><td>English Handwriting</td><td></td><td></td><td></td><td>English Speaking</td><td></td><td></td><td></td></tr>
+                    <tr><td>English Spelling</td><td></td><td></td><td></td><td>Nepali Handwriting</td><td></td><td></td><td></td></tr>
+                    <tr><td>Nepali Speaking</td><td></td><td></td><td></td><td>Nepali Spelling</td><td></td><td></td><td></td></tr>
+                    <tr><td>General Behaviour</td><td></td><td></td><td></td><td>Class Activities</td><td></td><td></td><td></td></tr>
+                    <tr><td>Homework</td><td></td><td></td><td></td><td>Rhymes / Songs</td><td></td><td></td><td></td></tr>
+                    <tr><td>Physical Training (P.T)</td><td></td><td></td><td></td><td>Neatness</td><td></td><td></td><td></td></tr>
+                    <tr><td>Art/Craft</td><td></td><td></td><td></td><td>Dance</td><td></td><td></td><td></td></tr>
+                    <tr><td>Music</td><td></td><td></td><td></td><td>Games</td><td></td><td></td><td></td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="grading-scale">
+            <div class="scale-title">GRADING SCALE</div>
+            <table class="scale-table">
+                <thead>
+                    <tr><th>Marks Range</th><th>Grade</th><th>Performance</th><th>Grade Point</th></tr>
+                </thead>
+                <tbody>
+                    <tr><td>90 to 100</td><td>A+</td><td>Outstanding</td><td>4.0</td></tr>
+                    <tr><td>80 to below 90</td><td>A</td><td>Excellent</td><td>3.6</td></tr>
+                    <tr><td>70 to below 80</td><td>B+</td><td>Very Good</td><td>3.2</td></tr>
+                    <tr><td>60 to below 70</td><td>B</td><td>Good</td><td>2.8</td></tr>
+                    <tr><td>50 to below 60</td><td>C+</td><td>Satisfactory</td><td>2.4</td></tr>
+                    <tr><td>40 to below 50</td><td>C</td><td>Acceptable</td><td>2.0</td></tr>
+                    <tr><td>30 to below 40</td><td>D</td><td>Basic</td><td>1.6</td></tr>
+                    <tr><td>0 to below 30</td><td>NG</td><td>Not Graded</td><td>0.0</td></tr>
+                </tbody>
+            </table>
+        </div>
+        
+        <div class="remarks">
+            Remarks: <span class="underline">_________________________________________________</span>
+        </div>
+        
+        <div class="signatures">
+            <div class="signature-box">
+                <div>Class Teacher</div>
+                <div class="signature-line">Signature</div>
+            </div>
+            <div class="signature-box">
+                <div>Principal</div>
+                <div class="signature-line">Signature</div>
+            </div>
+            <div class="signature-box">
+                <div>School Stamp</div>
+                <div class="signature-line"></div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

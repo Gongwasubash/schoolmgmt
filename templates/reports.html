@@ -1,15 +1,1225 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Reports - School Management{% endblock %}
+{% block title %}Marksheet Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.marksheet-dashboard {
+    background: #f5f5f5;
+    min-height: 100vh;
+    padding: 2rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dashboard-header {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.dashboard-header h1 {
+    color: #333;
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.dashboard-header p {
+    color: #666;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.header-controls {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.search-input {
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    width: 250px;
+    font-size: 14px;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-card.exams .stat-icon { background: #007bff; }
+.stat-card.subjects .stat-icon { background: #28a745; }
+.stat-card.marksheets .stat-icon { background: #ffc107; }
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.stat-content p {
+    color: #666;
+    margin: 0;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.action-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.action-card h3 {
+    color: #333;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    color: #333;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn:hover {
+    background: #0056b3;
+}
+
+.btn-success {
+    background: #28a745;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.recent-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.recent-section h3 {
+    color: #333;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.exam-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.exam-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.exam-item:last-child {
+    border-bottom: none;
+}
+
+.exam-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.delete-btn {
+    background: #dc3545;
+    color: white;
+    padding: 4px 8px;
+    font-size: 11px;
+}
+
+.delete-btn:hover {
+    background: #c82333;
+}
+
+.exam-info h4 {
+    color: #333;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.exam-info p {
+    color: #666;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.exam-badge {
+    background: #e9ecef;
+    color: #495057;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+}
+
+.form-control {
+    padding: 0.375rem 0.75rem;
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+    width: 100%;
+}
+
+.table-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    gap: 1rem;
+}
+
+.advanced-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.advanced-table th {
+    background: #f8f9fa;
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    cursor: pointer;
+    user-select: none;
+}
+
+.advanced-table th:hover {
+    background: #e9ecef;
+}
+
+.advanced-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.filter-row th {
+    background: #ffffff;
+    padding: 8px;
+    cursor: default;
+}
+
+.filter-row input, .filter-row select {
+    width: 100%;
+    padding: 6px 8px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.table-pagination {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    padding: 1rem 0;
+}
+
+.sort-icon {
+    margin-left: 5px;
+    color: #666;
+    font-size: 12px;
+}
+
+.section-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.section-controls input {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    width: 150px;
+}
+
+.section-controls select {
+    padding: 4px 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.highlight {
+    background-color: #fff3cd;
+    border: 1px solid #ffeaa7;
+}
+
+.action-card.filtered {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+
+
+.btn-success {
+    background: #28a745;
+    color: white;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.marks-entry-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-top: 2rem;
+}
+
+.marks-form {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+    .marksheet-dashboard {
+        padding: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr;
+    }
+}
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="page-header">
-    <h1>Reports</h1>
-    <p>Generate and view various school reports</p>
+<div class="marksheet-dashboard">
+    <div class="dashboard-header">
+        <h1>📊 Marksheet Dashboard</h1>
+        <p>Manage exams, subjects, and student marksheets</p>
+        <div class="header-controls">
+            <input type="text" id="globalSearch" placeholder="Search everything..." class="search-input">
+            <select id="viewMode" onchange="changeViewMode()">
+                <option value="cards">Card View</option>
+                <option value="table">Table View</option>
+            </select>
+            <button class="btn" onclick="exportData()">Export Data</button>
+        </div>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card exams">
+            <div class="stat-icon">📝</div>
+            <div class="stat-content">
+                <h3>{{ total_exams }}</h3>
+                <p>Total Exams</p>
+            </div>
+        </div>
+        
+        <div class="stat-card subjects">
+            <div class="stat-icon">📚</div>
+            <div class="stat-content">
+                <h3>{{ total_subjects }}</h3>
+                <p>Total Subjects</p>
+            </div>
+        </div>
+        
+        <div class="stat-card marksheets">
+            <div class="stat-icon">🎓</div>
+            <div class="stat-content">
+                <h3>{{ total_marksheets }}</h3>
+                <p>Total Marksheets</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="actions-grid" id="actionsGrid">
+        <div class="action-card" data-category="exam">
+            <h3>Create New Exam</h3>
+            <form id="examForm">
+                <div class="form-group">
+                    <label>Exam Name</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Exam Type</label>
+                    <select name="exam_type" required>
+                        <option value="">Select Type</option>
+                        <option value="First Term">First Term</option>
+                        <option value="Mid Term">Mid Term</option>
+                        <option value="Final Term">Final Term</option>
+                        <option value="Unit Test">Unit Test</option>
+                        <option value="Annual">Annual</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Class</label>
+                    <select name="class_name" required>
+                        <option value="">Select Class</option>
+                        <option value="All Classes">All Classes</option>
+                        <option value="Nursery">Nursery</option>
+                        <option value="LKG">LKG</option>
+                        <option value="UKG">UKG</option>
+                        <option value="1st">1st</option>
+                        <option value="2nd">2nd</option>
+                        <option value="3rd">3rd</option>
+                        <option value="4th">4th</option>
+                        <option value="5th">5th</option>
+                        <option value="6th">6th</option>
+                        <option value="7th">7th</option>
+                        <option value="8th">8th</option>
+                        <option value="9th">9th</option>
+                        <option value="10th">10th</option>
+                        <option value="11th">11th</option>
+                        <option value="12th">12th</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Exam Date</label>
+                    <input type="date" name="exam_date" required>
+                </div>
+                <div class="form-group">
+                    <label>Session</label>
+                    <input type="text" name="session" value="2024-25" required>
+                </div>
+                <button type="submit" class="btn">Create Exam</button>
+            </form>
+        </div>
+
+        <div class="action-card" data-category="subject">
+            <h3>Add New Subject</h3>
+            <form id="subjectForm">
+                <div class="form-group">
+                    <label>Subject Name</label>
+                    <input type="text" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label>Subject Code</label>
+                    <input type="text" name="code" required>
+                </div>
+                <div class="form-group">
+                    <label>Class</label>
+                    <select name="class_name" required>
+                        <option value="">Select Class</option>
+                        <option value="Nursery">Nursery</option>
+                        <option value="LKG">LKG</option>
+                        <option value="UKG">UKG</option>
+                        <option value="1st">1st</option>
+                        <option value="2nd">2nd</option>
+                        <option value="3rd">3rd</option>
+                        <option value="4th">4th</option>
+                        <option value="5th">5th</option>
+                        <option value="6th">6th</option>
+                        <option value="7th">7th</option>
+                        <option value="8th">8th</option>
+                        <option value="9th">9th</option>
+                        <option value="10th">10th</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Max Marks</label>
+                    <input type="number" name="max_marks" value="100" required>
+                </div>
+                <div class="form-group">
+                    <label>Pass Marks</label>
+                    <input type="number" name="pass_marks" value="35" required>
+                </div>
+                <button type="submit" class="btn btn-success">Add Subject</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="marks-entry-section" data-category="marks">
+        <h3>Enter Student Marks</h3>
+        <div class="section-controls">
+            <button class="btn btn-sm" onclick="toggleSection('marks-entry')">Toggle</button>
+            <button class="btn btn-sm" onclick="clearMarksForm()">Clear Form</button>
+        </div>
+        <form id="marksForm">
+            <div class="marks-form">
+                <div class="form-group">
+                    <label>Class</label>
+                    <select name="class_filter" id="classFilter">
+                        <option value="">All Classes</option>
+                        <option value="Nursery">Nursery</option>
+                        <option value="LKG">LKG</option>
+                        <option value="UKG">UKG</option>
+                        <option value="1st">1st</option>
+                        <option value="2nd">2nd</option>
+                        <option value="3rd">3rd</option>
+                        <option value="4th">4th</option>
+                        <option value="5th">5th</option>
+                        <option value="6th">6th</option>
+                        <option value="7th">7th</option>
+                        <option value="8th">8th</option>
+                        <option value="9th">9th</option>
+                        <option value="10th">10th</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Student</label>
+                    <select name="student_id" id="studentSelect" required>
+                        <option value="">Select Student</option>
+                        <!-- Will be populated via JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Exam</label>
+                    <select name="exam_id" id="examSelect" required>
+                        <option value="">Select Exam</option>
+                        <!-- Will be populated via JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Subject</label>
+                    <select name="subject_id" id="subjectSelect" required>
+                        <option value="">Select Subject</option>
+                        <!-- Will be populated via JavaScript -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Marks Obtained</label>
+                    <input type="number" name="marks_obtained" min="0" required>
+                </div>
+                <div class="form-group">
+                    <label>Remarks</label>
+                    <input type="text" name="remarks">
+                </div>
+            </div>
+            <button type="submit" class="btn">Enter Marks</button>
+        </form>
+    </div>
+
+
+
+    <div class="recent-section" data-category="exam">
+        <h3>Recent Exams</h3>
+        <div class="section-controls">
+            <input type="text" placeholder="Filter exams..." onkeyup="filterExams(this.value)">
+            <select onchange="sortExams(this.value)">
+                <option value="date">Sort by Date</option>
+                <option value="name">Sort by Name</option>
+                <option value="class">Sort by Class</option>
+            </select>
+        </div>
+        <ul class="exam-list">
+            {% regroup recent_exams by name as grouped_exams %}
+            {% for exam_group in grouped_exams %}
+            <li class="exam-item">
+                <div class="exam-info">
+                    <h4>{{ exam_group.grouper }}</h4>
+                    <p>
+                        {% if exam_group.list|length == 1 %}
+                            {{ exam_group.list.0.class_name }} - {{ exam_group.list.0.exam_date }}
+                        {% else %}
+                            {% if exam_group.list.0.class_name == "All Classes" %}
+                                All Classes - {{ exam_group.list.0.exam_date }}
+                            {% else %}
+                                Multiple Classes - {{ exam_group.list.0.exam_date }}
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="exam-actions">
+                    <span class="exam-badge">{{ exam_group.list.0.exam_type }}</span>
+                    <button class="btn btn-sm delete-btn" onclick="deleteExam({{ exam_group.list.0.id }}, '{{ exam_group.grouper }}', '{{ exam_group.list.0.class_name }}')">Delete</button>
+                </div>
+            </li>
+            {% empty %}
+            <li class="exam-item">
+                <p>No exams created yet</p>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+
+    <div class="recent-section" data-category="subject">
+        <h3>Subjects</h3>
+        <div class="section-controls">
+            <select id="bulkEditClassSelect" onchange="enableBulkEdit()">
+                <option value="">Select Class to Edit All</option>
+                <option value="All Subjects">All Subjects</option>
+                <option value="Nursery">Nursery</option>
+                <option value="LKG">LKG</option>
+                <option value="UKG">UKG</option>
+                <option value="1st">1st</option>
+                <option value="2nd">2nd</option>
+                <option value="3rd">3rd</option>
+                <option value="4th">4th</option>
+                <option value="5th">5th</option>
+                <option value="6th">6th</option>
+                <option value="7th">7th</option>
+                <option value="8th">8th</option>
+                <option value="9th">9th</option>
+                <option value="10th">10th</option>
+                <option value="11th">11th</option>
+                <option value="12th">12th</option>
+            </select>
+            <button class="btn btn-sm" id="bulkEditBtn" onclick="bulkEditSubjects()" style="display: none;">Edit Selected Class</button>
+            <button class="btn btn-sm" onclick="addBulkSubjects()">Bulk Add</button>
+            <button class="btn btn-sm" onclick="exportSubjects()">Export</button>
+        </div>
+        <div class="students-container">
+            <div class="table-controls">
+                <input type="text" id="subjectSearch" placeholder="Search subjects..." class="search-input">
+                <select id="entriesPerPage" onchange="changeEntriesPerPage()">
+                    <option value="10">10 entries</option>
+                    <option value="25">25 entries</option>
+                    <option value="50">50 entries</option>
+                    <option value="100">100 entries</option>
+                </select>
+            </div>
+            <table class="fee-table advanced-table">
+                <thead>
+                    <tr>
+                        <th onclick="sortSubjectTable(0)">Subject Name <span class="sort-icon">↕</span></th>
+                        <th onclick="sortSubjectTable(1)">Code <span class="sort-icon">↕</span></th>
+                        <th onclick="sortSubjectTable(2)">Class <span class="sort-icon">↕</span></th>
+                        <th onclick="sortSubjectTable(3)">Max Marks <span class="sort-icon">↕</span></th>
+                        <th onclick="sortSubjectTable(4)">Pass Marks <span class="sort-icon">↕</span></th>
+                        <th>Actions</th>
+                    </tr>
+                    <tr class="filter-row">
+                        <th><input type="text" placeholder="Filter name" onkeyup="filterColumn(0, this.value)"></th>
+                        <th><input type="text" placeholder="Filter code" onkeyup="filterColumn(1, this.value)"></th>
+                        <th>
+                            <select class="form-control" id="classFilterDropdown" onchange="filterColumn(2, this.value)">
+                                <option value="">All Classes</option>
+                                <option value="Nursery">Nursery</option>
+                                <option value="LKG">LKG</option>
+                                <option value="UKG">UKG</option>
+                                <option value="1st">1st</option>
+                                <option value="2nd">2nd</option>
+                                <option value="3rd">3rd</option>
+                                <option value="4th">4th</option>
+                                <option value="5th">5th</option>
+                                <option value="6th">6th</option>
+                                <option value="7th">7th</option>
+                                <option value="8th">8th</option>
+                                <option value="9th">9th</option>
+                                <option value="10th">10th</option>
+                            </select>
+                        </th>
+                        <th><input type="number" placeholder="Max marks" onkeyup="filterColumn(3, this.value)"></th>
+                        <th><input type="number" placeholder="Pass marks" onkeyup="filterColumn(4, this.value)"></th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody id="subjectTableBody">
+                    {% for subject in subjects %}
+                    <tr>
+                        <td>{{ subject.name }}</td>
+                        <td>{{ subject.code }}</td>
+                        <td>{{ subject.class_name }}</td>
+                        <td>{{ subject.max_marks }}</td>
+                        <td>{{ subject.pass_marks }}</td>
+                        <td>
+                            <button class="btn btn-sm" onclick="editSubject({{ subject.id }}, '{{ subject.name }}', '{{ subject.code }}', '{{ subject.class_name }}', {{ subject.max_marks }}, {{ subject.pass_marks }})">Edit</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #666;">No subjects added yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            <div class="table-pagination">
+                <div class="pagination-info">
+                    Showing <span id="subjectStartRecord">1</span> to <span id="subjectEndRecord">{{ subjects|length }}</span> of <span id="subjectTotalRecords">{{ subjects|length }}</span> entries
+                </div>
+                <div class="pagination">
+                    <button class="page-btn" onclick="previousSubjectPage()" id="subjectPrevBtn">Previous</button>
+                    <span class="page-numbers" id="subjectPageNumbers">
+                        <button class="page-btn active" onclick="goToSubjectPage(1)">1</button>
+                    </span>
+                    <button class="page-btn" onclick="nextSubjectPage()" id="subjectNextBtn">Next</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="content-card">
-    <h2>Available Reports</h2>
-    <p>Access different types of reports and analytics.</p>
-</div>
+<script>
+document.getElementById('examForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    
+    fetch('{% url "create_exam" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Exam created successfully!');
+            this.reset();
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+});
+
+document.getElementById('subjectForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const editId = this.dataset.editId;
+    
+    if (editId) {
+        formData.append('subject_id', editId);
+    }
+    
+    const url = editId ? '{% url "edit_subject" %}' : '{% url "create_subject" %}';
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(editId ? 'Subject updated successfully!' : 'Subject added successfully!');
+            this.reset();
+            delete this.dataset.editId;
+            this.querySelector('button[type="submit"]').textContent = 'Add Subject';
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+});
+
+function editSubject(id, name, code, className, maxMarks, passMarks) {
+    const form = document.getElementById('subjectForm');
+    form.querySelector('input[name="name"]').value = name;
+    form.querySelector('input[name="code"]').value = code;
+    form.querySelector('select[name="class_name"]').value = className;
+    form.querySelector('input[name="max_marks"]').value = maxMarks;
+    form.querySelector('input[name="pass_marks"]').value = passMarks;
+    
+    form.dataset.editId = id;
+    form.querySelector('button[type="submit"]').textContent = 'Update Subject';
+    
+    form.scrollIntoView({ behavior: 'smooth' });
+}
+
+document.getElementById('marksForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const data = Object.fromEntries(formData);
+    
+    fetch('{% url "enter_marks" %}', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Marks entered successfully! Grade: ${data.grade}, Status: ${data.status}`);
+            this.reset();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+});
+
+// Store all data for filtering
+const allStudents = [
+    {% for student in students %}
+    {id: '{{ student.id }}', name: '{{ student.name }}', class: '{{ student.student_class }}'},
+    {% endfor %}
+];
+
+const allExams = [
+    {% for exam in exams %}
+    {id: '{{ exam.id }}', name: '{{ exam.name }}', class: '{{ exam.class_name }}', type: '{{ exam.exam_type }}', session: '{{ exam.session }}'},
+    {% endfor %}
+];
+
+const allSubjects = [
+    {% for subject in subjects %}
+    {id: '{{ subject.id }}', name: '{{ subject.name }}', class: '{{ subject.class_name }}', maxMarks: {{ subject.max_marks }}, passMarks: {{ subject.pass_marks }}},
+    {% endfor %}
+];
+
+// Function to populate dropdowns based on class filter
+function populateDropdowns(selectedClass = '') {
+    const studentSelect = document.getElementById('studentSelect');
+    const examSelect = document.getElementById('examSelect');
+    const subjectSelect = document.getElementById('subjectSelect');
+    
+    // Clear existing options (except first)
+    studentSelect.innerHTML = '<option value="">Select Student</option>';
+    examSelect.innerHTML = '<option value="">Select Exam</option>';
+    subjectSelect.innerHTML = '<option value="">Select Subject</option>';
+    
+    // Filter and populate students
+    const filteredStudents = selectedClass ? 
+        allStudents.filter(s => s.class === selectedClass) : allStudents;
+    
+    filteredStudents.forEach(student => {
+        const option = document.createElement('option');
+        option.value = student.id;
+        option.textContent = `${student.name} - ${student.class}`;
+        studentSelect.appendChild(option);
+    });
+    
+    // Filter and populate exams
+    const filteredExams = selectedClass ? 
+        allExams.filter(e => e.class === selectedClass) : allExams;
+    
+    filteredExams.forEach(exam => {
+        const option = document.createElement('option');
+        option.value = exam.id;
+        option.textContent = `${exam.name} - ${exam.class}`;
+        examSelect.appendChild(option);
+    });
+    
+    // Filter and populate subjects
+    const filteredSubjects = selectedClass ? 
+        allSubjects.filter(s => s.class === selectedClass) : allSubjects;
+    
+    filteredSubjects.forEach(subject => {
+        const option = document.createElement('option');
+        option.value = subject.id;
+        option.textContent = `${subject.name} - ${subject.class}`;
+        subjectSelect.appendChild(option);
+    });
+}
+
+// Load students, exams, and subjects for marks entry
+window.addEventListener('load', function() {
+    // Initial population
+    populateDropdowns();
+    
+    // Add class filter event listener
+    document.getElementById('classFilter').addEventListener('change', function() {
+        populateDropdowns(this.value);
+    });
+});
+
+
+
+function editSubject(id, name, code, className, maxMarks, passMarks) {
+    const form = document.getElementById('subjectForm');
+    form.querySelector('input[name="name"]').value = name;
+    form.querySelector('input[name="code"]').value = code;
+    form.querySelector('select[name="class_name"]').value = className;
+    form.querySelector('input[name="max_marks"]').value = maxMarks;
+    form.querySelector('input[name="pass_marks"]').value = passMarks;
+    
+    form.dataset.editId = id;
+    form.querySelector('button[type="submit"]').textContent = 'Update Subject';
+    
+    form.scrollIntoView({ behavior: 'smooth' });
+}
+let subjectSortDirection = {};
+let subjectCurrentPage = 1;
+let subjectEntriesPerPage = 10;
+
+function sortSubjectTable(columnIndex) {
+    const table = document.querySelector('.advanced-table');
+    const tbody = table.querySelector('tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    const isAscending = subjectSortDirection[columnIndex] !== 'asc';
+    subjectSortDirection[columnIndex] = isAscending ? 'asc' : 'desc';
+    
+    rows.sort((a, b) => {
+        const aValue = a.cells[columnIndex].textContent.trim();
+        const bValue = b.cells[columnIndex].textContent.trim();
+        
+        if (columnIndex === 3 || columnIndex === 4) {
+            return isAscending ? parseInt(aValue) - parseInt(bValue) : parseInt(bValue) - parseInt(aValue);
+        }
+        
+        return isAscending ? aValue.localeCompare(bValue) : bValue.localeCompare(aValue);
+    });
+    
+    tbody.innerHTML = '';
+    rows.forEach(row => tbody.appendChild(row));
+    
+    document.querySelectorAll('.advanced-table .sort-icon').forEach(icon => icon.textContent = '↕');
+    document.querySelectorAll('.advanced-table th')[columnIndex].querySelector('.sort-icon').textContent = isAscending ? '↑' : '↓';
+}
+
+function filterColumn(columnIndex, filterValue) {
+    const rows = document.querySelectorAll('.advanced-table tbody tr');
+    rows.forEach(row => {
+        const cellValue = row.cells[columnIndex].textContent.toLowerCase();
+        const match = cellValue.includes(filterValue.toLowerCase());
+        row.style.display = match ? '' : 'none';
+    });
+}
+
+function changeEntriesPerPage() {
+    subjectEntriesPerPage = parseInt(document.getElementById('entriesPerPage').value);
+    paginateSubjectTable();
+}
+
+function paginateSubjectTable() {
+    const rows = document.querySelectorAll('.advanced-table tbody tr');
+    const totalRows = rows.length;
+    const totalPages = Math.ceil(totalRows / subjectEntriesPerPage);
+    
+    rows.forEach((row, index) => {
+        const startIndex = (subjectCurrentPage - 1) * subjectEntriesPerPage;
+        const endIndex = startIndex + subjectEntriesPerPage;
+        row.style.display = (index >= startIndex && index < endIndex) ? '' : 'none';
+    });
+    
+    document.getElementById('subjectStartRecord').textContent = Math.min((subjectCurrentPage - 1) * subjectEntriesPerPage + 1, totalRows);
+    document.getElementById('subjectEndRecord').textContent = Math.min(subjectCurrentPage * subjectEntriesPerPage, totalRows);
+    document.getElementById('subjectTotalRecords').textContent = totalRows;
+}
+
+function previousSubjectPage() {
+    if (subjectCurrentPage > 1) {
+        subjectCurrentPage--;
+        paginateSubjectTable();
+    }
+}
+
+function nextSubjectPage() {
+    const totalRows = document.querySelectorAll('.advanced-table tbody tr').length;
+    const totalPages = Math.ceil(totalRows / subjectEntriesPerPage);
+    if (subjectCurrentPage < totalPages) {
+        subjectCurrentPage++;
+        paginateSubjectTable();
+    }
+}
+
+function goToSubjectPage(page) {
+    subjectCurrentPage = page;
+    paginateSubjectTable();
+}
+
+document.getElementById('subjectSearch').addEventListener('keyup', function() {
+    const searchTerm = this.value.toLowerCase();
+    const rows = document.querySelectorAll('.advanced-table tbody tr');
+    
+    rows.forEach(row => {
+        const found = Array.from(row.cells).some(cell => 
+            cell.textContent.toLowerCase().includes(searchTerm)
+        );
+        row.style.display = found ? '' : 'none';
+    });
+});
+
+function changeViewMode() {
+    const mode = document.getElementById('viewMode').value;
+    const actionsGrid = document.getElementById('actionsGrid');
+    
+    if (mode === 'table') {
+        actionsGrid.style.display = 'none';
+    } else {
+        actionsGrid.style.display = 'grid';
+    }
+}
+
+function exportData() {
+    const data = {
+        exams: allExams,
+        subjects: allSubjects,
+        students: allStudents
+    };
+    
+    const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'marksheet_data.json';
+    a.click();
+}
+
+function toggleSection(sectionId) {
+    const section = document.querySelector(`[data-category="${sectionId.replace('-entry', '')}"]`);
+    section.classList.toggle('hidden');
+}
+
+function clearMarksForm() {
+    document.getElementById('marksForm').reset();
+}
+
+function filterExams(searchTerm) {
+    const examItems = document.querySelectorAll('.exam-item');
+    examItems.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
+    });
+}
+
+function sortExams(sortBy) {
+    const examList = document.querySelector('.exam-list');
+    const items = Array.from(examList.querySelectorAll('.exam-item'));
+    
+    items.sort((a, b) => {
+        const aText = a.querySelector('.exam-info h4').textContent;
+        const bText = b.querySelector('.exam-info h4').textContent;
+        return aText.localeCompare(bText);
+    });
+    
+    examList.innerHTML = '';
+    items.forEach(item => examList.appendChild(item));
+}
+
+function addBulkSubjects() {
+    alert('Bulk subject addition feature - to be implemented');
+}
+
+function exportSubjects() {
+    const subjects = Array.from(document.querySelectorAll('.advanced-table tbody tr')).map(row => {
+        return {
+            name: row.cells[0].textContent,
+            code: row.cells[1].textContent,
+            class: row.cells[2].textContent,
+            maxMarks: row.cells[3].textContent,
+            passMarks: row.cells[4].textContent
+        };
+    });
+    
+    const csv = 'Name,Code,Class,Max Marks,Pass Marks\n' + 
+        subjects.map(s => `${s.name},${s.code},${s.class},${s.maxMarks},${s.passMarks}`).join('\n');
+    
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'subjects.csv';
+    a.click();
+}
+
+document.getElementById('globalSearch').addEventListener('keyup', function() {
+    const searchTerm = this.value.toLowerCase();
+    
+    // Filter action cards
+    document.querySelectorAll('.action-card').forEach(card => {
+        const text = card.textContent.toLowerCase();
+        card.classList.toggle('filtered', !text.includes(searchTerm));
+    });
+    
+    // Filter sections
+    document.querySelectorAll('.recent-section').forEach(section => {
+        const text = section.textContent.toLowerCase();
+        section.classList.toggle('highlight', text.includes(searchTerm) && searchTerm.length > 2);
+    });
+});
+
+
+
+function deleteExam(examId, examName, examClass) {
+    if (confirm(`Are you sure you want to delete exam "${examName}" for class ${examClass}?\n\nThis will also delete all associated marksheets.`)) {
+        fetch('{% url "delete_exam" %}', {
+            method: 'POST',
+            body: JSON.stringify({ exam_id: examId }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Exam deleted successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting exam');
+        });
+    }
+}
+
+function enableBulkEdit() {
+    const selectedClass = document.getElementById('bulkEditClassSelect').value;
+    const bulkEditBtn = document.getElementById('bulkEditBtn');
+    
+    if (selectedClass) {
+        bulkEditBtn.style.display = 'inline-block';
+        // Highlight subjects of selected class or all subjects
+        const rows = document.querySelectorAll('.advanced-table tbody tr');
+        rows.forEach(row => {
+            if (selectedClass === 'All Subjects' || row.cells[2].textContent === selectedClass) {
+                row.style.backgroundColor = '#fff3cd';
+            } else {
+                row.style.backgroundColor = '';
+            }
+        });
+    } else {
+        bulkEditBtn.style.display = 'none';
+        // Remove highlighting
+        const rows = document.querySelectorAll('.advanced-table tbody tr');
+        rows.forEach(row => {
+            row.style.backgroundColor = '';
+        });
+    }
+}
+
+function bulkEditSubjects() {
+    const selectedClass = document.getElementById('bulkEditClassSelect').value;
+    
+    if (!selectedClass) {
+        alert('Please select a class first');
+        return;
+    }
+    
+    const targetText = selectedClass === 'All Subjects' ? 'all subjects' : `all ${selectedClass} subjects`;
+    const newMaxMarks = prompt(`Enter new Max Marks for ${targetText}:`, '100');
+    const newPassMarks = prompt(`Enter new Pass Marks for ${targetText}:`, '35');
+    
+    if (newMaxMarks === null || newPassMarks === null) return;
+    
+    if (confirm(`Update ${targetText} with:\nMax Marks: ${newMaxMarks}\nPass Marks: ${newPassMarks}`)) {
+        fetch('{% url "bulk_edit_subjects" %}', {
+            method: 'POST',
+            body: JSON.stringify({
+                class_name: selectedClass,
+                max_marks: parseInt(newMaxMarks),
+                pass_marks: parseInt(newPassMarks)
+            }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const message = selectedClass === 'All Subjects' ? 
+                    `Successfully updated ${data.updated_count} subjects across all classes` :
+                    `Successfully updated ${data.updated_count} subjects for class ${selectedClass}`;
+                alert(message);
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error updating subjects');
+        });
+    }
+}
+
+window.addEventListener('load', function() {
+    paginateSubjectTable();
+});
+</script>
 {% endblock %}

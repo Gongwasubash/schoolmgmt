@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Certificate</title>
+    <style>
+        @page { size: A4 landscape; margin: 15mm; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        @media print {
+            .no-print { display: none !important; }
+            body { background: white !important; }
+        }
+
+        body {
+            font-family: 'Times New Roman', serif;
+            background: linear-gradient(135deg, #f5f3f0 0%, #faf8f5 100%);
+            color: #2c3e50;
+            line-height: 1.4;
+        }
+
+        .certificate {
+            width: 267mm;
+            height: 180mm;
+            margin: 0 auto;
+            background: #fefcf9;
+            position: relative;
+            border: 8px solid #d4af37;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .certificate::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            right: 8px;
+            bottom: 8px;
+            border: 3px solid #1e3a8a;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        .certificate::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="texture" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="10" cy="10" r="0.5" fill="%23f0f0f0" opacity="0.3"/></pattern></defs><rect width="100" height="100" fill="url(%23texture)"/></svg>') repeat;
+            pointer-events: none;
+        }
+
+        .header {
+            text-align: center;
+            padding: 15mm 20mm 8mm 20mm;
+            position: relative;
+            z-index: 1;
+        }
+
+        .logo-placeholder {
+            position: absolute;
+            top: 15mm;
+            left: 20mm;
+            width: 20mm;
+            height: 20mm;
+            border: 2px dashed #d4af37;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: #d4af37;
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .school-name {
+            font-size: 28px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #1e3a8a;
+            margin-bottom: 3mm;
+            letter-spacing: 2px;
+        }
+
+        .school-details {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8mm;
+        }
+
+        .certificate-title {
+            font-size: 36px;
+            font-weight: bold;
+            color: #d4af37;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 8mm;
+            font-family: 'Brush Script MT', cursive;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+
+        .body-section {
+            padding: 0 20mm;
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .certify-text {
+            font-size: 16px;
+            color: #2c3e50;
+            margin-bottom: 5mm;
+            font-style: italic;
+        }
+
+        .student-name {
+            font-size: 32px;
+            font-weight: bold;
+            color: #1e3a8a;
+            margin: 5mm 0;
+            font-family: 'Brush Script MT', cursive;
+            text-decoration: underline;
+            text-decoration-color: #d4af37;
+            text-underline-offset: 3px;
+        }
+
+        .completion-text {
+            font-size: 16px;
+            color: #2c3e50;
+            margin: 5mm 0;
+            line-height: 1.6;
+        }
+
+        .student-details {
+            display: flex;
+            justify-content: space-around;
+            margin: 8mm 0;
+            font-size: 14px;
+        }
+
+        .detail-item {
+            text-align: center;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #1e3a8a;
+            display: block;
+            margin-bottom: 2mm;
+        }
+
+        .detail-value {
+            border-bottom: 2px solid #d4af37;
+            padding: 2mm 8mm;
+            min-width: 40mm;
+            display: inline-block;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 8mm 0;
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .results-table th {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 3mm;
+            font-weight: bold;
+            font-size: 12px;
+        }
+
+        .results-table td {
+            padding: 2.5mm;
+            border-bottom: 1px solid #e5e7eb;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .results-table tr:nth-child(even) {
+            background: #f9fafb;
+        }
+
+        .gpa-section {
+            text-align: center;
+            margin: 6mm 0;
+            font-size: 18px;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+
+        .gpa-value {
+            color: #d4af37;
+            border-bottom: 3px solid #d4af37;
+            padding: 1mm 8mm;
+            display: inline-block;
+            margin-left: 5mm;
+        }
+
+        .remarks-section {
+            margin: 6mm 0;
+            text-align: center;
+        }
+
+        .remarks-label {
+            font-weight: bold;
+            color: #1e3a8a;
+            margin-bottom: 2mm;
+            display: block;
+        }
+
+        .remarks-value {
+            border: 2px dashed #d4af37;
+            padding: 3mm;
+            min-height: 15mm;
+            background: rgba(212, 175, 55, 0.05);
+            border-radius: 5px;
+        }
+
+        .footer {
+            position: absolute;
+            bottom: 15mm;
+            left: 20mm;
+            right: 20mm;
+            display: flex;
+            justify-content: space-between;
+            align-items: end;
+        }
+
+        .signature-box {
+            text-align: center;
+            width: 30%;
+        }
+
+        .signature-line {
+            border-top: 2px solid #1e3a8a;
+            margin-top: 15mm;
+            padding-top: 2mm;
+            font-size: 12px;
+            font-weight: bold;
+            color: #1e3a8a;
+        }
+
+        .school-stamp {
+            text-align: center;
+            width: 25%;
+        }
+
+        .stamp-placeholder {
+            width: 20mm;
+            height: 20mm;
+            border: 2px dashed #d4af37;
+            border-radius: 50%;
+            margin: 0 auto 2mm;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 8px;
+            color: #d4af37;
+            background: rgba(212, 175, 55, 0.1);
+        }
+
+        .decorative-corner {
+            position: absolute;
+            width: 15mm;
+            height: 15mm;
+            background: linear-gradient(45deg, #d4af37, #f59e0b);
+            opacity: 0.1;
+        }
+
+        .decorative-corner.top-left {
+            top: 20mm;
+            left: 20mm;
+            border-radius: 0 0 100% 0;
+        }
+
+        .decorative-corner.top-right {
+            top: 20mm;
+            right: 20mm;
+            border-radius: 0 0 0 100%;
+        }
+
+        .decorative-corner.bottom-left {
+            bottom: 20mm;
+            left: 20mm;
+            border-radius: 0 100% 0 0;
+        }
+
+        .decorative-corner.bottom-right {
+            bottom: 20mm;
+            right: 20mm;
+            border-radius: 100% 0 0 0;
+        }
+
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: linear-gradient(135deg, #d4af37 0%, #f59e0b 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-weight: bold;
+            z-index: 1000;
+            box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+        }
+
+        .print-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn no-print" onclick="window.print()">Print Certificate</button>
+    
+    <div class="certificate">
+        <!-- Decorative Corners -->
+        <div class="decorative-corner top-left"></div>
+        <div class="decorative-corner top-right"></div>
+        <div class="decorative-corner bottom-left"></div>
+        <div class="decorative-corner bottom-right"></div>
+        
+        <!-- Header Section -->
+        <div class="header">
+            <div class="logo-placeholder">LOGO</div>
+            <div class="school-name">{{ school_name|default:"SARATHI PATHSHALA" }}</div>
+            <div class="school-details">
+                {{ school_address|default:"Budhanilkantha-8, Chyasal, Kathmandu" }}<br>
+                Phone: {{ school_phone|default:"01-5912328" }} | Email: {{ school_email|default:"sarathipathshala@gmail.com" }}
+            </div>
+            <div class="certificate-title">Certificate of Achievement</div>
+        </div>
+        
+        <!-- Body Section -->
+        <div class="body-section">
+            <div class="certify-text">This is to certify that</div>
+            
+            <div class="student-name">{{ student.name|default:"[Student Name]" }}</div>
+            
+            <div class="completion-text">
+                has successfully completed the <strong>{{ exam.exam_type|default:"[Exam/Program/Term]" }}</strong> with outstanding performance.
+            </div>
+            
+            <div class="student-details">
+                <div class="detail-item">
+                    <span class="detail-label">Class</span>
+                    <span class="detail-value">{{ student.student_class|default:"[Class]" }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Grade</span>
+                    <span class="detail-value">{{ student.overall_grade|default:"[Grade]" }}</span>
+                </div>
+                <div class="detail-item">
+                    <span class="detail-label">Roll Number</span>
+                    <span class="detail-value">{{ student.reg_number|default:"[Roll No]" }}</span>
+                </div>
+            </div>
+            
+            <!-- Results Table (Optional) -->
+            {% if show_subjects %}
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Subject</th>
+                        <th>Credit Hours</th>
+                        <th>Grade</th>
+                        <th>Grade Point</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for subject in subjects %}
+                    <tr>
+                        <td>{{ subject.name }}</td>
+                        <td>{{ subject.credit_hours|default:"4" }}</td>
+                        <td>{{ subject.grade|default:"A" }}</td>
+                        <td>{{ subject.grade_point|default:"4.0" }}</td>
+                        <td>{{ subject.remarks|default:"Excellent" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td>Mathematics</td>
+                        <td>4</td>
+                        <td>A+</td>
+                        <td>4.0</td>
+                        <td>Outstanding</td>
+                    </tr>
+                    <tr>
+                        <td>English</td>
+                        <td>4</td>
+                        <td>A</td>
+                        <td>3.6</td>
+                        <td>Excellent</td>
+                    </tr>
+                    <tr>
+                        <td>Science</td>
+                        <td>4</td>
+                        <td>A+</td>
+                        <td>4.0</td>
+                        <td>Outstanding</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% endif %}
+            
+            <div class="gpa-section">
+                Overall GPA: <span class="gpa-value">{{ student.gpa|default:"3.85" }}</span>
+            </div>
+            
+            <div class="remarks-section">
+                <span class="remarks-label">Remarks:</span>
+                <div class="remarks-value">{{ remarks|default:"Exceptional academic performance with consistent excellence in all subjects." }}</div>
+            </div>
+            
+            <div style="margin-top: 8mm; font-size: 14px; color: #666;">
+                <strong>Date (B.S):</strong> {{ bs_date|default:"2081/06/15" }} &nbsp;&nbsp;&nbsp;
+                <strong>Date (A.D):</strong> {{ ad_date|default:"September 30, 2024" }}
+            </div>
+        </div>
+        
+        <!-- Footer Section -->
+        <div class="footer">
+            <div class="signature-box">
+                <div class="signature-line">Class Teacher</div>
+            </div>
+            
+            <div class="school-stamp">
+                <div class="stamp-placeholder">STAMP</div>
+                <div style="font-size: 10px; color: #1e3a8a; font-weight: bold;">School Seal</div>
+            </div>
+            
+            <div class="signature-box">
+                <div class="signature-line">Principal</div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
