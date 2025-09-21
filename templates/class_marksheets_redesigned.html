@@ -77,12 +77,34 @@
             position: relative;
             z-index: 1;
         }
+        
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            
+            body {
+                margin: 0;
+                padding: 0;
+            }
+            
+            .grade-sheet {
+                width: 210mm !important;
+                height: 297mm !important;
+                margin: 0 !important;
+                padding: 10mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                page-break-after: always;
+            }
+        }
 
         .header-section {
             text-align: center;
             border-bottom: 3px solid #1976d2;
-            padding-bottom: 12px;
-            margin-bottom: 15px;
+            padding-bottom: 8px;
+            margin-bottom: 10px;
             position: relative;
         }
 
@@ -131,16 +153,16 @@
         }
 
         .student-info {
-            margin: 14px 0;
+            margin: 8px 0;
             font-size: 14px;
-            line-height: 1.5;
+            line-height: 1.3;
         }
 
         .info-fields {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin: 12px 0;
+            gap: 10px;
+            margin: 8px 0;
         }
 
         .field {
@@ -164,7 +186,7 @@
         .marks-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 12px 0;
+            margin: 8px 0;
             background: rgba(255, 255, 255, 0.2);
             border: 1px solid #1976d2;
         }
@@ -174,8 +196,8 @@
             color: #374151;
             padding: 12px 10px;
             text-align: center;
-            font-weight: 600;
-            font-size: 11px;
+            font-weight: bold;
+            font-size: 13px;
             border: 1px solid #1976d2;
         }
 
@@ -183,7 +205,8 @@
             padding: 12px 10px;
             text-align: center;
             border: 1px solid #1976d2;
-            font-size: 11px;
+            font-size: 13px;
+            font-weight: bold;
             color: #374151;
             background: rgba(255, 255, 255, 0.2);
         }
@@ -197,7 +220,7 @@
         .signature-section {
             display: flex;
             justify-content: space-between;
-            margin-top: 25px;
+            margin-top: 15px;
         }
 
         .signature-box {
@@ -309,18 +332,14 @@
                     </td>
                 </tr>
                 {% endfor %}
+                <tr style="background: rgba(25, 118, 210, 0.1); border-top: 2px solid #1976d2;">
+                    <td colspan="9" style="font-weight: bold; font-size: 16px; text-align: center; padding: 15px;">Grade Point Average (GPA): <span class="gpa-display">0.00</span> (<span class="gpa-grade">NG</span>)</td>
+                </tr>
             </tbody>
         </table>
 
         <!-- GPA and ECA Section -->
         <div style="margin: 15px 0;">
-            <table class="marks-table" style="margin-bottom: 10px;">
-                <tbody>
-                    <tr>
-                        <td style="font-weight: bold; font-size: 16px;">Grade Point Average (GPA): <span class="gpa-display">0.00</span> (<span class="gpa-grade">NG</span>)</td>
-                    </tr>
-                </tbody>
-            </table>
             <div style="margin-top: 15px;">
                 <h3 style="text-align: center; font-weight: bold; color: #333; margin-bottom: 10px; font-size: 14px;">GRADING SCALE</h3>
                 <table class="marks-table">
