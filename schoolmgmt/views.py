@@ -3,14 +3,19 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
-from .models import Student, FeeStructure, FeePayment
+from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData
 from django.db import models
+from django.db.models import F, Q
 import json
 from datetime import datetime, date
 from django.db.models import Count, Sum, Max
 from decimal import Decimal
 import csv
 import io
+try:
+    from nepali_datetime import date as nepali_date
+except ImportError:
+    nepali_date = None
 
 def home(request):
     # Get student statistics
@@ -42,6 +47,23 @@ def home(request):
 def students(request):
     if request.method == 'POST':
         try:
+            # Always get current active session for new students
+            current_session = Session.get_current_session()
+            
+            # If no active session exists, create default session
+            if not current_session:
+                current_session, created = Session.objects.get_or_create(
+                    name='2024-25',
+                    defaults={
+                        'start_date': '2024-04-01',
+                        'end_date': '2025-03-31',
+                        'is_active': True
+                    }
+                )
+            
+            # Use current active session for all new students
+            session_name = current_session.name
+            
             # Create new student from form data
             student = Student(
                 name=request.POST.get('name'),
@@ -57,7 +79,7 @@ def students(request):
                 dob=request.POST.get('dob'),
                 admission_date=request.POST.get('admissionDate'),
                 reg_number=request.POST.get('regNumber'),
-                session=request.POST.get('session'),
+                session=session_name,
                 character_cert=request.POST.get('character_cert') == 'Yes',
                 report_card=request.POST.get('report_card') == 'Yes',
                 dob_cert=request.POST.get('dob_cert') == 'Yes',
@@ -85,11 +107,43 @@ def students(request):
         except Exception as e:
             messages.error(request, f'Error submitting admission: {str(e)}')
     
-    return render(request, 'students.html', {'is_edit': False})
+    # Get available sessions for the form
+    sessions = Session.objects.all().order_by('-start_date')
+    current_session = Session.get_current_session()
+    
+    context = {
+        'is_edit': False,
+        'sessions': sessions,
+        'current_session': current_session
+    }
+    return render(request, 'students.html', context)
 
 def studentlist(request):
-    students = Student.objects.all()
-    return render(request, 'studentlist.html', {'students': students})
+    # Get session filter from request
+    session_filter = request.GET.get('session', '')
+    
+    # Get current active session
+    current_session = Session.get_current_session()
+    
+    # If no session filter specified, use current active session
+    if not session_filter and current_session:
+        session_filter = current_session.name
+    
+    if session_filter:
+        students = Student.objects.filter(session=session_filter)
+    else:
+        students = Student.objects.all()
+    
+    # Get all available sessions for filter dropdown
+    sessions = Session.objects.all().order_by('-start_date')
+    
+    context = {
+        'students': students,
+        'sessions': sessions,
+        'current_session': current_session,
+        'selected_session': session_filter
+    }
+    return render(request, 'studentlist.html', context)
 
 def teachers(request):
     return render(request, 'teachers.html')
@@ -98,7 +152,34 @@ def classes(request):
     return render(request, 'classes.html')
 
 def reports(request):
-    return render(request, 'reports.html')
+    # Get statistics
+    total_exams = Exam.objects.count()
+    total_subjects = Subject.objects.count()
+    total_marksheets = Marksheet.objects.count()
+    
+    # Get recent exams
+    recent_exams = Exam.objects.order_by('-exam_date')[:5]
+    
+    # Get all students for marks entry
+    students = Student.objects.all().order_by('name')
+    
+    # Get all exams for marks entry
+    exams = Exam.objects.all().order_by('-exam_date')
+    
+    # Get all subjects for marks entry
+    subjects = Subject.objects.all().order_by('class_name', 'name')
+    
+    context = {
+        'total_exams': total_exams,
+        'total_subjects': total_subjects,
+        'total_marksheets': total_marksheets,
+        'recent_exams': recent_exams,
+        'students': students,
+        'exams': exams,
+        'subjects': subjects,
+    }
+    
+    return render(request, 'reports.html', context)
 
 def fees(request):
     if request.method == 'POST':
@@ -499,6 +580,19 @@ def upload_csv(request):
                     dob = row.get('DOB', '2000-01-01').strip()
                     admission_date = row.get('Admission Date', datetime.now().strftime('%Y-%m-%d')).strip()
                     
+                    # Always use current active session for consistency
+                    current_session = Session.get_current_session()
+                    if not current_session:
+                        current_session, created = Session.objects.get_or_create(
+                            name='2024-25',
+                            defaults={
+                                'start_date': '2024-04-01',
+                                'end_date': '2025-03-31',
+                                'is_active': True
+                            }
+                        )
+                    session_name = current_session.name
+                    
                     # Create student with proper field mapping
                     student = Student.objects.create(
                         name=name,
@@ -516,7 +610,7 @@ def upload_csv(request):
                         religion=religion,
                         dob=dob,
                         admission_date=admission_date,
-                        session=row.get('Session', '2024-25').strip(),
+                        session=session_name,
                         father_mobile=row.get('Father Mobile', '9999999999').strip()[:10],
                         mother_mobile=row.get('Mother Mobile', '').strip()[:10] if row.get('Mother Mobile', '').strip() else '',
                         father_email=row.get('Father Email', '').strip(),
@@ -1401,3 +1495,1407 @@ def bulk_print_receipts(request):
     
     return render(request, 'bulk_print_receipts.html', context)
 
+def fee_pending_report(request):
+    from django.db.models import Sum, Max
+    from decimal import Decimal
+    
+    # Get all students with pending fees
+    students_query = Student.objects.annotate(
+        total_paid=Sum('feepayment__payment_amount'),
+        last_payment_date=Max('feepayment__payment_date')
+    ).order_by('name')
+    
+    # Process students and filter only those with pending fees
+    students_with_pending = []
+    total_pending_amount = Decimal('0')
+    
+    for student in students_query:
+        try:
+            fee_structure = FeeStructure.objects.get(class_name=student.student_class)
+            student_total_fee = (
+                fee_structure.admission_fee +
+                fee_structure.monthly_fee * 12 +
+                fee_structure.tuition_fee * 12 +
+                fee_structure.examination_fee +
+                fee_structure.library_fee +
+                fee_structure.sports_fee +
+                fee_structure.laboratory_fee +
+                fee_structure.computer_fee +
+                fee_structure.transportation_fee * 12
+            )
+        except FeeStructure.DoesNotExist:
+            student_total_fee = Decimal('60000')  # Default total fee
+        
+        student_paid = student.total_paid or Decimal('0')
+        student_pending = max(Decimal('0'), student_total_fee - student_paid)
+        
+        # Only include students with pending fees
+        if student_pending > 0:
+            student.total_fee = float(student_total_fee)
+            student.paid_amount = float(student_paid)
+            student.pending_amount = float(student_pending)
+            student.payment_status = 'pending'
+            student.class_name = student.student_class
+            student.roll_number = student.reg_number
+            
+            students_with_pending.append(student)
+            total_pending_amount += student_pending
+    
+    context = {
+        'students': students_with_pending,
+        'total_students': len(students_with_pending),
+        'total_pending': float(total_pending_amount),
+        'page_title': 'Fee Pending Report'
+    }
+    
+    return render(request, 'fee_pending_report.html', context)
+
+@csrf_exempt
+def create_exam(request):
+    if request.method == 'POST':
+        try:
+            class_name = request.POST.get('class_name')
+            
+            if class_name == 'All Classes':
+                # Create exam for all classes
+                all_classes = ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th']
+                created_exams = []
+                
+                for cls in all_classes:
+                    exam = Exam.objects.create(
+                        name=request.POST.get('name'),
+                        exam_type=request.POST.get('exam_type'),
+                        class_name=cls,
+                        exam_date=request.POST.get('exam_date'),
+                        session=request.POST.get('session')
+                    )
+                    created_exams.append(exam.id)
+                
+                return JsonResponse({'success': True, 'message': f'Created exams for all classes', 'exam_ids': created_exams})
+            else:
+                # Create exam for single class
+                exam = Exam.objects.create(
+                    name=request.POST.get('name'),
+                    exam_type=request.POST.get('exam_type'),
+                    class_name=class_name,
+                    exam_date=request.POST.get('exam_date'),
+                    session=request.POST.get('session')
+                )
+                return JsonResponse({'success': True, 'exam_id': exam.id})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def create_subject(request):
+    if request.method == 'POST':
+        try:
+            subject = Subject.objects.create(
+                name=request.POST.get('name'),
+                code=request.POST.get('code'),
+                class_name=request.POST.get('class_name'),
+                max_marks=int(request.POST.get('max_marks', 100)),
+                pass_marks=int(request.POST.get('pass_marks', 35))
+            )
+            return JsonResponse({'success': True, 'subject_id': subject.id})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def edit_subject(request):
+    if request.method == 'POST':
+        try:
+            subject_id = request.POST.get('subject_id')
+            subject = get_object_or_404(Subject, id=subject_id)
+            
+            subject.name = request.POST.get('name')
+            subject.code = request.POST.get('code')
+            subject.class_name = request.POST.get('class_name')
+            subject.max_marks = int(request.POST.get('max_marks', 100))
+            subject.pass_marks = int(request.POST.get('pass_marks', 35))
+            subject.save()
+            
+            return JsonResponse({'success': True, 'subject_id': subject.id})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def enter_marks(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Handle bulk marks entry
+            if 'bulk_marks' in data:
+                bulk_marks = data['bulk_marks']
+                created_count = 0
+                
+                for mark_data in bulk_marks:
+                    exam = get_object_or_404(Exam, id=mark_data['exam_id'])
+                    student = get_object_or_404(Student, id=mark_data['student_id'])
+                    subject = get_object_or_404(Subject, id=mark_data['subject_id'])
+                    
+                    marksheet, created = Marksheet.objects.update_or_create(
+                        student=student,
+                        exam=exam,
+                        subject=subject,
+                        defaults={
+                            'marks_obtained': mark_data['marks_obtained'],
+                            'remarks': mark_data.get('remarks', '')
+                        }
+                    )
+                    created_count += 1
+                
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Successfully saved marks for {created_count} students'
+                })
+            
+            # Handle single mark entry
+            else:
+                exam = get_object_or_404(Exam, id=data['exam_id'])
+                student = get_object_or_404(Student, id=data['student_id'])
+                subject = get_object_or_404(Subject, id=data['subject_id'])
+                
+                marksheet, created = Marksheet.objects.update_or_create(
+                    student=student,
+                    exam=exam,
+                    subject=subject,
+                    defaults={
+                        'marks_obtained': data['marks_obtained'],
+                        'remarks': data.get('remarks', '')
+                    }
+                )
+                
+                return JsonResponse({
+                    'success': True,
+                    'marksheet_id': marksheet.id,
+                    'grade': marksheet.grade,
+                    'percentage': marksheet.percentage,
+                    'status': marksheet.status
+                })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def student_marksheet(request, student_id, exam_id):
+    try:
+        student = Student.objects.get(id=student_id)
+    except Student.DoesNotExist:
+        # Get available student IDs for helpful error message
+        available_students = Student.objects.values_list('id', 'name')[:5]
+        student_list = ', '.join([f'ID {s[0]}: {s[1]}' for s in available_students])
+        return HttpResponse(
+            f'<h1>Student Not Found</h1>'
+            f'<p>No student found with ID {student_id}.</p>'
+            f'<p>Available students (first 5): {student_list}</p>'
+            f'<p><a href="/studentlist/">View all students</a></p>',
+            status=404
+        )
+    
+    try:
+        exam = Exam.objects.get(id=exam_id)
+    except Exam.DoesNotExist:
+        # Get available exam IDs for helpful error message
+        available_exams = Exam.objects.values_list('id', 'name', 'class_name')[:5]
+        exam_list = ', '.join([f'ID {e[0]}: {e[1]} ({e[2]})' for e in available_exams])
+        return HttpResponse(
+            f'<h1>Exam Not Found</h1>'
+            f'<p>No exam found with ID {exam_id}.</p>'
+            f'<p>Available exams (first 5): {exam_list}</p>'
+            f'<p><a href="/reports/">View all exams</a></p>',
+            status=404
+        )
+    
+    marksheets = Marksheet.objects.filter(student=student, exam=exam).select_related('subject').order_by('subject__name')
+    
+    # Initialize default values
+    total_marks = 0
+    obtained_marks = 0
+    percentage = 0
+    overall_grade = 'N/A'
+    overall_status = 'No Data'
+    failed_subjects = 0
+    
+    # Calculate totals only if marksheets exist
+    if marksheets.exists():
+        try:
+            total_marks = sum(int(m.subject.max_marks) for m in marksheets if m.subject and m.subject.max_marks)
+            obtained_marks = sum(int(m.marks_obtained) for m in marksheets if m.marks_obtained is not None)
+            percentage = (obtained_marks / total_marks * 100) if total_marks > 0 else 0
+            
+            # Overall grade
+            if percentage >= 90:
+                overall_grade = 'A+'
+            elif percentage >= 80:
+                overall_grade = 'A'
+            elif percentage >= 70:
+                overall_grade = 'B+'
+            elif percentage >= 60:
+                overall_grade = 'B'
+            elif percentage >= 50:
+                overall_grade = 'C+'
+            elif percentage >= 40:
+                overall_grade = 'C'
+            elif percentage >= 35:
+                overall_grade = 'D'
+            else:
+                overall_grade = 'F'
+            
+            # Overall status
+            failed_subjects = marksheets.filter(
+                marks_obtained__lt=models.F('subject__pass_marks')
+            ).count()
+            overall_status = 'Pass' if failed_subjects == 0 and marksheets.count() > 0 else 'Fail'
+            
+        except Exception as e:
+            # Handle any calculation errors gracefully
+            print(f"Error calculating marksheet totals: {e}")
+            overall_grade = 'Error'
+            overall_status = 'Error'
+    
+    context = {
+        'student': student,
+        'exam': exam,
+        'marksheets': marksheets,
+        'total_marks': total_marks,
+        'obtained_marks': obtained_marks,
+        'percentage': round(percentage, 2),
+        'overall_grade': overall_grade,
+        'overall_status': overall_status,
+        'failed_subjects': failed_subjects
+    }
+    
+    return render(request, 'student_marksheet.html', context)
+
+def update_subject_class(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            # This is a placeholder function - implement based on your Subject model
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def delete_exam(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            exam = get_object_or_404(Exam, id=data['exam_id'])
+            exam.delete()
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def generate_results(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            exam = get_object_or_404(Exam, id=data['exam_id'])
+            
+            # Get all students for this exam's class
+            if exam.class_name == 'All Classes':
+                # For "All Classes" exams, we need to process all classes
+                all_classes = ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th']
+                students = Student.objects.filter(student_class__in=all_classes)
+            else:
+                students = Student.objects.filter(student_class=exam.class_name)
+            
+            total_students = 0
+            passed_students = 0
+            failed_students = 0
+            
+            for student in students:
+                # Get all marksheets for this student and exam
+                marksheets = Marksheet.objects.filter(student=student, exam=exam)
+                
+                if marksheets.exists():
+                    total_students += 1
+                    
+                    # Check if student passed (no failed subjects)
+                    failed_subjects = marksheets.filter(marks_obtained__lt=models.F('subject__pass_marks')).count()
+                    
+                    if failed_subjects == 0:
+                        passed_students += 1
+                    else:
+                        failed_students += 1
+            
+            return JsonResponse({
+                'success': True,
+                'total_students': total_students,
+                'passed': passed_students,
+                'failed': failed_students
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def bulk_edit_subjects(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            class_name = data['class_name']
+            max_marks = data['max_marks']
+            pass_marks = data['pass_marks']
+            
+            # Update subjects based on selection
+            if class_name == 'All Subjects':
+                # Update all subjects across all classes
+                updated_count = Subject.objects.all().update(
+                    max_marks=max_marks,
+                    pass_marks=pass_marks
+                )
+            else:
+                # Update all subjects for the selected class
+                updated_count = Subject.objects.filter(class_name=class_name).update(
+                    max_marks=max_marks,
+                    pass_marks=pass_marks
+                )
+            
+            return JsonResponse({
+                'success': True,
+                'updated_count': updated_count
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def marksheet_system(request):
+    """Main marksheet system page"""
+    exams = Exam.objects.all().order_by('-exam_date')
+    subjects = Subject.objects.all().order_by('class_name', 'name')
+    
+    context = {
+        'exams': exams,
+        'subjects': subjects,
+    }
+    
+    return render(request, 'marksheet_system.html', context)
+
+def marksheet_new(request):
+    """New improved marksheet system"""
+    exams = Exam.objects.all().order_by('-exam_date')
+    subjects = Subject.objects.all().order_by('class_name', 'name')
+    
+    # Get class statistics
+    class_stats = {}
+    for exam in exams:
+        if exam.class_name not in class_stats:
+            class_stats[exam.class_name] = {
+                'total_students': Student.objects.filter(student_class=exam.class_name).count(),
+                'total_subjects': Subject.objects.filter(class_name=exam.class_name).count()
+            }
+    
+    context = {
+        'exams': exams,
+        'subjects': subjects,
+        'class_stats': class_stats,
+    }
+    
+    return render(request, 'marksheet_new.html', context)
+
+def marksheet_advanced(request):
+    """Advanced marksheet system with enhanced features"""
+    exams = Exam.objects.all().order_by('-exam_date')
+    subjects = Subject.objects.all().order_by('class_name', 'name')
+    
+    # Get comprehensive statistics
+    total_exams = exams.count()
+    total_subjects = subjects.count()
+    total_marksheets = Marksheet.objects.count()
+    
+    # Get recent activity
+    recent_marksheets = Marksheet.objects.select_related('student', 'exam', 'subject').order_by('-id')[:10]
+    
+    context = {
+        'exams': exams,
+        'subjects': subjects,
+        'total_exams': total_exams,
+        'total_subjects': total_subjects,
+        'total_marksheets': total_marksheets,
+        'recent_marksheets': recent_marksheets,
+    }
+    
+    return render(request, 'marksheet_advanced.html', context)
+
+def subjects_by_class_api(request, class_name):
+    """API to get subjects by class"""
+    try:
+        subjects = Subject.objects.filter(class_name=class_name).order_by('name')
+        subjects_data = []
+        
+        for subject in subjects:
+            subjects_data.append({
+                'id': subject.id,
+                'name': subject.name,
+                'code': subject.code,
+                'max_marks': subject.max_marks,
+                'pass_marks': subject.pass_marks
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'subjects': subjects_data
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def marksheet_data_api(request, exam_id, subject_id):
+    """API to get marksheet data for exam and subject"""
+    try:
+        exam = get_object_or_404(Exam, id=exam_id)
+        subject = get_object_or_404(Subject, id=subject_id)
+        
+        # Validate that subject belongs to exam's class
+        if subject.class_name != exam.class_name:
+            return JsonResponse({
+                'success': False, 
+                'error': f'Subject {subject.name} does not belong to class {exam.class_name}'
+            })
+        
+        # Get students for this exam's class
+        students = Student.objects.filter(student_class=exam.class_name).order_by('name')
+        
+        if not students.exists():
+            return JsonResponse({
+                'success': False,
+                'error': f'No students found in class {exam.class_name}'
+            })
+        
+        students_data = []
+        for student in students:
+            # Get existing marksheet if any
+            try:
+                marksheet = Marksheet.objects.get(student=student, exam=exam, subject=subject)
+                marks_obtained = marksheet.marks_obtained
+                remarks = marksheet.remarks
+                percentage = round(marksheet.percentage, 1)
+                grade = marksheet.grade
+                status = marksheet.status
+            except Marksheet.DoesNotExist:
+                marks_obtained = None
+                remarks = ''
+                percentage = 0
+                grade = 'F'
+                status = 'Fail'
+            
+            students_data.append({
+                'id': student.id,
+                'name': student.name,
+                'reg_number': student.reg_number,
+                'marks_obtained': marks_obtained,
+                'remarks': remarks,
+                'percentage': percentage,
+                'grade': grade,
+                'status': status
+            })
+        
+        subject_data = {
+            'id': subject.id,
+            'name': subject.name,
+            'code': subject.code,
+            'max_marks': subject.max_marks,
+            'pass_marks': subject.pass_marks
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'students': students_data,
+            'subject': subject_data,
+            'exam': {
+                'id': exam.id,
+                'name': exam.name,
+                'exam_type': exam.exam_type,
+                'class_name': exam.class_name,
+                'exam_date': exam.exam_date.strftime('%Y-%m-%d')
+            },
+            'stats': {
+                'total_students': len(students_data),
+                'students_with_marks': len([s for s in students_data if s['marks_obtained'] is not None]),
+                'passed_students': len([s for s in students_data if s['status'] == 'Pass']),
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def save_marksheet_api(request):
+    """API to save marksheet data"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            marks_data = data.get('marks', [])
+            
+            saved_count = 0
+            for mark_data in marks_data:
+                student = get_object_or_404(Student, id=mark_data['student_id'])
+                exam = get_object_or_404(Exam, id=mark_data['exam_id'])
+                subject = get_object_or_404(Subject, id=mark_data['subject_id'])
+                
+                marksheet, created = Marksheet.objects.update_or_create(
+                    student=student,
+                    exam=exam,
+                    subject=subject,
+                    defaults={
+                        'marks_obtained': mark_data['marks_obtained'],
+                        'remarks': mark_data.get('remarks', '')
+                    }
+                )
+                saved_count += 1
+            
+            return JsonResponse({
+                'success': True,
+                'saved_count': saved_count
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def generate_class_marksheets(request, exam_id):
+    """Generate marksheets for all students in an exam"""
+    exam = get_object_or_404(Exam, id=exam_id)
+    students = Student.objects.filter(student_class=exam.class_name).order_by('name')
+    
+    marksheets_data = []
+    for student in students:
+        marksheets = Marksheet.objects.filter(student=student, exam=exam)
+        
+        if marksheets.exists():
+            # Calculate totals
+            total_marks = sum(m.subject.max_marks for m in marksheets)
+            obtained_marks = sum(m.marks_obtained for m in marksheets)
+            percentage = (obtained_marks / total_marks * 100) if total_marks > 0 else 0
+            
+            # Overall grade
+            if percentage >= 90:
+                overall_grade = 'A+'
+            elif percentage >= 80:
+                overall_grade = 'A'
+            elif percentage >= 70:
+                overall_grade = 'B+'
+            elif percentage >= 60:
+                overall_grade = 'B'
+            elif percentage >= 50:
+                overall_grade = 'C+'
+            elif percentage >= 40:
+                overall_grade = 'C'
+            elif percentage >= 30:
+                overall_grade = 'D+'
+            elif percentage >= 20:
+                overall_grade = 'D'
+            else:
+                overall_grade = 'E'
+            
+            # Overall status
+            failed_subjects = marksheets.filter(marks_obtained__lt=models.F('subject__pass_marks')).count()
+            overall_status = 'Pass' if failed_subjects == 0 else 'Fail'
+            
+            marksheets_data.append({
+                'student': student,
+                'marksheets': marksheets,
+                'total_marks': total_marks,
+                'obtained_marks': obtained_marks,
+                'percentage': round(percentage, 2),
+                'overall_grade': overall_grade,
+                'overall_status': overall_status,
+                'failed_subjects': failed_subjects
+            })
+    
+    context = {
+        'exam': exam,
+        'marksheets_data': marksheets_data,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    return render(request, 'class_marksheets.html', context)
+
+def generate_student_result(request, student_id):
+    """Generate complete result for a student with all subjects across all exams"""
+    student = get_object_or_404(Student, id=student_id)
+    
+    # Get all exams for this student's class
+    exams = Exam.objects.filter(class_name=student.student_class).order_by('-exam_date')
+    
+    # Get all subjects for this student's class
+    subjects = Subject.objects.filter(class_name=student.student_class).order_by('name')
+    
+    # Get all marksheets for this student
+    marksheets = Marksheet.objects.filter(student=student).select_related('exam', 'subject')
+    
+    # Organize data by exam
+    exam_results = []
+    overall_stats = {
+        'total_exams': 0,
+        'passed_exams': 0,
+        'failed_exams': 0,
+        'average_percentage': 0,
+        'best_percentage': 0,
+        'worst_percentage': 100
+    }
+    
+    total_percentage = 0
+    
+    for exam in exams:
+        exam_marksheets = marksheets.filter(exam=exam)
+        
+        if exam_marksheets.exists():
+            # Calculate exam totals
+            total_marks = sum(m.subject.max_marks for m in exam_marksheets)
+            obtained_marks = sum(m.marks_obtained for m in exam_marksheets)
+            percentage = (obtained_marks / total_marks * 100) if total_marks > 0 else 0
+            
+            # Calculate grade
+            if percentage >= 90:
+                grade = 'A+'
+            elif percentage >= 80:
+                grade = 'A'
+            elif percentage >= 70:
+                grade = 'B+'
+            elif percentage >= 60:
+                grade = 'B'
+            elif percentage >= 50:
+                grade = 'C+'
+            elif percentage >= 40:
+                grade = 'C'
+            elif percentage >= 35:
+                grade = 'D'
+            else:
+                grade = 'F'
+            
+            # Check pass/fail
+            failed_subjects = exam_marksheets.filter(marks_obtained__lt=models.F('subject__pass_marks')).count()
+            status = 'Pass' if failed_subjects == 0 else 'Fail'
+            
+            # Subject-wise results
+            subject_results = []
+            for subject in subjects:
+                try:
+                    marksheet = exam_marksheets.get(subject=subject)
+                    subject_results.append({
+                        'subject': subject,
+                        'marks_obtained': marksheet.marks_obtained,
+                        'max_marks': subject.max_marks,
+                        'percentage': marksheet.percentage,
+                        'grade': marksheet.grade,
+                        'grade_point': marksheet.grade_point,
+                        'grade_remarks': marksheet.grade_remarks,
+                        'status': marksheet.status,
+                        'remarks': marksheet.remarks
+                    })
+                except Marksheet.DoesNotExist:
+                    subject_results.append({
+                        'subject': subject,
+                        'marks_obtained': 'N/A',
+                        'max_marks': subject.max_marks,
+                        'percentage': 0,
+                        'grade': 'N/A',
+                        'grade_point': 0,
+                        'grade_remarks': 'Not attempted',
+                        'status': 'N/A',
+                        'remarks': 'Not attempted'
+                    })
+            
+            exam_results.append({
+                'exam': exam,
+                'subject_results': subject_results,
+                'total_marks': total_marks,
+                'obtained_marks': obtained_marks,
+                'percentage': round(percentage, 2),
+                'grade': grade,
+                'status': status,
+                'failed_subjects': failed_subjects
+            })
+            
+            # Update overall stats
+            overall_stats['total_exams'] += 1
+            if status == 'Pass':
+                overall_stats['passed_exams'] += 1
+            else:
+                overall_stats['failed_exams'] += 1
+            
+            total_percentage += percentage
+            overall_stats['best_percentage'] = max(overall_stats['best_percentage'], percentage)
+            overall_stats['worst_percentage'] = min(overall_stats['worst_percentage'], percentage)
+    
+    # Calculate average percentage
+    if overall_stats['total_exams'] > 0:
+        overall_stats['average_percentage'] = round(total_percentage / overall_stats['total_exams'], 2)
+    
+    # If no exams taken, reset worst percentage
+    if overall_stats['total_exams'] == 0:
+        overall_stats['worst_percentage'] = 0
+    
+    context = {
+        'student': student,
+        'exam_results': exam_results,
+        'subjects': subjects,
+        'overall_stats': overall_stats,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    return render(request, 'student_result.html', context)
+
+@csrf_exempt
+def create_session(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # If setting as active, deactivate all other sessions
+            if data.get('is_active', False):
+                Session.objects.all().update(is_active=False)
+            
+            session = Session.objects.create(
+                name=data['name'],
+                start_date=data['start_date'],
+                end_date=data['end_date'],
+                is_active=data.get('is_active', False)
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'session_id': session.id,
+                'message': f'Session {session.name} created successfully'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def set_active_session(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            session_id = data['session_id']
+            
+            # Deactivate all sessions
+            Session.objects.all().update(is_active=False)
+            
+            # Activate selected session
+            session = get_object_or_404(Session, id=session_id)
+            session.is_active = True
+            session.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Session {session.name} is now active'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def get_sessions_api(request):
+    try:
+        sessions = Session.objects.all().order_by('-start_date')
+        sessions_data = []
+        
+        for session in sessions:
+            sessions_data.append({
+                'id': session.id,
+                'name': session.name,
+                'start_date': session.start_date.strftime('%Y-%m-%d'),
+                'end_date': session.end_date.strftime('%Y-%m-%d'),
+                'is_active': session.is_active
+            })
+        
+        current_session = Session.get_current_session()
+        
+        return JsonResponse({
+            'success': True,
+            'sessions': sessions_data,
+            'current_session': current_session.name if current_session else None
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def students_by_session_api(request, session_name):
+    try:
+        students = Student.objects.filter(session=session_name).order_by('name')
+        students_data = []
+        
+        for student in students:
+            students_data.append({
+                'id': student.id,
+                'name': student.name,
+                'reg_number': student.reg_number,
+                'student_class': student.student_class,
+                'section': student.section,
+                'father_name': student.father_name,
+                'mobile': student.mobile,
+                'session': student.session
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'students': students_data,
+            'total_count': len(students_data)
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def assign_sessions_to_students(request):
+    """API endpoint to assign current session to all students without sessions"""
+    if request.method == 'POST':
+        try:
+            # Get or create current active session
+            current_session = Session.get_current_session()
+            if not current_session:
+                current_session, created = Session.objects.get_or_create(
+                    name='2024-25',
+                    defaults={
+                        'start_date': '2024-04-01',
+                        'end_date': '2025-03-31',
+                        'is_active': True
+                    }
+                )
+
+            # Update students without sessions or with empty sessions
+            students_without_session = Student.objects.filter(
+                models.Q(session__isnull=True) | models.Q(session='')
+            )
+            count = students_without_session.count()
+            
+            if count > 0:
+                students_without_session.update(session=current_session.name)
+                return JsonResponse({
+                    'success': True,
+                    'message': f'Assigned session "{current_session.name}" to {count} students',
+                    'updated_count': count
+                })
+            else:
+                return JsonResponse({
+                    'success': True,
+                    'message': 'All students already have sessions assigned',
+                    'updated_count': 0
+                })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def save_student_marks(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            marks_data = data['marks']
+            
+            current_session = Session.get_current_session()
+            session_name = current_session.name if current_session else '2024-25'
+            
+            saved_count = 0
+            for mark_entry in marks_data:
+                # Get student name from frontend or database
+                student_name = mark_entry.get('student_name')
+                if not student_name:
+                    student = get_object_or_404(Student, id=mark_entry['student_id'])
+                    student_name = student.name
+                
+                # Save directly to MarksheetData model
+                MarksheetData.objects.create(
+                    student_name=student_name,
+                    subject_name=mark_entry['subject'],
+                    marks_obtained=mark_entry['marks_obtained'],
+                    max_marks=mark_entry.get('max_marks', 100),
+                    session=session_name
+                )
+                
+                saved_count += 1
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'{saved_count} students',
+                'session': session_name
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def generate_class_marksheets_new_tab(request, exam_id):
+    """Generate marksheets for all students in an exam - opens in new tab without sidebar"""
+    exam = get_object_or_404(Exam, id=exam_id)
+    students = Student.objects.filter(student_class=exam.class_name).order_by('name')
+    
+    marksheets_data = []
+    for student in students:
+        marksheets = Marksheet.objects.filter(student=student, exam=exam)
+        
+        if marksheets.exists():
+            # Calculate totals
+            total_marks = sum(m.subject.max_marks for m in marksheets)
+            obtained_marks = sum(m.marks_obtained for m in marksheets)
+            percentage = (obtained_marks / total_marks * 100) if total_marks > 0 else 0
+            
+            # Overall grade
+            if percentage >= 90:
+                overall_grade = 'A+'
+            elif percentage >= 80:
+                overall_grade = 'A'
+            elif percentage >= 70:
+                overall_grade = 'B+'
+            elif percentage >= 60:
+                overall_grade = 'B'
+            elif percentage >= 50:
+                overall_grade = 'C+'
+            elif percentage >= 40:
+                overall_grade = 'C'
+            elif percentage >= 30:
+                overall_grade = 'D+'
+            elif percentage >= 20:
+                overall_grade = 'D'
+            else:
+                overall_grade = 'E'
+            
+            # Overall status
+            failed_subjects = marksheets.filter(marks_obtained__lt=models.F('subject__pass_marks')).count()
+            overall_status = 'Pass' if failed_subjects == 0 else 'Fail'
+            
+            # Calculate total grade points (GPA)
+            total_grade_points = sum(m.grade_point for m in marksheets) / len(marksheets) if marksheets else 0
+            
+            marksheets_data.append({
+                'student': student,
+                'marksheets': marksheets,
+                'total_marks': total_marks,
+                'obtained_marks': obtained_marks,
+                'percentage': round(percentage, 2),
+                'overall_grade': overall_grade,
+                'overall_status': overall_status,
+                'failed_subjects': failed_subjects,
+                'total_grade_points': round(total_grade_points, 2)
+            })
+    
+    # Get current Nepali date
+    if nepali_date:
+        try:
+            from datetime import date as ad_date
+            today_ad = ad_date.today()
+            nepali_today = nepali_date.from_datetime_date(today_ad)
+            current_nepali_date = f'{nepali_today.year}/{nepali_today.month:02d}/{nepali_today.day:02d}'
+        except:
+            current_nepali_date = '2081/08/15'  # Fallback date
+    else:
+        current_nepali_date = '2081/08/15'  # Fallback if package not installed
+    
+    # Add cache busting and debug info
+    context = {
+        'exam': exam,
+        'marksheets_data': marksheets_data,
+        'current_date': datetime.now().strftime('%B %d, %Y'),
+        'current_nepali_date': current_nepali_date,
+        'cache_buster': datetime.now().timestamp(),
+        'debug_info': f'Updated at {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}'
+    }
+    
+    # Set no-cache headers
+    response = render(request, 'class_marksheets_redesigned.html', context)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response
+
+def generate_class_marksheets_see_style(request, exam_id):
+    """Generate SEE-style marksheets for all students in an exam"""
+    exam = get_object_or_404(Exam, id=exam_id)
+    students = Student.objects.filter(student_class=exam.class_name).order_by('name')
+    
+    marksheets_data = []
+    for student in students:
+        marksheets = Marksheet.objects.filter(student=student, exam=exam)
+        
+        if marksheets.exists():
+            # Calculate totals
+            total_marks = sum(m.subject.max_marks for m in marksheets)
+            obtained_marks = sum(m.marks_obtained for m in marksheets)
+            percentage = (obtained_marks / total_marks * 100) if total_marks > 0 else 0
+            
+            # Overall grade
+            if percentage >= 90:
+                overall_grade = 'A+'
+            elif percentage >= 80:
+                overall_grade = 'A'
+            elif percentage >= 70:
+                overall_grade = 'B+'
+            elif percentage >= 60:
+                overall_grade = 'B'
+            elif percentage >= 50:
+                overall_grade = 'C+'
+            elif percentage >= 40:
+                overall_grade = 'C'
+            elif percentage >= 30:
+                overall_grade = 'D+'
+            elif percentage >= 20:
+                overall_grade = 'D'
+            else:
+                overall_grade = 'E'
+            
+            # Overall status
+            failed_subjects = marksheets.filter(marks_obtained__lt=models.F('subject__pass_marks')).count()
+            overall_status = 'Pass' if failed_subjects == 0 else 'Fail'
+            
+            # Calculate total grade points (GPA)
+            total_grade_points = sum(m.grade_point for m in marksheets) / len(marksheets) if marksheets else 0
+            
+            marksheets_data.append({
+                'student': student,
+                'marksheets': marksheets,
+                'total_marks': total_marks,
+                'obtained_marks': obtained_marks,
+                'percentage': round(percentage, 2),
+                'overall_grade': overall_grade,
+                'overall_status': overall_status,
+                'failed_subjects': failed_subjects,
+                'total_grade_points': round(total_grade_points, 2)
+            })
+    
+    context = {
+        'exam': exam,
+        'marksheets_data': marksheets_data,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    # Set no-cache headers
+    response = render(request, 'generate-class-marksheets-see-style.html', context)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response
+
+def generate_class_marksheets_print_see_style(request, exam_id):
+    """Generate improved SEE-style marksheets for printing in A4 format"""
+    exam = get_object_or_404(Exam, id=exam_id)
+    students = Student.objects.filter(student_class=exam.class_name).order_by('name')
+    
+    marksheets_data = []
+    for student in students:
+        marksheets = Marksheet.objects.filter(student=student, exam=exam)
+        
+        if marksheets.exists():
+            # Calculate totals
+            total_marks = sum(m.subject.max_marks for m in marksheets)
+            obtained_marks = sum(m.marks_obtained for m in marksheets)
+            percentage = (obtained_marks / total_marks * 100) if total_marks > 0 else 0
+            
+            # Overall grade
+            if percentage >= 90:
+                overall_grade = 'A+'
+            elif percentage >= 80:
+                overall_grade = 'A'
+            elif percentage >= 70:
+                overall_grade = 'B+'
+            elif percentage >= 60:
+                overall_grade = 'B'
+            elif percentage >= 50:
+                overall_grade = 'C+'
+            elif percentage >= 40:
+                overall_grade = 'C'
+            elif percentage >= 30:
+                overall_grade = 'D+'
+            elif percentage >= 20:
+                overall_grade = 'D'
+            else:
+                overall_grade = 'E'
+            
+            # Overall status
+            failed_subjects = marksheets.filter(marks_obtained__lt=models.F('subject__pass_marks')).count()
+            overall_status = 'Pass' if failed_subjects == 0 else 'Fail'
+            
+            # Calculate total grade points (GPA)
+            total_grade_points = sum(m.grade_point for m in marksheets) / len(marksheets) if marksheets else 0
+            
+            marksheets_data.append({
+                'student': student,
+                'marksheets': marksheets,
+                'total_marks': total_marks,
+                'obtained_marks': obtained_marks,
+                'percentage': round(percentage, 2),
+                'overall_grade': overall_grade,
+                'overall_status': overall_status,
+                'failed_subjects': failed_subjects,
+                'total_grade_points': round(total_grade_points, 2)
+            })
+    
+    context = {
+        'exam': exam,
+        'marksheets_data': marksheets_data,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    # Set no-cache headers for fresh content
+    response = render(request, 'generate-class-marksheets-print-see-style.html', context)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response
+
+def generate_sarathi_pathshala_marksheets(request, exam_id):
+    """Generate SARATHI PATHSHALA specific grade sheets"""
+    exam = get_object_or_404(Exam, id=exam_id)
+    students = Student.objects.filter(student_class=exam.class_name).order_by('name')
+    
+    marksheets_data = []
+    for student in students:
+        marksheets = Marksheet.objects.filter(student=student, exam=exam)
+        
+        if marksheets.exists():
+            # Calculate totals
+            total_marks = sum(m.subject.max_marks for m in marksheets)
+            obtained_marks = sum(m.marks_obtained for m in marksheets)
+            percentage = (obtained_marks / total_marks * 100) if total_marks > 0 else 0
+            
+            # Overall grade
+            if percentage >= 90:
+                overall_grade = 'A+'
+            elif percentage >= 80:
+                overall_grade = 'A'
+            elif percentage >= 70:
+                overall_grade = 'B+'
+            elif percentage >= 60:
+                overall_grade = 'B'
+            elif percentage >= 50:
+                overall_grade = 'C+'
+            elif percentage >= 40:
+                overall_grade = 'C'
+            elif percentage >= 30:
+                overall_grade = 'D+'
+            elif percentage >= 20:
+                overall_grade = 'D'
+            else:
+                overall_grade = 'E'
+            
+            # Overall status
+            failed_subjects = marksheets.filter(marks_obtained__lt=models.F('subject__pass_marks')).count()
+            overall_status = 'Pass' if failed_subjects == 0 else 'Fail'
+            
+            # Calculate total grade points (GPA)
+            total_grade_points = sum(m.grade_point for m in marksheets) / len(marksheets) if marksheets else 0
+            
+            marksheets_data.append({
+                'student': student,
+                'marksheets': marksheets,
+                'total_marks': total_marks,
+                'obtained_marks': obtained_marks,
+                'percentage': round(percentage, 2),
+                'overall_grade': overall_grade,
+                'overall_status': overall_status,
+                'failed_subjects': failed_subjects,
+                'total_grade_points': round(total_grade_points, 2)
+            })
+    
+    context = {
+        'exam': exam,
+        'marksheets_data': marksheets_data,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    # Set no-cache headers for fresh content
+    response = render(request, 'sarathi_pathshala_marksheet.html', context)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response
+
+def generate_sarathi_pathshala_see_marksheets(request, exam_id):
+    """Generate SARATHI PATHSHALA SEE Style grade sheets"""
+    exam = get_object_or_404(Exam, id=exam_id)
+    students = Student.objects.filter(student_class=exam.class_name).order_by('name')
+    
+    marksheets_data = []
+    for student in students:
+        marksheets = Marksheet.objects.filter(student=student, exam=exam)
+        
+        if marksheets.exists():
+            # Calculate totals
+            total_marks = sum(m.subject.max_marks for m in marksheets)
+            obtained_marks = sum(m.marks_obtained for m in marksheets)
+            percentage = (obtained_marks / total_marks * 100) if total_marks > 0 else 0
+            
+            # Overall grade
+            if percentage >= 90:
+                overall_grade = 'A+'
+            elif percentage >= 80:
+                overall_grade = 'A'
+            elif percentage >= 70:
+                overall_grade = 'B+'
+            elif percentage >= 60:
+                overall_grade = 'B'
+            elif percentage >= 50:
+                overall_grade = 'C+'
+            elif percentage >= 40:
+                overall_grade = 'C'
+            elif percentage >= 30:
+                overall_grade = 'D+'
+            elif percentage >= 20:
+                overall_grade = 'D'
+            else:
+                overall_grade = 'E'
+            
+            # Overall status
+            failed_subjects = marksheets.filter(marks_obtained__lt=models.F('subject__pass_marks')).count()
+            overall_status = 'Pass' if failed_subjects == 0 else 'Fail'
+            
+            # Calculate total grade points (GPA)
+            total_grade_points = sum(m.grade_point for m in marksheets) / len(marksheets) if marksheets else 0
+            
+            marksheets_data.append({
+                'student': student,
+                'marksheets': marksheets,
+                'total_marks': total_marks,
+                'obtained_marks': obtained_marks,
+                'percentage': round(percentage, 2),
+                'overall_grade': overall_grade,
+                'overall_status': overall_status,
+                'failed_subjects': failed_subjects,
+                'total_grade_points': round(total_grade_points, 2)
+            })
+    
+    context = {
+        'exam': exam,
+        'marksheets_data': marksheets_data,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    # Set no-cache headers for fresh content
+    response = render(request, 'sarathi_pathshala_see_marksheet.html', context)
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response
+
+def grade_sheet_certificate(request):
+    """Standalone Grade Sheet Certificate template"""
+    return render(request, 'grade_sheet_certificate.html')
+
+def student_marksheet_finder(request):
+    """Helper view to find valid student-exam combinations"""
+    students = Student.objects.all().order_by('name')[:20]  # First 20 students
+    exams = Exam.objects.all().order_by('-exam_date')[:10]  # First 10 exams
+    
+    # Get some existing marksheets as examples
+    existing_marksheets = Marksheet.objects.select_related('student', 'exam').distinct('student', 'exam')[:10]
+    
+    context = {
+        'students': students,
+        'exams': exams,
+        'existing_marksheets': existing_marksheets
+    }
+    
+    return render(request, 'student_marksheet_finder.html', context)
+
+def populate_grade_sheet_certificate(request):
+    """Generate populated grade sheet certificates - same as generate_class_marksheets_print_see_style"""
+    # Get exam_id from request or use the latest exam
+    exam_id = request.GET.get('exam_id')
+    if exam_id:
+        try:
+            exam = get_object_or_404(Exam, id=exam_id)
+        except:
+            exam = Exam.objects.order_by('-exam_date').first()
+    else:
+        exam = Exam.objects.order_by('-exam_date').first()
+    
+    if not exam:
+        # Create sample data if no exam exists
+        context = {
+            'marksheets_data': [{
+                'student': type('obj', (object,), {
+                    'name': 'SAMPLE STUDENT',
+                    'reg_number': '001',
+                    'student_class': '10',
+                    'section': 'A'
+                }),
+                'marksheets': [{
+                    'subject': type('obj', (object,), {'name': 'English'}),
+                    'marks_obtained': 85,
+                    'grade': 'A',
+                    'status': 'Pass'
+                }],
+                'total_marks': 100,
+                'obtained_marks': 85,
+                'percentage': 85.0,
+                'overall_grade': 'A',
+                'overall_status': 'Pass',
+                'total_grade_points': 3.6
+            }],
+            'exam': type('obj', (object,), {
+                'exam_type': 'Terminal',
+                'session': '2081 BS'
+            }),
+            'current_date': datetime.now().strftime('%B %d, %Y')
+        }
+        return render(request, 'generate-class-marksheets-print-see-style.html', context)
+    
+    students = Student.objects.filter(student_class=exam.class_name).order_by('name')
+    
+    marksheets_data = []
+    for student in students:
+        marksheets = Marksheet.objects.filter(student=student, exam=exam)
+        
+        if marksheets.exists():
+            # Calculate totals
+            total_marks = sum(m.subject.max_marks for m in marksheets)
+            obtained_marks = sum(m.marks_obtained for m in marksheets)
+            percentage = (obtained_marks / total_marks * 100) if total_marks > 0 else 0
+            
+            # Overall grade
+            if percentage >= 90: overall_grade = 'A+'
+            elif percentage >= 80: overall_grade = 'A'
+            elif percentage >= 70: overall_grade = 'B+'
+            elif percentage >= 60: overall_grade = 'B'
+            elif percentage >= 50: overall_grade = 'C+'
+            elif percentage >= 40: overall_grade = 'C'
+            elif percentage >= 30: overall_grade = 'D+'
+            elif percentage >= 20: overall_grade = 'D'
+            else: overall_grade = 'E'
+            
+            # Overall status
+            failed_subjects = marksheets.filter(marks_obtained__lt=models.F('subject__pass_marks')).count()
+            overall_status = 'Pass' if failed_subjects == 0 else 'Fail'
+            
+            # Calculate total grade points (GPA)
+            total_grade_points = sum(m.grade_point for m in marksheets) / len(marksheets) if marksheets else 0
+            
+            marksheets_data.append({
+                'student': student,
+                'marksheets': marksheets,
+                'total_marks': total_marks,
+                'obtained_marks': obtained_marks,
+                'percentage': round(percentage, 2),
+                'overall_grade': overall_grade,
+                'overall_status': overall_status,
+                'failed_subjects': failed_subjects,
+                'total_grade_points': round(total_grade_points, 2)
+            })
+    
+    context = {
+        'exam': exam,
+        'marksheets_data': marksheets_data,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    return render(request, 'generate-class-marksheets-print-see-style.html', context)
+
+def student_attendance_dashboard(request):
+    """Student Attendance Dashboard"""
+    return render(request, 'student_attendance_dashboard.html')

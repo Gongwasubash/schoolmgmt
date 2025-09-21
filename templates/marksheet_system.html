@@ -1,0 +1,823 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Marksheet System{% endblock %}
+
+{% block extra_css %}
+<style>
+.marksheet-system {
+    padding: 2rem;
+    background: #f5f5f5;
+    min-height: 100vh;
+}
+
+.system-header {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.controls-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.controls-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group label {
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.form-group select, .form-group input {
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-primary { background: #007bff; color: white; }
+.btn-success { background: #28a745; color: white; }
+.btn-warning { background: #ffc107; color: #212529; }
+.btn-danger { background: #dc3545; color: white; }
+
+.btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+.marksheet-table {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.table th {
+    background: #f8f9fa;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.table td {
+    padding: 1rem;
+    border-bottom: 1px solid #dee2e6;
+    vertical-align: middle;
+}
+
+.marks-input {
+    width: 80px;
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    text-align: center;
+}
+
+.grade-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 0.75rem;
+}
+
+.grade-a-plus { background: #d4edda; color: #155724; }
+.grade-a { background: #d1ecf1; color: #0c5460; }
+.grade-b-plus { background: #fff3cd; color: #856404; }
+.grade-b { background: #f8d7da; color: #721c24; }
+.grade-c-plus { background: #e2e3e5; color: #383d41; }
+.grade-c { background: #f5c6cb; color: #721c24; }
+.grade-d { background: #ffeaa7; color: #6c757d; }
+.grade-f { background: #f8d7da; color: #721c24; }
+
+.status-pass { color: #28a745; font-weight: 600; }
+.status-fail { color: #dc3545; font-weight: 600; }
+
+.summary-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    text-align: center;
+}
+
+.summary-item h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.summary-item p {
+    color: #666;
+    margin: 0.25rem 0 0 0;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+}
+
+.hidden { display: none; }
+
+/* Responsive styles for all subjects table */
+#allSubjectsTable {
+    min-width: 100%;
+    font-size: 0.875rem;
+}
+
+#allSubjectsTable th {
+    min-width: 80px;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+    text-align: center;
+}
+
+#allSubjectsTable td {
+    min-width: 80px;
+    padding: 0.5rem 0.25rem;
+    font-size: 0.75rem;
+}
+
+@media (max-width: 1200px) {
+    #allSubjectsTable {
+        font-size: 0.75rem;
+    }
+    
+    #allSubjectsTable th,
+    #allSubjectsTable td {
+        min-width: 70px;
+        padding: 0.4rem 0.2rem;
+        font-size: 0.7rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .marksheet-system {
+        padding: 1rem;
+    }
+    
+    .controls-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    #allSubjectsTable {
+        font-size: 0.65rem;
+    }
+    
+    #allSubjectsTable th,
+    #allSubjectsTable td {
+        min-width: 60px;
+        padding: 0.3rem 0.15rem;
+        font-size: 0.6rem;
+    }
+    
+    #allSubjectsTable th {
+        writing-mode: vertical-rl;
+        text-orientation: mixed;
+        height: 80px;
+        width: 60px;
+    }
+    
+    .grade-badge {
+        font-size: 0.6rem;
+        padding: 0.1rem 0.3rem;
+    }
+}
+
+@media (max-width: 480px) {
+    #allSubjectsTable th,
+    #allSubjectsTable td {
+        min-width: 50px;
+        padding: 0.2rem 0.1rem;
+        font-size: 0.55rem;
+    }
+    
+    #allSubjectsTable th {
+        height: 70px;
+        width: 50px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="marksheet-system">
+    <div class="system-header">
+        <h1>📊 Marksheet Management System</h1>
+        <p>Comprehensive student marksheet creation and management</p>
+    </div>
+
+    <div class="controls-section">
+        <h3>Select Exam and Class</h3>
+        <div class="controls-grid">
+            <div class="form-group">
+                <label>Exam</label>
+                <select id="examSelect" onchange="loadClassStudents()">
+                    <option value="">Select Exam</option>
+                    {% for exam in exams %}
+                    <option value="{{ exam.id }}" data-class="{{ exam.class_name }}">{{ exam.name }} - {{ exam.class_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Class (Auto-selected)</label>
+                <input type="text" id="selectedClass" readonly placeholder="Select exam first">
+            </div>
+            <div class="form-group">
+                <label>Subject</label>
+                <select id="subjectSelect" onchange="loadMarksheet()">
+                    <option value="">Select Subject</option>
+                    <option value="all">All Subjects</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Actions</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-primary" onclick="loadMarksheet()">Load Marksheet</button>
+                    <button class="btn btn-success" onclick="saveAllMarks()">Save All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="marksheetContainer" class="hidden">
+        <div class="marksheet-table">
+            <table class="table" id="marksheetTable">
+                <thead>
+                    <tr>
+                        <th>Roll No</th>
+                        <th>Student Name</th>
+                        <th>Max Marks</th>
+                        <th>Marks Obtained</th>
+                        <th>Percentage</th>
+                        <th>Grade</th>
+                        <th>Status</th>
+                        <th>Remarks</th>
+                    </tr>
+                </thead>
+                <tbody id="marksheetTableBody">
+                </tbody>
+            </table>
+        </div>
+
+        <div class="summary-section">
+            <h3>Class Summary</h3>
+            <div class="summary-grid">
+                <div class="summary-item">
+                    <h3 id="totalStudents">0</h3>
+                    <p>Total Students</p>
+                </div>
+                <div class="summary-item">
+                    <h3 id="passedStudents">0</h3>
+                    <p>Passed</p>
+                </div>
+                <div class="summary-item">
+                    <h3 id="failedStudents">0</h3>
+                    <p>Failed</p>
+                </div>
+                <div class="summary-item">
+                    <h3 id="averageMarks">0</h3>
+                    <p>Average Marks</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="controls-section">
+            <h3>Bulk Actions</h3>
+            <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                <button class="btn btn-warning" onclick="autoFillMarks()">Auto Fill Marks</button>
+                <button class="btn btn-primary" onclick="calculateResults()">Calculate Results</button>
+                <button class="btn btn-success" onclick="generateMarksheets()">Generate Marksheets</button>
+                <button class="btn btn-primary" onclick="generateSEEStyleReports()">SEE Style Grade Sheets</button>
+                <button class="btn btn-success" onclick="generateGradeSheetCertificate()">Grade Sheet Certificate</button>
+                <button class="btn btn-danger" onclick="clearAllMarks()">Clear All Marks</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentExam = null;
+let currentSubject = null;
+let studentsData = [];
+
+function loadClassStudents() {
+    const examSelect = document.getElementById('examSelect');
+    const selectedOption = examSelect.options[examSelect.selectedIndex];
+    
+    if (!selectedOption.value) {
+        document.getElementById('selectedClass').value = '';
+        document.getElementById('subjectSelect').innerHTML = '<option value="">Select Subject</option>';
+        document.getElementById('marksheetContainer').classList.add('hidden');
+        return;
+    }
+    
+    const examClass = selectedOption.dataset.class;
+    document.getElementById('selectedClass').value = examClass;
+    
+    // Load subjects for this class
+    fetch(`/api/subjects-by-class/${examClass}/`)
+        .then(response => response.json())
+        .then(data => {
+            const subjectSelect = document.getElementById('subjectSelect');
+            subjectSelect.innerHTML = '<option value="">Select Subject</option><option value="all">All Subjects</option>';
+            
+            if (data.success) {
+                data.subjects.forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = subject.id;
+                    option.textContent = `${subject.name} (Max: ${subject.max_marks})`;
+                    option.dataset.maxMarks = subject.max_marks;
+                    option.dataset.passMarks = subject.pass_marks;
+                    subjectSelect.appendChild(option);
+                });
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading subjects:', error);
+            alert('Error loading subjects');
+        });
+}
+
+function loadMarksheet() {
+    const examId = document.getElementById('examSelect').value;
+    const subjectId = document.getElementById('subjectSelect').value;
+    
+    if (!examId || !subjectId) {
+        document.getElementById('marksheetContainer').classList.add('hidden');
+        return;
+    }
+    
+    currentExam = examId;
+    currentSubject = subjectId;
+    
+    if (subjectId === 'all') {
+        loadAllSubjectsMarksheet(examId);
+    } else {
+        fetch(`/api/marksheet-data/${examId}/${subjectId}/`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    studentsData = data.students;
+                    renderMarksheetTable(data.students, data.subject);
+                    updateSummary(data.students);
+                    document.getElementById('marksheetContainer').classList.remove('hidden');
+                } else {
+                    alert('Error: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error loading marksheet:', error);
+                alert('Error loading marksheet data');
+            });
+    }
+}
+
+function loadAllSubjectsMarksheet(examId) {
+    const examClass = document.getElementById('selectedClass').value;
+    
+    // Get all subjects for the class first
+    fetch(`/api/subjects-by-class/${examClass}/`)
+        .then(response => response.json())
+        .then(subjectsData => {
+            if (subjectsData.success && subjectsData.subjects.length > 0) {
+                // Load marksheet data for all subjects
+                const promises = subjectsData.subjects.map(subject => 
+                    fetch(`/api/marksheet-data/${examId}/${subject.id}/`)
+                        .then(response => response.json())
+                        .then(data => ({ subject, data }))
+                );
+                
+                Promise.all(promises)
+                    .then(results => {
+                        const allSubjectsData = processAllSubjectsData(results);
+                        renderAllSubjectsTable(allSubjectsData.students, allSubjectsData.subjects);
+                        document.getElementById('marksheetContainer').classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Error loading marksheet data:', error);
+                        alert('Error loading marksheet data');
+                    });
+            } else {
+                alert('No subjects found for this class');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading subjects:', error);
+            alert('Error loading subjects for class');
+        });
+}
+
+function processAllSubjectsData(results) {
+    const subjects = [];
+    const studentsMap = new Map();
+    
+    results.forEach(({ subject, data }) => {
+        if (data.success) {
+            subjects.push(subject);
+            
+            data.students.forEach(student => {
+                if (!studentsMap.has(student.id)) {
+                    studentsMap.set(student.id, {
+                        id: student.id,
+                        name: student.name,
+                        reg_number: student.reg_number,
+                        subjects: {}
+                    });
+                }
+                
+                studentsMap.get(student.id).subjects[subject.id] = {
+                    marks: student.marks_obtained || 0,
+                    percentage: student.percentage || 0,
+                    grade: student.grade || 'F',
+                    status: student.status || 'Fail'
+                };
+            });
+        }
+    });
+    
+    return {
+        subjects,
+        students: Array.from(studentsMap.values())
+    };
+}
+
+function renderAllSubjectsTable(students, subjects) {
+    const tableContainer = document.querySelector('.marksheet-table');
+    
+    // Create completely new table structure for all subjects
+    let tableHTML = `
+        <table class="table" id="allSubjectsTable">
+            <thead>
+                <tr>
+                    <th>Roll No</th>
+                    <th>Student Name</th>
+    `;
+    
+    subjects.forEach(subject => {
+        tableHTML += `<th>${subject.name}<br><small>Max: ${subject.max_marks}</small></th>`;
+    });
+    
+    tableHTML += `
+                    <th>Total Marks</th>
+                    <th>Percentage</th>
+                    <th>Overall Grade</th>
+                    <th>Result</th>
+                </tr>
+            </thead>
+            <tbody>
+    `;
+    
+    // Create rows for each student
+    students.forEach(student => {
+        let totalMarks = 0;
+        let totalMaxMarks = 0;
+        
+        tableHTML += `
+            <tr>
+                <td><strong>${student.reg_number}</strong></td>
+                <td><strong>${student.name}</strong></td>
+        `;
+        
+        subjects.forEach(subject => {
+            const marks = student.subjects?.[subject.id]?.marks || 0;
+            totalMarks += marks;
+            totalMaxMarks += subject.max_marks;
+            const subjectPercentage = subject.max_marks > 0 ? Math.round((marks / subject.max_marks) * 100) : 0;
+            const subjectGrade = calculateGrade(subjectPercentage);
+            const subjectStatus = marks >= (subject.pass_marks || Math.ceil(subject.max_marks * 0.35)) ? 'Pass' : 'Fail';
+            
+            tableHTML += `
+                <td style="text-align: center;">
+                    <div style="font-weight: bold; color: ${subjectStatus === 'Pass' ? '#28a745' : '#dc3545'};">${marks || 0}</div>
+                    <div style="font-size: 0.75rem; color: #666;">${subjectGrade} (${subjectPercentage}%)</div>
+                </td>
+            `;
+        });
+        
+        const overallPercentage = totalMaxMarks > 0 ? Math.round((totalMarks / totalMaxMarks) * 100) : 0;
+        const overallGrade = calculateGrade(overallPercentage);
+        const overallStatus = overallPercentage >= 35 ? 'Pass' : 'Fail';
+        
+        tableHTML += `
+                <td style="text-align: center; font-weight: bold;">
+                    <div>${totalMarks}/${totalMaxMarks}</div>
+                </td>
+                <td style="text-align: center; font-weight: bold; font-size: 1.1rem;">
+                    ${overallPercentage}%
+                </td>
+                <td style="text-align: center;">
+                    <span class="grade-badge ${getGradeClass(overallGrade)}">${overallGrade}</span>
+                </td>
+                <td style="text-align: center;">
+                    <span class="${overallStatus === 'Pass' ? 'status-pass' : 'status-fail'}" style="font-weight: bold; font-size: 1.1rem;">${overallStatus}</span>
+                </td>
+            </tr>
+        `;
+    });
+    
+    tableHTML += `
+            </tbody>
+        </table>
+    `;
+    
+    // Replace the entire table content
+    tableContainer.innerHTML = tableHTML;
+}
+
+function renderMarksheetTable(students, subject) {
+    const tableContainer = document.querySelector('.marksheet-table');
+    
+    // Restore original table structure
+    tableContainer.innerHTML = `
+        <table class="table" id="marksheetTable">
+            <thead>
+                <tr>
+                    <th>Roll No</th>
+                    <th>Student Name</th>
+                    <th>Max Marks</th>
+                    <th>Marks Obtained</th>
+                    <th>Percentage</th>
+                    <th>Grade</th>
+                    <th>Status</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody id="marksheetTableBody">
+            </tbody>
+        </table>
+    `;
+    
+    const tbody = document.getElementById('marksheetTableBody');
+    
+    students.forEach((student, index) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${student.reg_number}</td>
+            <td>${student.name}</td>
+            <td>${subject.max_marks}</td>
+            <td>
+                <input type="number" 
+                       class="marks-input" 
+                       min="0" 
+                       max="${subject.max_marks}"
+                       value="${student.marks_obtained || ''}"
+                       data-student-id="${student.id}"
+                       onchange="updateStudentResult(this, ${subject.max_marks}, ${subject.pass_marks})">
+            </td>
+            <td id="percentage-${student.id}">${student.percentage || '0'}%</td>
+            <td id="grade-${student.id}">
+                <span class="grade-badge ${getGradeClass(student.grade || 'F')}">${student.grade || 'F'}</span>
+            </td>
+            <td id="status-${student.id}">
+                <span class="${student.status === 'Pass' ? 'status-pass' : 'status-fail'}">${student.status || 'Fail'}</span>
+            </td>
+            <td>
+                <input type="text" 
+                       style="width: 120px; padding: 0.25rem;" 
+                       value="${student.remarks || ''}"
+                       data-student-id="${student.id}"
+                       class="remarks-input"
+                       placeholder="Remarks">
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function updateStudentResult(input, maxMarks, passMarks) {
+    const studentId = input.dataset.studentId;
+    const marks = parseInt(input.value) || 0;
+    
+    // Validate marks
+    if (marks > maxMarks) {
+        input.value = maxMarks;
+        marks = maxMarks;
+    }
+    
+    // Calculate percentage
+    const percentage = Math.round((marks / maxMarks) * 100);
+    
+    // Calculate grade
+    const grade = calculateGrade(percentage);
+    
+    // Determine status
+    const status = marks >= passMarks ? 'Pass' : 'Fail';
+    
+    // Update display
+    document.getElementById(`percentage-${studentId}`).textContent = percentage + '%';
+    
+    const gradeElement = document.getElementById(`grade-${studentId}`);
+    gradeElement.innerHTML = `<span class="grade-badge ${getGradeClass(grade)}">${grade}</span>`;
+    
+    const statusElement = document.getElementById(`status-${studentId}`);
+    statusElement.innerHTML = `<span class="${status === 'Pass' ? 'status-pass' : 'status-fail'}">${status}</span>`;
+    
+    // Update student data
+    const student = studentsData.find(s => s.id == studentId);
+    if (student) {
+        student.marks_obtained = marks;
+        student.percentage = percentage;
+        student.grade = grade;
+        student.status = status;
+    }
+    
+    // Update summary
+    updateSummary(studentsData);
+}
+
+function calculateGrade(percentage) {
+    if (percentage >= 90) return 'A+';
+    if (percentage >= 80) return 'A';
+    if (percentage >= 70) return 'B+';
+    if (percentage >= 60) return 'B';
+    if (percentage >= 50) return 'C+';
+    if (percentage >= 40) return 'C';
+    if (percentage >= 35) return 'D';
+    return 'F';
+}
+
+function getGradeClass(grade) {
+    return 'grade-' + grade.toLowerCase().replace('+', '-plus');
+}
+
+function updateSummary(students) {
+    const total = students.length;
+    const passed = students.filter(s => s.status === 'Pass').length;
+    const failed = total - passed;
+    const totalMarks = students.reduce((sum, s) => sum + (s.marks_obtained || 0), 0);
+    const average = total > 0 ? Math.round(totalMarks / total) : 0;
+    
+    document.getElementById('totalStudents').textContent = total;
+    document.getElementById('passedStudents').textContent = passed;
+    document.getElementById('failedStudents').textContent = failed;
+    document.getElementById('averageMarks').textContent = average;
+}
+
+function saveAllMarks() {
+    if (!currentExam || !currentSubject) {
+        alert('Please select exam and subject first');
+        return;
+    }
+    
+    const marksData = [];
+    const remarksInputs = document.querySelectorAll('.remarks-input');
+    
+    document.querySelectorAll('.marks-input').forEach((input, index) => {
+        const marks = parseInt(input.value);
+        if (!isNaN(marks) && marks >= 0) {
+            marksData.push({
+                student_id: input.dataset.studentId,
+                exam_id: currentExam,
+                subject_id: currentSubject,
+                marks_obtained: marks,
+                remarks: remarksInputs[index].value || ''
+            });
+        }
+    });
+    
+    if (marksData.length === 0) {
+        alert('No valid marks to save');
+        return;
+    }
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+                     document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || 
+                     getCookie('csrftoken');
+    
+    fetch('/api/save-marksheet/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ marks: marksData })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Successfully saved marks for ${data.saved_count} students`);
+            loadMarksheet(); // Reload to show saved data
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error saving marks:', error);
+        alert('Error saving marks');
+    });
+}
+
+// Helper function to get CSRF token from cookies
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function autoFillMarks() {
+    const subjectSelect = document.getElementById('subjectSelect');
+    const selectedOption = subjectSelect.options[subjectSelect.selectedIndex];
+    const maxMarks = parseInt(selectedOption.dataset.maxMarks);
+    
+    if (confirm('Auto-fill marks with random values?')) {
+        document.querySelectorAll('.marks-input').forEach(input => {
+            const randomMarks = Math.floor(Math.random() * (maxMarks - 30 + 1)) + 30;
+            input.value = randomMarks;
+            input.onchange();
+        });
+    }
+}
+
+function clearAllMarks() {
+    if (confirm('Clear all marks? This cannot be undone.')) {
+        document.querySelectorAll('.marks-input').forEach(input => {
+            input.value = '';
+            input.onchange();
+        });
+    }
+}
+
+function calculateResults() {
+    updateSummary(studentsData);
+    alert('Results calculated and summary updated');
+}
+
+function generateMarksheets() {
+    if (!currentExam) {
+        alert('Please select an exam first');
+        return;
+    }
+    
+    alert('Opening marksheet reports...');
+    window.open(`/generate-class-marksheets-print/${currentExam}/`, '_blank');
+}
+
+function generateSEEStyleReports() {
+    if (!currentExam) {
+        alert('Please select an exam first');
+        return;
+    }
+    
+    alert('Opening SEE-style grade sheet reports...');
+    window.open(`/generate-class-marksheets-print-see-style/${currentExam}/`, '_blank');
+}
+
+function generateGradeSheetCertificate() {
+    if (!currentExam) {
+        alert('Please select an exam first');
+        return;
+    }
+    
+    alert('Opening grade sheet certificate...');
+    window.open(`/grade-sheet-certificate/`, '_blank');
+}
+</script>
+{% endblock %}

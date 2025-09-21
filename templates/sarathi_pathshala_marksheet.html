@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SARATHI PATHSHALA - Grade Sheet</title>
+    <style>
+        @page {
+            size: A4 portrait;
+            margin: 0;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Times New Roman', serif;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f0f8ff 100%);
+            color: #000;
+            line-height: 1.3;
+        }
+        
+        .no-print {
+            display: block;
+        }
+        
+        .certificate-page {
+            width: 210mm;
+            height: 297mm;
+            margin: 0 auto;
+            position: relative;
+            background: linear-gradient(135deg, #e3f2fd 0%, #f0f8ff 100%);
+            border: 4px solid #1976d2;
+            padding: 15mm;
+            page-break-after: always;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .certificate-page:last-child {
+            page-break-after: avoid;
+        }
+        
+        .inner-border {
+            flex: 1;
+            border: 2px solid #0d47a1;
+            padding: 10mm;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            background: rgba(255, 255, 255, 0.9);
+        }
+        
+        /* Header Section */
+        .header-section {
+            text-align: center;
+            margin-bottom: 8mm;
+            border-bottom: 3px solid #1976d2;
+            padding-bottom: 6mm;
+            position: relative;
+        }
+        
+        .school-logo {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 25mm;
+            height: 25mm;
+            border: 2px solid #1976d2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(45deg, #ffffff, #e3f2fd);
+            font-size: 8px;
+            font-weight: bold;
+            color: #1976d2;
+            text-align: center;
+            line-height: 1.1;
+        }
+        
+        .school-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #0d47a1;
+            margin: 2mm 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+        
+        .school-address {
+            font-size: 12px;
+            color: #424242;
+            margin: 1mm 0;
+        }
+        
+        .school-contact {
+            font-size: 11px;
+            color: #424242;
+            margin: 1mm 0;
+        }
+        
+        .grade-sheet-title {
+            font-size: 20px;
+            font-weight: bold;
+            color: #1976d2;
+            margin: 4mm 0 2mm;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: underline;
+        }
+        
+        .exam-subtitle {
+            font-size: 14px;
+            color: #424242;
+            margin-bottom: 4mm;
+            font-weight: 600;
+        }
+        
+        /* Student Info Section */
+        .student-info {
+            margin: 6mm 0;
+            border: 2px solid #1976d2;
+            padding: 5mm;
+            background: rgba(227, 242, 253, 0.3);
+        }
+        
+        .grade-line {
+            font-size: 12px;
+            margin-bottom: 4mm;
+            font-weight: 600;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 3mm;
+            margin-bottom: 3mm;
+        }
+        
+        .info-item {
+            display: flex;
+            align-items: center;
+            font-size: 11px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #0d47a1;
+            min-width: 35mm;
+        }
+        
+        .info-value {
+            font-weight: 600;
+            text-transform: uppercase;
+            border-bottom: 1px dotted #666;
+            flex: 1;
+            padding: 1mm;
+        }
+        
+        .exam-year {
+            font-size: 12px;
+            margin-top: 3mm;
+            font-weight: 600;
+        }
+        
+        /* Main Table */
+        .marks-section {
+            flex: 1;
+            margin: 6mm 0;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .marks-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 10px;
+            border: 2px solid #0d47a1;
+            flex: 1;
+        }
+        
+        .marks-table th,
+        .marks-table td {
+            border: 1px solid #0d47a1;
+            padding: 3mm 2mm;
+            text-align: center;
+            vertical-align: middle;
+        }
+        
+        .marks-table th {
+            background: linear-gradient(135deg, #1976d2, #42a5f5);
+            color: white;
+            font-weight: bold;
+            font-size: 9px;
+        }
+        
+        .subject-name {
+            text-align: left !important;
+            font-weight: 600;
+        }
+        
+        .total-row {
+            background: rgba(227, 242, 253, 0.5);
+            font-weight: bold;
+        }
+        
+        /* Footer Section */
+        .footer-section {
+            margin-top: 6mm;
+        }
+        
+        .gpa-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 6mm;
+        }
+        
+        .gpa-box {
+            border: 2px solid #1976d2;
+            padding: 3mm;
+            background: rgba(227, 242, 253, 0.3);
+            text-align: center;
+            min-width: 25mm;
+        }
+        
+        .gpa-label {
+            font-size: 9px;
+            color: #666;
+            margin-bottom: 1mm;
+        }
+        
+        .gpa-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: #1976d2;
+        }
+        
+        .eca-section {
+            display: flex;
+            gap: 5mm;
+            margin-bottom: 6mm;
+        }
+        
+        .eca-table {
+            flex: 1;
+            border-collapse: collapse;
+            font-size: 9px;
+            border: 2px solid #0d47a1;
+        }
+        
+        .eca-table th,
+        .eca-table td {
+            border: 1px solid #0d47a1;
+            padding: 2mm 1mm;
+            text-align: center;
+        }
+        
+        .eca-table th {
+            background: linear-gradient(135deg, #1976d2, #42a5f5);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .grading-scale {
+            flex: 1;
+            border-collapse: collapse;
+            font-size: 8px;
+            border: 2px solid #0d47a1;
+        }
+        
+        .grading-scale th,
+        .grading-scale td {
+            border: 1px solid #0d47a1;
+            padding: 1.5mm 1mm;
+            text-align: center;
+        }
+        
+        .grading-scale th {
+            background: linear-gradient(135deg, #1976d2, #42a5f5);
+            color: white;
+            font-weight: bold;
+        }
+        
+        /* Signatures Section */
+        .signatures-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8mm;
+            padding-top: 4mm;
+        }
+        
+        .signature-block {
+            text-align: center;
+            width: 30%;
+        }
+        
+        .signature-space {
+            height: 8mm;
+            border-bottom: 2px solid #0d47a1;
+            margin-bottom: 2mm;
+        }
+        
+        .signature-title {
+            font-size: 10px;
+            font-weight: bold;
+            color: #0d47a1;
+            margin-bottom: 1mm;
+        }
+        
+        .school-seal {
+            text-align: center;
+            align-self: center;
+        }
+        
+        .seal-circle {
+            width: 30mm;
+            height: 30mm;
+            border: 3px solid #1976d2;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            background: linear-gradient(45deg, #ffffff, #e3f2fd);
+        }
+        
+        .seal-text {
+            font-size: 8px;
+            font-weight: bold;
+            color: #1976d2;
+            text-align: center;
+            line-height: 1.1;
+        }
+        
+        /* Remarks Section */
+        .remarks-section {
+            margin: 4mm 0;
+            display: flex;
+            gap: 5mm;
+        }
+        
+        .remarks-box {
+            flex: 1;
+            border: 2px solid #0d47a1;
+            padding: 3mm;
+            min-height: 15mm;
+        }
+        
+        .remarks-title {
+            font-size: 10px;
+            font-weight: bold;
+            color: #0d47a1;
+            margin-bottom: 2mm;
+        }
+        
+        .issue-date {
+            font-size: 10px;
+            color: #666;
+            text-align: right;
+            margin-top: 4mm;
+        }
+        
+        /* Control Panel */
+        .control-panel {
+            background: #fff;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .control-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-print {
+            background: #1976d2;
+            color: white;
+        }
+        
+        .btn-close {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+        
+        @media print {
+            .no-print {
+                display: none !important;
+            }
+            
+            body {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .certificate-page {
+                page-break-inside: avoid;
+                margin: 0;
+                width: 100%;
+                height: 100vh;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .certificate-page {
+                width: 100%;
+                padding: 8mm;
+                margin-bottom: 10px;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+                gap: 2mm;
+            }
+            
+            .eca-section {
+                flex-direction: column;
+                gap: 3mm;
+            }
+            
+            .signatures-section {
+                flex-direction: column;
+                gap: 8mm;
+                align-items: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Control Panel -->
+    <div class="control-panel no-print">
+        <div>
+            <h1>SARATHI PATHSHALA - Grade Sheets</h1>
+            <p>{{ marksheets_data|length }} students - {{ exam.exam_type }} ({{ exam.class_name }})</p>
+        </div>
+        <div class="control-actions">
+            <button class="btn btn-print" onclick="window.print()">Print All</button>
+            <button class="btn btn-close" onclick="window.close()">Close</button>
+        </div>
+    </div>
+
+    <!-- Marksheet Content -->
+    {% for data in marksheets_data %}
+    <div class="certificate-page">
+        <div class="inner-border">
+            <!-- Header Section -->
+            <div class="header-section">
+                <div class="school-logo">
+                    <div>SARATHI<br>LOGO</div>
+                </div>
+                
+                <div class="school-name">SARATHI PATHSHALA</div>
+                <div class="school-address">Budhanilkantha-8, Chyasal, Kathmandu</div>
+                <div class="school-contact">Phone: 01-5912328 | Email: sarathipathshala@gmail.com</div>
+                
+                <div class="grade-sheet-title">GRADE - SHEET</div>
+                <div class="exam-subtitle">FIRST TERM EXAMINATION</div>
+            </div>
+            
+            <!-- Student Information -->
+            <div class="student-info">
+                <div class="grade-line">
+                    The grade(s) secured by: ________________________________
+                </div>
+                
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Student Name:</span>
+                        <span class="info-value">{{ data.student.name }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Roll No:</span>
+                        <span class="info-value">{{ data.student.reg_number }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Grade:</span>
+                        <span class="info-value">{{ data.student.student_class }}</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Section:</span>
+                        <span class="info-value">{{ data.student.section }}</span>
+                    </div>
+                </div>
+                
+                <div class="exam-year">
+                    The First Term Examination conducted in: 2083 BS
+                </div>
+            </div>
+            
+            <!-- Main Table -->
+            <div class="marks-section">
+                <table class="marks-table">
+                    <thead>
+                        <tr>
+                            <th>S.No</th>
+                            <th>Subjects</th>
+                            <th>Credit Hours</th>
+                            <th colspan="2">Obtained Grade</th>
+                            <th>Total</th>
+                            <th>Grade</th>
+                            <th>Final Grade</th>
+                            <th>Remarks</th>
+                        </tr>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th>TH</th>
+                            <th>PR</th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for marksheet in data.marksheets %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td class="subject-name">{{ marksheet.subject.name }}</td>
+                            <td>3</td>
+                            <td>{{ marksheet.marks_obtained }}</td>
+                            <td>-</td>
+                            <td>{{ marksheet.marks_obtained }}</td>
+                            <td>{{ marksheet.grade }}</td>
+                            <td>{{ marksheet.grade }}</td>
+                            <td>{{ marksheet.status }}</td>
+                        </tr>
+                        {% endfor %}
+                        <tr class="total-row">
+                            <td colspan="2"><strong>TOTAL</strong></td>
+                            <td><strong>{{ data.marksheets|length|mul:3 }}</strong></td>
+                            <td><strong>{{ data.obtained_marks }}</strong></td>
+                            <td><strong>-</strong></td>
+                            <td><strong>{{ data.obtained_marks }}</strong></td>
+                            <td><strong>{{ data.overall_grade }}</strong></td>
+                            <td><strong>{{ data.overall_grade }}</strong></td>
+                            <td><strong>{{ data.overall_status }}</strong></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- GPA Section -->
+            <div class="gpa-section">
+                <div class="gpa-box">
+                    <div class="gpa-label">Grade Point Average</div>
+                    <div class="gpa-value">{{ data.total_grade_points|floatformat:2 }}</div>
+                </div>
+                <div class="gpa-box">
+                    <div class="gpa-label">Overall Grade</div>
+                    <div class="gpa-value">{{ data.overall_grade }}</div>
+                </div>
+                <div class="gpa-box">
+                    <div class="gpa-label">Status</div>
+                    <div class="gpa-value">{{ data.overall_status }}</div>
+                </div>
+            </div>
+            
+            <!-- ECA and Grading Scale Section -->
+            <div class="eca-section">
+                <table class="eca-table">
+                    <thead>
+                        <tr>
+                            <th colspan="4">ECA, CCA & Overall Grade</th>
+                        </tr>
+                        <tr>
+                            <th>Activities</th>
+                            <th>A</th>
+                            <th>B</th>
+                            <th>C</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>English Handwriting</td><td>✓</td><td></td><td></td></tr>
+                        <tr><td>Spelling</td><td>✓</td><td></td><td></td></tr>
+                        <tr><td>Speaking</td><td></td><td>✓</td><td></td></tr>
+                        <tr><td>General Behaviour</td><td>✓</td><td></td><td></td></tr>
+                        <tr><td>Homework</td><td></td><td>✓</td><td></td></tr>
+                        <tr><td>PT</td><td>✓</td><td></td><td></td></tr>
+                        <tr><td>Art/Craft</td><td></td><td>✓</td><td></td></tr>
+                        <tr><td>Music</td><td></td><td></td><td>✓</td></tr>
+                    </tbody>
+                </table>
+                
+                <table class="grading-scale">
+                    <thead>
+                        <tr>
+                            <th colspan="4">Grading Scale</th>
+                        </tr>
+                        <tr>
+                            <th>Marks Range</th>
+                            <th>Grade</th>
+                            <th>Performance</th>
+                            <th>Grade Point</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>90-100</td><td>A+</td><td>Outstanding</td><td>4.0</td></tr>
+                        <tr><td>80-89</td><td>A</td><td>Excellent</td><td>3.6</td></tr>
+                        <tr><td>70-79</td><td>B+</td><td>Very Good</td><td>3.2</td></tr>
+                        <tr><td>60-69</td><td>B</td><td>Good</td><td>2.8</td></tr>
+                        <tr><td>50-59</td><td>C+</td><td>Satisfactory</td><td>2.4</td></tr>
+                        <tr><td>40-49</td><td>C</td><td>Acceptable</td><td>2.0</td></tr>
+                        <tr><td>30-39</td><td>D+</td><td>Partially Acceptable</td><td>1.6</td></tr>
+                        <tr><td>20-29</td><td>D</td><td>Insufficient</td><td>1.2</td></tr>
+                        <tr><td>0-19</td><td>E</td><td>Very Insufficient</td><td>0.8</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            
+            <!-- Remarks Section -->
+            <div class="remarks-section">
+                <div class="remarks-box">
+                    <div class="remarks-title">Remarks:</div>
+                    <div style="min-height: 10mm;"></div>
+                </div>
+                <div class="remarks-box">
+                    <div class="remarks-title">Issued Date:</div>
+                    <div>{{ current_date }}</div>
+                </div>
+            </div>
+            
+            <!-- Signatures Section -->
+            <div class="signatures-section">
+                <div class="signature-block">
+                    <div class="signature-space"></div>
+                    <div class="signature-title">Class Teacher Signature</div>
+                </div>
+                
+                <div class="school-seal">
+                    <div class="seal-circle">
+                        <div class="seal-text">
+                            SARATHI<br>PATHSHALA<br>SCHOOL<br>STAMP
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="signature-block">
+                    <div class="signature-space"></div>
+                    <div class="signature-title">Principal Signature</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="certificate-page">
+        <div class="inner-border">
+            <div style="text-align: center; padding: 50px; color: #666;">
+                <h3>No Results Available</h3>
+                <p>No marksheet data found for this examination.</p>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <script>
+        // Auto-print functionality (optional)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Uncomment the line below if you want auto-print on page load
+            // setTimeout(() => window.print(), 1000);
+        });
+    </script>
+</body>
+</html>
