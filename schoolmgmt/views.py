@@ -867,6 +867,10 @@ def fee_receipt_book(request):
     from django.db.models import Sum, Max
     from decimal import Decimal
     
+    # Get filter parameters
+    selected_months = [m.strip() for m in request.GET.get('months', '').split(',') if m.strip()]
+    selected_fee_types = [f.strip() for f in request.GET.get('fee_types', '').split(',') if f.strip()]
+    
     # Handle search functionality
     search_query = request.GET.get('search', '').strip()
     students_query = Student.objects.all()
@@ -921,6 +925,45 @@ def fee_receipt_book(request):
         # Add to totals
         total_collected += student_paid
         total_pending += student_pending
+        
+        # Calculate fee breakdown based on applied filters
+        if fee_structure:
+            breakdown_parts = []
+            
+            # Apply fee type filters or show all if none selected
+            fee_types_to_show = selected_fee_types if selected_fee_types else ['admission_fee', 'monthly_fee', 'tuition_fee', 'transportation_fee', 'examination_fee', 'library_fee', 'sports_fee', 'laboratory_fee', 'computer_fee']
+            
+            # Apply month filters for monthly fees
+            months_count = len(selected_months) if selected_months else 12
+            
+            # Calculate components based on filters
+            if 'admission_fee' in fee_types_to_show:
+                admission_total = int(fee_structure.admission_fee)
+                if admission_total > 0: breakdown_parts.append(f"Admission: Rs{admission_total:,}")
+            
+            if 'monthly_fee' in fee_types_to_show:
+                monthly_total = int(fee_structure.monthly_fee * months_count)
+                if monthly_total > 0: breakdown_parts.append(f"Monthly: Rs{monthly_total:,} ({months_count}m)")
+            
+            if 'tuition_fee' in fee_types_to_show:
+                tuition_total = int(fee_structure.tuition_fee * months_count)
+                if tuition_total > 0: breakdown_parts.append(f"Tuition: Rs{tuition_total:,} ({months_count}m)")
+            
+            if 'transportation_fee' in fee_types_to_show:
+                transport_total = int(fee_structure.transportation_fee * months_count)
+                if transport_total > 0: breakdown_parts.append(f"Transport: Rs{transport_total:,} ({months_count}m)")
+            
+            # Other fees (not affected by months)
+            other_fees = ['examination_fee', 'library_fee', 'sports_fee', 'laboratory_fee', 'computer_fee']
+            other_total = 0
+            for fee in other_fees:
+                if fee in fee_types_to_show:
+                    other_total += int(getattr(fee_structure, fee, 0))
+            if other_total > 0: breakdown_parts.append(f"Others: Rs{other_total:,}")
+            
+            student.fee_breakdown_text = " | ".join(breakdown_parts) if breakdown_parts else "No fees selected"
+        else:
+            student.fee_breakdown_text = "No fee structure found"
         
         # Set student attributes for template
         student.total_fee = float(student_total_fee)
@@ -1424,6 +1467,44 @@ def fee_receipt_book_api(request):
             total_collected += student_paid
             total_pending += student_pending
             
+            # Calculate fee breakdown based on applied filters
+            fee_breakdown_text = "Fee breakdown not available"
+            if fee_structure:
+                breakdown_parts = []
+                
+                # Apply fee type filters or show all if none selected
+                fee_types_to_show = fee_types_filter if fee_types_filter else ['admission_fee', 'monthly_fee', 'tuition_fee', 'transportation_fee', 'examination_fee', 'library_fee', 'sports_fee', 'laboratory_fee', 'computer_fee']
+                
+                # Apply month filters for monthly fees
+                months_count = len(selected_months) if selected_months else 12
+                
+                # Calculate components based on filters
+                if 'admission_fee' in fee_types_to_show:
+                    admission_total = int(fee_structure.admission_fee)
+                    if admission_total > 0: breakdown_parts.append(f"Admission: Rs{admission_total:,}")
+                
+                if 'monthly_fee' in fee_types_to_show:
+                    monthly_total = int(fee_structure.monthly_fee * months_count)
+                    if monthly_total > 0: breakdown_parts.append(f"Monthly: Rs{monthly_total:,} ({months_count}m)")
+                
+                if 'tuition_fee' in fee_types_to_show:
+                    tuition_total = int(fee_structure.tuition_fee * months_count)
+                    if tuition_total > 0: breakdown_parts.append(f"Tuition: Rs{tuition_total:,} ({months_count}m)")
+                
+                if 'transportation_fee' in fee_types_to_show:
+                    transport_total = int(fee_structure.transportation_fee * months_count)
+                    if transport_total > 0: breakdown_parts.append(f"Transport: Rs{transport_total:,} ({months_count}m)")
+                
+                # Other fees (not affected by months)
+                other_fees = ['examination_fee', 'library_fee', 'sports_fee', 'laboratory_fee', 'computer_fee']
+                other_total = 0
+                for fee in other_fees:
+                    if fee in fee_types_to_show:
+                        other_total += int(getattr(fee_structure, fee, 0))
+                if other_total > 0: breakdown_parts.append(f"Others: Rs{other_total:,}")
+                
+                fee_breakdown_text = " | ".join(breakdown_parts) if breakdown_parts else "No fees selected"
+            
             students_data.append({
                 'id': student.id,
                 'name': student.name,
@@ -1434,7 +1515,8 @@ def fee_receipt_book_api(request):
                 'paid_amount': float(student_paid),
                 'pending_amount': float(student_pending),
                 'payment_status': payment_status,
-                'last_payment_date': student.last_payment_date.strftime('%Y-%m-%d') if student.last_payment_date else None
+                'last_payment_date': student.last_payment_date.strftime('%Y-%m-%d') if student.last_payment_date else None,
+                'fee_breakdown_text': fee_breakdown_text
             })
         
         return JsonResponse({
