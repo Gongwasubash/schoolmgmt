@@ -12,10 +12,42 @@ from django.db.models import Count, Sum, Max
 from decimal import Decimal
 import csv
 import io
+from .nepali_calendar import NepaliCalendar
 try:
     from nepali_datetime import date as nepali_date
 except ImportError:
     nepali_date = None
+
+def get_current_nepali_year_session():
+    """Get current Nepali year session (e.g., '2082-83')"""
+    return NepaliCalendar.get_nepali_session_from_date()
+
+def convert_english_to_nepali_date_string(english_date, format_type='short'):
+    """Convert English date to Nepali date string"""
+    if not english_date:
+        return ''
+    try:
+        nepali_date_dict = NepaliCalendar.english_to_nepali_date(english_date)
+        return NepaliCalendar.format_nepali_date(nepali_date_dict, format_type)
+    except:
+        return str(english_date)
+
+def get_nepali_months_list():
+    """Get list of Nepali months in English"""
+    return NepaliCalendar.NEPALI_MONTHS_EN
+
+def get_comprehensive_nepali_info():
+    """Get comprehensive Nepali date information for views"""
+    return NepaliCalendar.get_nepali_today_info()
+
+def format_nepali_datetime_for_display(english_datetime):
+    """Format datetime for display with Nepali date"""
+    if not english_datetime:
+        return ''
+    try:
+        return NepaliCalendar.format_nepali_datetime(english_datetime, 'full')
+    except:
+        return str(english_datetime)
 
 def home(request):
     # Get student statistics
@@ -33,6 +65,9 @@ def home(request):
     # Get religion-wise data
     religion_data = Student.objects.values('religion').annotate(count=Count('religion')).order_by('religion')
     
+    # Get comprehensive Nepali date information
+    nepali_info = get_comprehensive_nepali_info()
+    
     context = {
         'total_students': total_students,
         'boys_count': boys_count,
@@ -40,6 +75,13 @@ def home(request):
         'todays_birthdays': todays_birthdays,
         'class_data': class_data,
         'religion_data': religion_data,
+        'nepali_info': nepali_info,
+        'current_nepali_date': nepali_info['formatted_full'],
+        'nepali_year': nepali_info['nepali_date']['year'],
+        'current_nepali_session': nepali_info['session'],
+        'nepali_fiscal_year': nepali_info['fiscal_year'],
+        'nepali_weekday': nepali_info['weekday']['name_english'],
+        'is_weekend': nepali_info['is_weekend'],
     }
     
     return render(request, 'index.html', context)
@@ -47,22 +89,24 @@ def home(request):
 def students(request):
     if request.method == 'POST':
         try:
-            # Always get current active session for new students
-            current_session = Session.get_current_session()
+            # Use current Nepali session for new students
+            session_name = get_current_nepali_year_session()
             
-            # If no active session exists, create default session
-            if not current_session:
-                current_session, created = Session.objects.get_or_create(
-                    name='2024-25',
-                    defaults={
-                        'start_date': '2024-04-01',
-                        'end_date': '2025-03-31',
-                        'is_active': True
-                    }
-                )
+            # Also create/update Session model for compatibility
+            current_session, created = Session.objects.get_or_create(
+                name=session_name,
+                defaults={
+                    'start_date': date.today().replace(month=4, day=1),  # Approximate Baisakh 1
+                    'end_date': date.today().replace(year=date.today().year+1, month=3, day=31),  # Approximate Chaitra end
+                    'is_active': True
+                }
+            )
             
-            # Use current active session for all new students
-            session_name = current_session.name
+            # Ensure only one active session
+            if created or not current_session.is_active:
+                Session.objects.exclude(id=current_session.id).update(is_active=False)
+                current_session.is_active = True
+                current_session.save()
             
             # Create new student from form data
             student = Student(
@@ -169,6 +213,13 @@ def reports(request):
     # Get all subjects for marks entry
     subjects = Subject.objects.all().order_by('class_name', 'name')
     
+    # Get comprehensive Nepali date and session info
+    nepali_info = get_comprehensive_nepali_info()
+    nepali_months = get_nepali_months_list()
+    
+    # Generate Nepali year sessions for dropdown
+    nepali_sessions = NepaliCalendar.get_nepali_year_sessions(2082, 2100)
+    
     context = {
         'total_exams': total_exams,
         'total_subjects': total_subjects,
@@ -177,6 +228,13 @@ def reports(request):
         'students': students,
         'exams': exams,
         'subjects': subjects,
+        'nepali_info': nepali_info,
+        'current_nepali_date': nepali_info['formatted_full'],
+        'current_nepali_session': nepali_info['session'],
+        'nepali_fiscal_year': nepali_info['fiscal_year'],
+        'nepali_months': nepali_months,
+        'nepali_sessions': nepali_sessions,
+        'nepali_weekday': nepali_info['weekday']['name_english'],
     }
     
     return render(request, 'reports.html', context)
@@ -826,6 +884,9 @@ def fee_receipt_book(request):
         last_payment_date=Max('feepayment__payment_date')
     ).order_by('name')
     
+    # Get unique classes from students
+    available_classes = Student.objects.values_list('student_class', flat=True).distinct().order_by('student_class')
+    
     # Calculate statistics
     total_students = students.count()
     total_collected = Decimal('0')
@@ -919,7 +980,8 @@ def fee_receipt_book(request):
         'total_students': total_students,
         'total_collected': float(total_collected),
         'total_pending': float(total_pending),
-        'search_query': search_query
+        'search_query': search_query,
+        'available_classes': available_classes
     }
     
     return render(request, 'fee_receipt_book.html', context)
@@ -1070,10 +1132,20 @@ def fee_receipt(request, payment_id):
         except json.JSONDecodeError:
             pass
     
+    # Get Nepali date for payment
+    payment_date_nepali = ''
+    if payment.payment_date:
+        try:
+            nepali_date_dict = NepaliCalendar.english_to_nepali_date(payment.payment_date)
+            payment_date_nepali = NepaliCalendar.format_nepali_date(nepali_date_dict, 'full_en')
+        except:
+            pass
+    
     context = {
         'student': student,
         'payment': payment_data,
-        'current_date': datetime.now().strftime('%B %d, %Y')
+        'current_date': datetime.now().strftime('%B %d, %Y'),
+        'payment_date_nepali': payment_date_nepali
     }
     
     return render(request, 'fee_receipt.html', context)
@@ -1555,6 +1627,16 @@ def create_exam(request):
     if request.method == 'POST':
         try:
             class_name = request.POST.get('class_name')
+            exam_date = request.POST.get('exam_date')
+            
+            # Convert exam date to Nepali if provided
+            exam_date_nepali = ''
+            if exam_date:
+                try:
+                    nepali_date_dict = NepaliCalendar.english_to_nepali_date(exam_date)
+                    exam_date_nepali = NepaliCalendar.format_nepali_date(nepali_date_dict, 'full_en')
+                except:
+                    pass
             
             if class_name == 'All Classes':
                 # Create exam for all classes
@@ -1566,7 +1648,8 @@ def create_exam(request):
                         name=request.POST.get('name'),
                         exam_type=request.POST.get('exam_type'),
                         class_name=cls,
-                        exam_date=request.POST.get('exam_date'),
+                        exam_date=exam_date,
+                        exam_date_nepali=exam_date_nepali,
                         session=request.POST.get('session')
                     )
                     created_exams.append(exam.id)
@@ -1578,7 +1661,8 @@ def create_exam(request):
                     name=request.POST.get('name'),
                     exam_type=request.POST.get('exam_type'),
                     class_name=class_name,
-                    exam_date=request.POST.get('exam_date'),
+                    exam_date=exam_date,
+                    exam_date_nepali=exam_date_nepali,
                     session=request.POST.get('session')
                 )
                 return JsonResponse({'success': True, 'exam_id': exam.id})
@@ -1876,9 +1960,18 @@ def marksheet_system(request):
     exams = Exam.objects.all().order_by('-exam_date')
     subjects = Subject.objects.all().order_by('class_name', 'name')
     
+    # Get current Nepali session for filtering
+    current_nepali_session = get_current_nepali_year_session()
+    
+    # Get available sessions from exams
+    available_sessions = list(set(exam.session for exam in exams if exam.session))
+    available_sessions.sort(reverse=True)
+    
     context = {
         'exams': exams,
         'subjects': subjects,
+        'current_nepali_session': current_nepali_session,
+        'available_sessions': available_sessions,
     }
     
     return render(request, 'marksheet_system.html', context)
@@ -2481,17 +2574,12 @@ def generate_class_marksheets_new_tab(request, exam_id):
                 'total_grade_points': round(total_grade_points, 2)
             })
     
-    # Get current Nepali date
-    if nepali_date:
-        try:
-            from datetime import date as ad_date
-            today_ad = ad_date.today()
-            nepali_today = nepali_date.from_datetime_date(today_ad)
-            current_nepali_date = f'{nepali_today.year}/{nepali_today.month:02d}/{nepali_today.day:02d}'
-        except:
-            current_nepali_date = '2081/08/15'  # Fallback date
-    else:
-        current_nepali_date = '2081/08/15'  # Fallback if package not installed
+    # Get current Nepali date using our NepaliCalendar class
+    try:
+        current_nepali_date_dict = NepaliCalendar.get_current_nepali_date()
+        current_nepali_date = NepaliCalendar.format_nepali_date(current_nepali_date_dict, 'short')
+    except:
+        current_nepali_date = '2082/08/15'  # Fallback date
     
     # Add cache busting and debug info
     context = {
@@ -2899,3 +2987,95 @@ def populate_grade_sheet_certificate(request):
 def student_attendance_dashboard(request):
     """Student Attendance Dashboard"""
     return render(request, 'student_attendance_dashboard.html')
+
+# Nepali Date API Endpoints
+def get_nepali_date_api(request):
+    """API to get current Nepali date information"""
+    try:
+        current_nepali_date = NepaliCalendar.get_current_nepali_date()
+        current_session = get_current_nepali_year_session()
+        
+        return JsonResponse({
+            'success': True,
+            'nepali_date': {
+                'year': current_nepali_date['year'],
+                'month': current_nepali_date['month'],
+                'day': current_nepali_date['day'],
+                'month_name': current_nepali_date['month_name_en'],
+                'formatted_full': NepaliCalendar.format_nepali_date(current_nepali_date, 'full_en'),
+                'formatted_short': NepaliCalendar.format_nepali_date(current_nepali_date, 'short'),
+            },
+            'current_session': current_session,
+            'nepali_months': NepaliCalendar.NEPALI_MONTHS_EN
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def convert_date_api(request):
+    """API to convert English date to Nepali date"""
+    try:
+        english_date = request.GET.get('date')
+        if not english_date:
+            return JsonResponse({'success': False, 'error': 'Date parameter required'})
+        
+        nepali_date_dict = NepaliCalendar.english_to_nepali_date(english_date)
+        
+        return JsonResponse({
+            'success': True,
+            'english_date': english_date,
+            'nepali_date': {
+                'year': nepali_date_dict['year'],
+                'month': nepali_date_dict['month'],
+                'day': nepali_date_dict['day'],
+                'month_name': nepali_date_dict['month_name_en'],
+                'formatted_full': NepaliCalendar.format_nepali_date(nepali_date_dict, 'full_en'),
+                'formatted_short': NepaliCalendar.format_nepali_date(nepali_date_dict, 'short'),
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def get_nepali_sessions_api(request):
+    """API to get available Nepali sessions"""
+    try:
+        # Generate sessions from 2082 to 2100
+        sessions = []
+        for year in range(2082, 2101):
+            sessions.append({
+                'value': f"{year}-{str(year+1)[-2:]}",
+                'label': f"{year}-{str(year+1)[-2:]} BS"
+            })
+        
+        current_session = get_current_nepali_year_session()
+        
+        return JsonResponse({
+            'success': True,
+            'sessions': sessions,
+            'current_session': current_session
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def delete_subject(request):
+    """Delete a subject"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            subject_id = data.get('subject_id')
+            
+            if not subject_id:
+                return JsonResponse({'success': False, 'error': 'Subject ID required'})
+            
+            subject = get_object_or_404(Subject, id=subject_id)
+            subject_name = subject.name
+            subject.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Subject "{subject_name}" deleted successfully'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})

@@ -53,6 +53,7 @@ urlpatterns = [
     path('create-exam/', views.create_exam, name='create_exam'),
     path('create-subject/', views.create_subject, name='create_subject'),
     path('edit-subject/', views.edit_subject, name='edit_subject'),
+    path('delete-subject/', views.delete_subject, name='delete_subject'),
     path('enter-marks/', views.enter_marks, name='enter_marks'),
     path('update-subject-class/', views.update_subject_class, name='update_subject_class'),
     path('delete-exam/', views.delete_exam, name='delete_exam'),
@@ -82,5 +83,9 @@ urlpatterns = [
     path('grade-sheet-certificate-populated/', views.populate_grade_sheet_certificate, name='grade_sheet_certificate_populated'),
     path('student-marksheet-finder/', views.student_marksheet_finder, name='student_marksheet_finder'),
     path('student_attendance_dashboard/', views.student_attendance_dashboard, name='student_attendance_dashboard'),
+    # Nepali Date API endpoints
+    path('api/nepali-date/', views.get_nepali_date_api, name='get_nepali_date_api'),
+    path('api/convert-date/', views.convert_date_api, name='convert_date_api'),
+    path('api/nepali-sessions/', views.get_nepali_sessions_api, name='get_nepali_sessions_api'),
     path('admin/', admin.site.urls),
 ]

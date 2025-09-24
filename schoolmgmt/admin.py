@@ -3,10 +3,10 @@ from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, M
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ['name', 'reg_number', 'student_class', 'section', 'father_name', 'mobile', 'session', 'admission_date']
-    list_filter = ['student_class', 'section', 'gender', 'session', 'admission_date']
+    list_display = ['name', 'reg_number', 'student_class', 'section', 'father_name', 'mobile', 'session']
+    list_filter = ['student_class', 'section', 'gender', 'session']
     search_fields = ['name', 'reg_number', 'father_name', 'mobile', 'session']
-    ordering = ['-admission_date']
+    ordering = ['-created_at']
 
 @admin.register(FeeStructure)
 class FeeStructureAdmin(admin.ModelAdmin):
