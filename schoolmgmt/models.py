@@ -152,6 +152,7 @@ class FeeStructure(models.Model):
     ]
     
     class_name = models.CharField(max_length=10, choices=CLASS_CHOICES, unique=True)
+    class_order = models.IntegerField(default=0, help_text="Order for sorting classes")
     admission_fee = models.DecimalField(max_digits=10, decimal_places=2)
     monthly_fee = models.DecimalField(max_digits=10, decimal_places=2)
     tuition_fee = models.DecimalField(max_digits=10, decimal_places=2)
@@ -170,7 +171,7 @@ class FeeStructure(models.Model):
         return f"{self.class_name}"
     
     class Meta:
-        ordering = ['class_name']
+        ordering = ['class_order']
 
 
 class FeePayment(models.Model):
