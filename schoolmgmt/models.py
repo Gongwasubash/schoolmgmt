@@ -1,5 +1,6 @@
 from django.db import models
 from datetime import datetime
+from .nepali_calendar import NepaliCalendar
 
 class Student(models.Model):
     GENDER_CHOICES = [
@@ -19,18 +20,18 @@ class Student(models.Model):
         ('Nursery', 'Nursery'),
         ('LKG', 'LKG'),
         ('UKG', 'UKG'),
-        ('1st', '1st'),
-        ('2nd', '2nd'),
-        ('3rd', '3rd'),
-        ('4th', '4th'),
-        ('5th', '5th'),
-        ('6th', '6th'),
-        ('7th', '7th'),
-        ('8th', '8th'),
-        ('9th', '9th'),
-        ('10th', '10th'),
-        ('11th', '11th'),
-        ('12th', '12th'),
+        ('One', 'One'),
+        ('Two', 'Two'),
+        ('Three', 'Three'),
+        ('Four', 'Four'),
+        ('Five', 'Five'),
+        ('Six', 'Six'),
+        ('Seven', 'Seven'),
+        ('Eight', 'Eight'),
+        ('Nine', 'Nine'),
+        ('Ten', 'Ten'),
+        ('Eleven', 'Eleven'),
+        ('Twelve', 'Twelve'),
     ]
     
     SECTION_CHOICES = [
@@ -52,12 +53,16 @@ class Student(models.Model):
     gender = models.CharField(max_length=4, choices=GENDER_CHOICES)
     religion = models.CharField(max_length=20, choices=RELIGION_CHOICES)
     dob = models.DateField()
+    dob_nepali = models.CharField(max_length=20, blank=True, help_text='Format: YYYY/MM/DD')
     photo = models.ImageField(upload_to='student_photos/', blank=True, null=True)
     
     # Admission Details
     admission_date = models.DateField()
+    admission_date_nepali = models.CharField(max_length=50, blank=True, help_text="Nepali date format")
+    admission_date_nepali_short = models.CharField(max_length=20, blank=True, help_text="Short Nepali date (YYYY/MM/DD)")
     reg_number = models.CharField(max_length=50, unique=True)
     session = models.CharField(max_length=10)
+    session_nepali = models.CharField(max_length=15, blank=True, help_text="Nepali session (e.g., 2082-83)")
     
     # Documents
     character_cert = models.BooleanField(default=False)
@@ -76,6 +81,7 @@ class Student(models.Model):
     father_occupation = models.CharField(max_length=100, blank=True)
     father_qualification = models.CharField(max_length=100, blank=True)
     father_dob = models.DateField(blank=True, null=True)
+    father_dob_nepali = models.CharField(max_length=20, blank=True, help_text='Format: YYYY/MM/DD')
     father_citizen = models.CharField(max_length=50, blank=True)
     
     # Mother's Details
@@ -84,6 +90,7 @@ class Student(models.Model):
     mother_occupation = models.CharField(max_length=100, blank=True)
     mother_qualification = models.CharField(max_length=100, blank=True)
     mother_dob = models.DateField(blank=True, null=True)
+    mother_dob_nepali = models.CharField(max_length=20, blank=True, help_text='Format: YYYY/MM/DD')
     mother_citizen = models.CharField(max_length=50, blank=True)
     
     # Other Information
@@ -93,8 +100,33 @@ class Student(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    def save(self, *args, **kwargs):
+        # Auto-populate Nepali dates if not provided
+        if self.admission_date:
+            if not self.admission_date_nepali:
+                nepali_date = NepaliCalendar.english_to_nepali_date(self.admission_date)
+                self.admission_date_nepali = NepaliCalendar.format_nepali_date(nepali_date, 'full_en')
+                self.admission_date_nepali_short = NepaliCalendar.format_nepali_date(nepali_date, 'short')
+            
+            # Auto-populate Nepali session if not provided
+            if not self.session_nepali:
+                self.session_nepali = NepaliCalendar.get_nepali_session_from_date(self.admission_date)
+        
+        super().save(*args, **kwargs)
+    
     def __str__(self):
         return f"{self.name} - {self.reg_number}"
+    
+    def get_nepali_dob(self):
+        """Convert AD DOB to Nepali date"""
+        if self.dob_nepali:
+            return self.dob_nepali
+        try:
+            from nepali_datetime import date as nepali_date
+            nepali_dob = nepali_date.from_datetime_date(self.dob)
+            return f'{nepali_dob.year}/{nepali_dob.month:02d}/{nepali_dob.day:02d}'
+        except:
+            return f'{self.dob.year + 57}/{self.dob.month:02d}/{self.dob.day:02d}'
     
     class Meta:
         ordering = ['-created_at']
@@ -102,16 +134,21 @@ class Student(models.Model):
 
 class FeeStructure(models.Model):
     CLASS_CHOICES = [
-        ('1', '1'),
-        ('2', '2'),
-        ('3', '3'),
-        ('4', '4'),
-        ('5', '5'),
-        ('6', '6'),
-        ('7', '7'),
-        ('8', '8'),
-        ('9', '9'),
-        ('10', '10'),
+        ('Nursery', 'Nursery'),
+        ('LKG', 'LKG'),
+        ('UKG', 'UKG'),
+        ('One', 'One'),
+        ('Two', 'Two'),
+        ('Three', 'Three'),
+        ('Four', 'Four'),
+        ('Five', 'Five'),
+        ('Six', 'Six'),
+        ('Seven', 'Seven'),
+        ('Eight', 'Eight'),
+        ('Nine', 'Nine'),
+        ('Ten', 'Ten'),
+        ('Eleven', 'Eleven'),
+        ('Twelve', 'Twelve'),
     ]
     
     class_name = models.CharField(max_length=10, choices=CLASS_CHOICES, unique=True)
@@ -145,6 +182,8 @@ class FeePayment(models.Model):
     
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     payment_date = models.DateField(auto_now_add=True)
+    payment_date_nepali = models.CharField(max_length=50, blank=True, help_text="Nepali payment date")
+    payment_date_nepali_short = models.CharField(max_length=20, blank=True, help_text="Short Nepali payment date")
     selected_months = models.TextField()  # JSON string of selected months
     fee_types = models.TextField()  # JSON string of fee types and amounts
     custom_fees = models.TextField(blank=True)  # JSON string of custom fees
@@ -160,6 +199,14 @@ class FeePayment(models.Model):
     whatsapp_sent = models.BooleanField(default=False)
     
     created_at = models.DateTimeField(auto_now_add=True)
+    
+    def save(self, *args, **kwargs):
+        # Auto-populate Nepali payment date if not provided
+        if self.payment_date and not self.payment_date_nepali:
+            nepali_date = NepaliCalendar.english_to_nepali_date(self.payment_date)
+            self.payment_date_nepali = NepaliCalendar.format_nepali_date(nepali_date, 'full_en')
+            self.payment_date_nepali_short = NepaliCalendar.format_nepali_date(nepali_date, 'short')
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.student.name} - Rs.{self.payment_amount} - {self.payment_date}"
@@ -195,7 +242,24 @@ class Exam(models.Model):
     exam_type = models.CharField(max_length=20, choices=EXAM_TYPE_CHOICES)
     class_name = models.CharField(max_length=10, choices=Student.CLASS_CHOICES)
     exam_date = models.DateField()
+    exam_date_nepali = models.CharField(max_length=50, blank=True, help_text="Nepali date format")
+    exam_date_nepali_short = models.CharField(max_length=20, blank=True, help_text="Short Nepali date (YYYY/MM/DD)")
     session = models.CharField(max_length=10)
+    session_nepali = models.CharField(max_length=15, blank=True, help_text="Nepali session (e.g., 2082-83)")
+    
+    def save(self, *args, **kwargs):
+        # Auto-populate Nepali dates if not provided
+        if self.exam_date:
+            if not self.exam_date_nepali:
+                nepali_date = NepaliCalendar.english_to_nepali_date(self.exam_date)
+                self.exam_date_nepali = NepaliCalendar.format_nepali_date(nepali_date, 'full_en')
+                self.exam_date_nepali_short = NepaliCalendar.format_nepali_date(nepali_date, 'short')
+            
+            # Auto-populate Nepali session if not provided
+            if not self.session_nepali:
+                self.session_nepali = NepaliCalendar.get_nepali_session_from_date(self.exam_date)
+        
+        super().save(*args, **kwargs)
     
     def __str__(self):
         return f"{self.name} - {self.class_name}"
@@ -296,17 +360,42 @@ class Marksheet(models.Model):
 
 class Session(models.Model):
     name = models.CharField(max_length=20, unique=True)  # e.g., "2024-25", "2025-26"
+    name_nepali = models.CharField(max_length=25, blank=True, help_text="Nepali session name (e.g., 2082-83)")
     start_date = models.DateField()
     end_date = models.DateField()
+    start_date_nepali = models.CharField(max_length=50, blank=True, help_text="Nepali start date")
+    end_date_nepali = models.CharField(max_length=50, blank=True, help_text="Nepali end date")
     is_active = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     
+    def save(self, *args, **kwargs):
+        # Auto-populate Nepali session data if not provided
+        if not self.name_nepali and self.start_date:
+            nepali_start_date = NepaliCalendar.english_to_nepali_date(self.start_date)
+            start_year = nepali_start_date['year']
+            self.name_nepali = f"{start_year}-{str(start_year+1)[-2:]}"
+        
+        if self.start_date and not self.start_date_nepali:
+            nepali_date = NepaliCalendar.english_to_nepali_date(self.start_date)
+            self.start_date_nepali = NepaliCalendar.format_nepali_date(nepali_date, 'full_en')
+        
+        if self.end_date and not self.end_date_nepali:
+            nepali_date = NepaliCalendar.english_to_nepali_date(self.end_date)
+            self.end_date_nepali = NepaliCalendar.format_nepali_date(nepali_date, 'full_en')
+        
+        super().save(*args, **kwargs)
+    
     def __str__(self):
-        return self.name
+        return f"{self.name} ({self.name_nepali})" if self.name_nepali else self.name
     
     @classmethod
     def get_current_session(cls):
         return cls.objects.filter(is_active=True).first()
+    
+    @classmethod
+    def get_current_nepali_session(cls):
+        current = cls.get_current_session()
+        return current.name_nepali if current and current.name_nepali else NepaliCalendar.get_nepali_session_from_date()
     
     class Meta:
         ordering = ['-start_date']
