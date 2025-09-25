@@ -832,32 +832,62 @@ def submit_payment(request):
                 except ValueError:
                     pass
 
-            payment = FeePayment.objects.create(
-                student=student,
-                selected_months=data['selected_months'],
-                fee_types=data['fee_types'],
-                custom_fees=data.get('custom_fees', '[]'),
-                total_fee=data['total_fee'],
-                payment_amount=data['payment_amount'],
-                balance=data['balance'],
-                payment_method=data['payment_method'],
-                bank_name=data.get('bank_name', ''),
-                cheque_dd_no=data.get('cheque_dd_no', ''),
-                cheque_date=cheque_date,
-                remarks=data.get('remarks', ''),
-                sms_sent=data.get('sms_sent', False),
-                whatsapp_sent=data.get('whatsapp_sent', False)
-            )
+            # Parse fee types and months
+            fee_types = json.loads(data['fee_types'])
+            selected_months = json.loads(data['selected_months'])
+            custom_fees = json.loads(data.get('custom_fees', '[]'))
+            
+            payment_ids = []
+            
+            # Create separate payment record for each fee type and month combination
+            for fee_type in fee_types:
+                for month in selected_months:
+                    payment = FeePayment.objects.create(
+                        student=student,
+                        selected_months=json.dumps([month]),
+                        fee_types=json.dumps([fee_type]),
+                        custom_fees='[]',
+                        total_fee=fee_type['amount'],
+                        payment_amount=fee_type['amount'],
+                        balance=0,
+                        payment_method=data['payment_method'],
+                        bank_name=data.get('bank_name', ''),
+                        cheque_dd_no=data.get('cheque_dd_no', ''),
+                        cheque_date=cheque_date,
+                        remarks=data.get('remarks', ''),
+                        sms_sent=data.get('sms_sent', False),
+                        whatsapp_sent=data.get('whatsapp_sent', False)
+                    )
+                    payment_ids.append(payment.id)
+            
+            # Create separate payment records for custom fees
+            for custom_fee in custom_fees:
+                payment = FeePayment.objects.create(
+                    student=student,
+                    selected_months='[]',
+                    fee_types='[]',
+                    custom_fees=json.dumps([custom_fee]),
+                    total_fee=custom_fee['amount'],
+                    payment_amount=custom_fee['amount'],
+                    balance=0,
+                    payment_method=data['payment_method'],
+                    bank_name=data.get('bank_name', ''),
+                    cheque_dd_no=data.get('cheque_dd_no', ''),
+                    cheque_date=cheque_date,
+                    remarks=data.get('remarks', ''),
+                    sms_sent=data.get('sms_sent', False),
+                    whatsapp_sent=data.get('whatsapp_sent', False)
+                )
+                payment_ids.append(payment.id)
             
             # Update admission status if admission fee is paid
-            fee_types = json.loads(data['fee_types'])
             for fee_type in fee_types:
                 if fee_type['type'] == 'admission_fee':
                     student.admission_paid = True
                     student.save()
                     break
             
-            return JsonResponse({'success': True, 'payment_id': payment.id})
+            return JsonResponse({'success': True, 'payment_ids': payment_ids})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     

@@ -652,71 +652,8 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function autoTickFromUrlParams() {
-    const urlParams = new URLSearchParams(window.location.search);
-    const months = urlParams.get('months');
-    const feeTypes = urlParams.get('fee_types');
-    
-    console.log('URL Params:', { months, feeTypes });
-    
-    // Auto-tick months
-    if (months) {
-        const selectedMonths = months.split(',').map(m => m.trim());
-        console.log('Selected months:', selectedMonths);
-        
-        selectedMonths.forEach(month => {
-            // Find by text content in labels
-            const labels = document.querySelectorAll('.month-grid label');
-            labels.forEach(label => {
-                const labelText = label.textContent.trim();
-                if (labelText === month || labelText.includes(month)) {
-                    const input = label.querySelector('input');
-                    if (input && !input.disabled) {
-                        input.checked = true;
-                        console.log('Checked month:', month);
-                    }
-                }
-            });
-        });
-    }
-    
-    // Auto-select fee types
-    if (feeTypes) {
-        const selectedFeeTypes = feeTypes.split(',').map(f => f.trim());
-        console.log('Selected fee types:', selectedFeeTypes);
-        
-        if (selectedFeeTypes.length > 0) {
-            const feeSelect = document.querySelector('.feeType');
-            if (feeSelect) {
-                // Set the first fee type
-                if (selectedFeeTypes[0]) {
-                    feeSelect.value = selectedFeeTypes[0];
-                    updateFeeAmount(feeSelect);
-                    console.log('Set first fee type:', selectedFeeTypes[0]);
-                }
-                
-                // Add additional fee sections for other fee types
-                for (let i = 1; i < selectedFeeTypes.length; i++) {
-                    if (selectedFeeTypes[i]) {
-                        duplicateFeeSection();
-                        const newSections = document.querySelectorAll('.fee-types-section');
-                        const lastSection = newSections[newSections.length - 1];
-                        const newSelect = lastSection.querySelector('.feeType');
-                        if (newSelect) {
-                            newSelect.value = selectedFeeTypes[i];
-                            updateFeeAmount(newSelect);
-                            console.log('Set additional fee type:', selectedFeeTypes[i]);
-                        }
-                    }
-                }
-            }
-        }
-    }
-    
-    // Calculate fees after auto-ticking
-    setTimeout(() => {
-        calculateFees();
-        console.log('Fees calculated after auto-tick');
-    }, 200);
+    // Removed auto-tick functionality - users must manually select fees and months
+    console.log('Auto-tick disabled - manual selection required');
 }
 
 function calculateFees() {

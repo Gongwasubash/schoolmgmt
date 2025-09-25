@@ -701,7 +701,7 @@
                     <th>Paid</th>
                     <th>Fee Breakdown</th>
                     <th>Status</th>
-                    <th class="hide-mobile">Payment Tracker</th>
+
                     <th class="hide-mobile">Last Payment</th>
                     <th>Actions</th>
                 </tr>
@@ -734,28 +734,7 @@
                         </div>
                     </td>
                     <td><span class="badge {{ student.payment_status|yesno:'success,warning' }}">{{ student.payment_status }}</span></td>
-                    <td class="hide-mobile">
-                        <div class="payment-tracker">
-                            {% for month in student.payment_months %}
-                            <div class="month-box{% if month.paid %} paid{% endif %}" title="{{ month.name }}">
-                                {{ month.short }}
-                            </div>
-                            {% empty %}
-                            <div class="month-box" title="Baisakh">B</div>
-                            <div class="month-box" title="Jestha">J</div>
-                            <div class="month-box" title="Ashadh">A</div>
-                            <div class="month-box" title="Shrawan">S</div>
-                            <div class="month-box" title="Bhadra">Bh</div>
-                            <div class="month-box" title="Ashwin">As</div>
-                            <div class="month-box" title="Kartik">K</div>
-                            <div class="month-box" title="Mangsir">M</div>
-                            <div class="month-box" title="Poush">P</div>
-                            <div class="month-box" title="Magh">Ma</div>
-                            <div class="month-box" title="Falgun">F</div>
-                            <div class="month-box" title="Chaitra">C</div>
-                            {% endfor %}
-                        </div>
-                    </td>
+
                     <td class="hide-mobile">
                         <div class="last-payment">
                             <i class="fas fa-calendar"></i>
@@ -808,7 +787,6 @@ class FeeReceiptBook {
         // Auto-tick admission fee and monthly fee
         const admissionFeeCheckbox = document.querySelector('input[value="admission_fee"]');
         const monthlyFeeCheckbox = document.querySelector('input[value="monthly_fee"]');
-        
         if (admissionFeeCheckbox) admissionFeeCheckbox.checked = true;
         if (monthlyFeeCheckbox) monthlyFeeCheckbox.checked = true;
         
@@ -827,35 +805,19 @@ class FeeReceiptBook {
             'Kartik', 'Mangsir', 'Poush', 'Magh', 'Falgun', 'Chaitra'
         ];
         
-        // Get current Nepali month (approximation based on current date)
         const currentDate = new Date();
-        const currentMonth = currentDate.getMonth(); // 0-11
+        const currentMonth = currentDate.getMonth();
         
-        // Map English months to approximate Nepali months
-        // This is a rough mapping - you might want to use a proper Nepali calendar library
         const englishToNepaliMonthMap = {
-            3: 0,  // April -> Baisakh
-            4: 1,  // May -> Jestha
-            5: 2,  // June -> Ashadh
-            6: 3,  // July -> Shrawan
-            7: 4,  // August -> Bhadra
-            8: 5,  // September -> Ashwin
-            9: 6,  // October -> Kartik
-            10: 7, // November -> Mangsir
-            11: 8, // December -> Poush
-            0: 9,  // January -> Magh
-            1: 10, // February -> Falgun
-            2: 11  // March -> Chaitra
+            3: 0, 4: 1, 5: 2, 6: 3, 7: 4, 8: 5,
+            9: 6, 10: 7, 11: 8, 0: 9, 1: 10, 2: 11
         };
         
         const currentNepaliMonth = englishToNepaliMonthMap[currentMonth] || 0;
         
-        // Tick months from Baisakh up to current month
         for (let i = 0; i <= currentNepaliMonth; i++) {
             const monthCheckbox = document.querySelector(`input[value="${nepaliMonths[i]}"]`);
-            if (monthCheckbox) {
-                monthCheckbox.checked = true;
-            }
+            if (monthCheckbox) monthCheckbox.checked = true;
         }
     }
 
@@ -987,22 +949,7 @@ class FeeReceiptBook {
                     </div>
                 </td>
                 <td><span class="badge ${student.payment_status === 'paid' ? 'success' : 'warning'}">${student.payment_status}</span></td>
-                <td class="hide-mobile">
-                    <div class="payment-tracker">
-                        <div class="month-box" title="Baisakh">B</div>
-                        <div class="month-box" title="Jestha">J</div>
-                        <div class="month-box" title="Ashadh">A</div>
-                        <div class="month-box" title="Shrawan">S</div>
-                        <div class="month-box" title="Bhadra">Bh</div>
-                        <div class="month-box" title="Ashwin">As</div>
-                        <div class="month-box" title="Kartik">K</div>
-                        <div class="month-box" title="Mangsir">M</div>
-                        <div class="month-box" title="Poush">P</div>
-                        <div class="month-box" title="Magh">Ma</div>
-                        <div class="month-box" title="Falgun">F</div>
-                        <div class="month-box" title="Chaitra">C</div>
-                    </div>
-                </td>
+
                 <td class="hide-mobile"><div class="last-payment"><i class="fas fa-calendar"></i>${student.last_payment_date || 'No payments yet'}</div></td>
                 <td>
                     <div class="action-buttons">
