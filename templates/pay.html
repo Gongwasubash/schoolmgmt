@@ -921,11 +921,15 @@ function submitPayment() {
         return;
     }
     
-    // Collect selected months from main section
-    const mainSection = document.querySelector('.fee-types-section');
+    // Collect selected months from ALL sections
     const selectedMonths = [];
-    mainSection.querySelectorAll('.month-checkbox:checked').forEach(cb => {
-        selectedMonths.push(cb.parentElement.textContent.trim());
+    document.querySelectorAll('.fee-types-section').forEach(section => {
+        section.querySelectorAll('.month-checkbox:checked').forEach(cb => {
+            const monthName = cb.parentElement.textContent.trim();
+            if (!selectedMonths.includes(monthName)) {
+                selectedMonths.push(monthName);
+            }
+        });
     });
     
     // Collect fee types from all sections
@@ -1112,7 +1116,9 @@ function printBill() {
                         </thead>
                         <tbody>
                             ${JSON.parse(paymentData.fee_types).map((fee, index) => {
-                                const monthsText = selectedMonths.length === 1 ? selectedMonths[0] : 
+                                const oneTimeFees = ['admission_fee', 'examination_fee', 'library_fee', 'sports_fee', 'laboratory_fee', 'computer_fee'];
+                                const monthsText = oneTimeFees.includes(fee.type) ? '-' : 
+                                    selectedMonths.length === 1 ? selectedMonths[0] : 
                                     selectedMonths.length === 2 ? selectedMonths.join(', ') :
                                     `${selectedMonths[0]} to ${selectedMonths[selectedMonths.length-1]}`;
                                 return `<tr><td style="text-align: center;">${index + 1}</td><td>${fee.type.replace('_', ' ').toUpperCase()}</td><td style="text-align: center;">${monthsText}</td><td class="amount-col">${fee.total.toLocaleString()}</td></tr>`;
