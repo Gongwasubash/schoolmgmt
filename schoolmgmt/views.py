@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
-from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData
+from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense
 from django.db import models
 from django.db.models import F, Q
 import json
@@ -773,20 +773,32 @@ def search_student_api(request):
         
         # Advanced search
         if name:
-            conditions &= models.Q(name__icontains=name)
+            if conditions:
+                conditions &= models.Q(name__icontains=name)
+            else:
+                conditions = models.Q(name__icontains=name)
         if student_class:
-            conditions &= models.Q(student_class=student_class)
+            if conditions:
+                conditions &= models.Q(student_class=student_class)
+            else:
+                conditions = models.Q(student_class=student_class)
         if section:
-            conditions &= models.Q(section=section)
+            if conditions:
+                conditions &= models.Q(section=section)
+            else:
+                conditions = models.Q(section=section)
         if reg_number:
-            conditions &= models.Q(reg_number__icontains=reg_number)
+            if conditions:
+                conditions &= models.Q(reg_number__icontains=reg_number)
+            else:
+                conditions = models.Q(reg_number__icontains=reg_number)
         
-        # If no search criteria provided
+        # If no search criteria provided, return all students (limited)
         if not any([query, name, student_class, section, reg_number]):
-            return JsonResponse({'success': False, 'error': 'No search criteria provided'})
-        
-        # Execute search
-        students = Student.objects.filter(conditions).order_by('name')[:20]  # Limit to 20 results
+            students = Student.objects.all().order_by('name')[:20]
+        else:
+            # Execute search
+            students = Student.objects.filter(conditions).order_by('name')[:20]  # Limit to 20 results
         
         if students:
             students_data = []
@@ -813,7 +825,12 @@ def search_student_api(request):
                     'students': students_data
                 })
         else:
-            return JsonResponse({'success': False, 'error': 'No students found'})
+            # Check if there are any students in the database at all
+            total_students = Student.objects.count()
+            if total_students == 0:
+                return JsonResponse({'success': False, 'error': 'No students found in database. Please add students first.'})
+            else:
+                return JsonResponse({'success': False, 'error': f'No students found matching search criteria. Total students in database: {total_students}'})
             
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
@@ -953,11 +970,21 @@ def fee_receipt_book(request):
         
         # Calculate paid amount
         student_paid = student.total_paid or Decimal('0')
+        
+        # Add daily expenses to total fee
+        daily_expenses = StudentDailyExpense.objects.filter(student=student).aggregate(
+            total_expenses=Sum('amount')
+        )['total_expenses'] or Decimal('0')
+        
+        student_total_fee += daily_expenses
         student_pending = max(Decimal('0'), student_total_fee - student_paid)
         
         # Add to totals
         total_collected += student_paid
         total_pending += student_pending
+        
+        # Store daily expenses for display
+        student.daily_expenses = float(daily_expenses)
         
         # Calculate fee breakdown based on applied filters
         if fee_structure:
@@ -1005,6 +1032,7 @@ def fee_receipt_book(request):
         student.payment_status = 'paid' if student_pending == 0 else 'pending'
         student.class_name = student.student_class
         student.roll_number = student.reg_number
+        student.daily_expenses_total = float(daily_expenses)
         
         # Calculate monthly fee amount (monthly_fee + tuition_fee)
         try:
@@ -1480,6 +1508,12 @@ def fee_receipt_book_api(request):
                 
                 student_paid = student.total_paid or Decimal('0')
             
+            # Add daily expenses to total fee
+            daily_expenses = StudentDailyExpense.objects.filter(student=student).aggregate(
+                total_expenses=Sum('amount')
+            )['total_expenses'] or Decimal('0')
+            
+            student_total_fee += daily_expenses
             student_pending = max(Decimal('0'), student_total_fee - student_paid)
             payment_status = 'paid' if student_pending == 0 else 'pending'
             
@@ -1539,7 +1573,8 @@ def fee_receipt_book_api(request):
                 'pending_amount': float(student_pending),
                 'payment_status': payment_status,
                 'last_payment_date': student.last_payment_date.strftime('%Y-%m-%d') if student.last_payment_date else None,
-                'fee_breakdown_text': fee_breakdown_text
+                'fee_breakdown_text': fee_breakdown_text,
+                'daily_expenses_total': float(daily_expenses)
             })
         
         return JsonResponse({
@@ -3097,6 +3132,13 @@ def print_bill(request):
     """Print bill page"""
     return render(request, 'print_bill.html')
 
+def student_daily_exp(request):
+    """Student daily expenses page"""
+    context = {
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    return render(request, 'student_daily_exp.html', context)
+
 # Nepali Date API Endpoints
 def get_nepali_date_api(request):
     """API to get current Nepali date information"""
@@ -3188,3 +3230,163 @@ def delete_subject(request):
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def add_student_expense(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            student = get_object_or_404(Student, id=data['student_id'])
+            
+            expense = StudentDailyExpense.objects.create(
+                student=student,
+                description=data['description'],
+                amount=data['amount']
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'expense': {
+                    'id': expense.id,
+                    'description': expense.description,
+                    'amount': float(expense.amount),
+                    'time': expense.created_at.strftime('%H:%M')
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def delete_student_expense(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            expense = get_object_or_404(StudentDailyExpense, id=data['expense_id'])
+            expense.delete()
+            
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def get_student_expenses_api(request, student_id):
+    try:
+        student = get_object_or_404(Student, id=student_id)
+        today = date.today()
+        expenses = StudentDailyExpense.objects.filter(
+            student=student,
+            expense_date=today
+        ).order_by('-created_at')
+        
+        expenses_data = []
+        total_amount = 0
+        
+        for expense in expenses:
+            expenses_data.append({
+                'id': expense.id,
+                'description': expense.description,
+                'amount': float(expense.amount),
+                'time': expense.created_at.strftime('%H:%M')
+            })
+            total_amount += float(expense.amount)
+        
+        return JsonResponse({
+            'success': True,
+            'student': {
+                'id': student.id,
+                'name': student.name,
+                'class': student.student_class,
+                'roll': student.reg_number
+            },
+            'expenses': expenses_data,
+            'total_amount': total_amount
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def get_class_expenses_api(request, class_name):
+    try:
+        today = date.today()
+        expenses = StudentDailyExpense.objects.filter(
+            student__student_class=class_name,
+            expense_date=today
+        ).select_related('student').order_by('-created_at')
+        
+        expenses_data = []
+        total_amount = 0
+        students_with_expenses = {}
+        
+        for expense in expenses:
+            expense_data = {
+                'id': expense.id,
+                'description': expense.description,
+                'amount': float(expense.amount),
+                'time': expense.created_at.strftime('%H:%M'),
+                'student_name': expense.student.name,
+                'student_id': expense.student.id
+            }
+            expenses_data.append(expense_data)
+            total_amount += float(expense.amount)
+            
+            # Group by student
+            if expense.student.id not in students_with_expenses:
+                students_with_expenses[expense.student.id] = {
+                    'student': {
+                        'id': expense.student.id,
+                        'name': expense.student.name,
+                        'class': expense.student.student_class,
+                        'roll': expense.student.reg_number
+                    },
+                    'expenses': [],
+                    'total': 0
+                }
+            
+            students_with_expenses[expense.student.id]['expenses'].append(expense_data)
+            students_with_expenses[expense.student.id]['total'] += float(expense.amount)
+        
+        return JsonResponse({
+            'success': True,
+            'class_name': class_name,
+            'expenses': expenses_data,
+            'students_with_expenses': list(students_with_expenses.values()),
+            'total_amount': total_amount,
+            'total_students': len(students_with_expenses)
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def get_todays_all_expenses_api(request):
+    try:
+        today = date.today()
+        expenses = StudentDailyExpense.objects.filter(
+            expense_date=today
+        ).select_related('student').order_by('-created_at')
+        
+        expenses_data = []
+        total_amount = 0
+        
+        for expense in expenses:
+            expenses_data.append({
+                'id': expense.id,
+                'description': expense.description,
+                'amount': float(expense.amount),
+                'expense_date': expense.expense_date.strftime('%Y-%m-%d'),
+                'time': expense.created_at.strftime('%H:%M'),
+                'student_id': expense.student.id,
+                'student_name': expense.student.name,
+                'student_reg_number': expense.student.reg_number,
+                'student_class': expense.student.student_class
+            })
+            total_amount += float(expense.amount)
+        
+        return JsonResponse({
+            'success': True,
+            'expenses': expenses_data,
+            'total_amount': total_amount,
+            'total_count': len(expenses_data)
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})

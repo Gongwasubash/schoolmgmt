@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData
+from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -33,4 +33,11 @@ class MarksheetDataAdmin(admin.ModelAdmin):
     list_display = ['student_name', 'subject_name', 'marks_obtained', 'max_marks', 'percentage', 'grade', 'session', 'created_at']
     list_filter = ['session', 'subject_name', 'created_at']
     search_fields = ['student_name', 'subject_name']
+    ordering = ['-created_at']
+
+@admin.register(StudentDailyExpense)
+class StudentDailyExpenseAdmin(admin.ModelAdmin):
+    list_display = ['student', 'description', 'amount', 'expense_date', 'created_at']
+    list_filter = ['expense_date', 'student__student_class']
+    search_fields = ['student__name', 'description']
     ordering = ['-created_at']
