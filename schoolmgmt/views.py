@@ -3093,6 +3093,10 @@ def student_attendance_dashboard(request):
     """Student Attendance Dashboard"""
     return render(request, 'student_attendance_dashboard.html')
 
+def print_bill(request):
+    """Print bill page"""
+    return render(request, 'print_bill.html')
+
 # Nepali Date API Endpoints
 def get_nepali_date_api(request):
     """API to get current Nepali date information"""
