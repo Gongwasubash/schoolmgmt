@@ -3,7 +3,10 @@
 <head>
     <title>Credit Slip - {{ student.name }}</title>
     <style>
-        @page { size: A5; margin: 8mm; }
+        @page { 
+            size: A5; 
+            margin: 0; 
+        }
         
         body {
             font-family: 'Arial', sans-serif;
@@ -11,17 +14,18 @@
             padding: 0;
             background: white;
             color: black;
-            font-size: 11px;
+            font-size: 12px;
             line-height: 1.4;
         }
         
         .receipt {
-            width: 132mm;
-            min-height: 194mm;
+            width: 148mm;
+            height: 210mm;
             margin: 0 auto;
             background: white;
-            border: 3px solid black;
-            overflow: hidden;
+            border: 2px solid black;
+            box-sizing: border-box;
+            padding: 8mm;
         }
         
         .header {
@@ -160,11 +164,17 @@
             body {
                 margin: 0;
                 padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
             }
-            
             .receipt {
-                border: 3px solid black;
-                margin-bottom: 0;
+                width: 148mm;
+                height: 210mm;
+                margin: 0 auto;
+                padding: 8mm;
+                border: 2px solid black;
+                box-sizing: border-box;
+                page-break-after: avoid;
             }
         }
     </style>

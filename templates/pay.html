@@ -1014,168 +1014,21 @@ function printBill() {
         return;
     }
     
-    const paymentData = window.lastPaymentData;
-    const selectedMonths = JSON.parse(paymentData.selected_months);
-    const billWindow = window.open('', '_blank');
+    const paymentData = {
+        ...window.lastPaymentData,
+        payment_id: window.lastPaymentId,
+        student_name: '{{ student.name|default:"RAM JEE" }}',
+        student_class: '{{ student.student_class|default:"Nursery" }}',
+        section: '{{ student.section|default:"A" }}',
+        father_name: '{{ student.father_name|default:"SURESH JEE" }}',
+        reg_number: '{{ student.reg_number|default:"REG2025001" }}',
+        selected_months: JSON.parse(window.lastPaymentData.selected_months),
+        fee_types: JSON.parse(window.lastPaymentData.fee_types),
+        custom_fees: JSON.parse(window.lastPaymentData.custom_fees)
+    };
     
-    function numberToWords(num) {
-        const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
-        const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
-        const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
-        
-        if (num === 0) return 'Zero';
-        if (num < 10) return ones[num];
-        if (num < 20) return teens[num - 10];
-        if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? ' ' + ones[num % 10] : '');
-        if (num < 1000) return ones[Math.floor(num / 100)] + ' Hundred' + (num % 100 ? ' ' + numberToWords(num % 100) : '');
-        if (num < 100000) return numberToWords(Math.floor(num / 1000)) + ' Thousand' + (num % 1000 ? ' ' + numberToWords(num % 1000) : '');
-        return num.toString();
-    }
-    
-    const billHTML = `
-        <html>
-        <head>
-            <title>School Fee Receipt</title>
-            <style>
-                @page { size: A4; margin: 20mm; }
-                body { font-family: 'Arial', sans-serif; margin: 0; padding: 0; font-size: 14px; line-height: 1.5; color: #000; }
-                .bill-container { max-width: 210mm; margin: 0 auto; background: white; border: 1px solid #000; }
-                .header { text-align: center; padding: 25px; border-bottom: 1px solid #000; }
-                .school-name { font-size: 24px; font-weight: bold; margin: 0 0 10px 0; }
-                .school-address { font-size: 12px; margin: 5px 0; }
-                .doc-title { font-size: 18px; font-weight: bold; margin: 15px 0 0 0; text-decoration: underline; }
-                .ref-info { display: flex; justify-content: space-between; padding: 15px 25px; border-bottom: 1px solid #000; }
-                .ref-item { font-size: 12px; font-weight: bold; }
-                .content { padding: 25px; }
-                .student-info { margin: 20px 0; }
-                .info-table { width: 100%; border-collapse: collapse; margin: 15px 0; }
-                .info-table td { padding: 8px 12px; border: 1px solid #000; font-size: 13px; }
-                .info-table .label { background: #f0f0f0; font-weight: bold; width: 25%; }
-                .fee-table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-                .fee-table th, .fee-table td { border: 1px solid #000; padding: 10px; text-align: left; font-size: 13px; }
-                .fee-table th { background: #000; color: white; font-weight: bold; text-align: center; }
-                .amount-col { text-align: right; font-weight: bold; }
-                .total-row { background: #000; color: white; font-weight: bold; }
-                .amount-words { border: 1px solid #000; padding: 15px; margin: 20px 0; background: #f9f9f9; }
-                .payment-info { display: flex; justify-content: space-between; margin: 20px 0; }
-                .payment-box { width: 30%; text-align: center; border: 1px solid #000; padding: 10px; }
-                .footer { display: flex; justify-content: space-between; margin-top: 40px; }
-                .signature { text-align: center; width: 200px; }
-                .signature-line { border-top: 1px solid #000; margin-top: 50px; padding-top: 5px; font-size: 12px; font-weight: bold; }
-            </style>
-        </head>
-        <body>
-            <div class="bill-container">
-                <div class="header">
-                    <div class="school-name">BRIGHT FUTURE SECONDARY SCHOOL</div>
-                    <div class="school-address">Kathmandu, Nepal</div>
-                    <div class="school-address">Phone: +977-1-4567890</div>
-                    <div class="doc-title">FEE RECEIPT</div>
-                </div>
-                
-                <div class="ref-info">
-                    <div class="ref-item">Receipt No: #${window.lastPaymentId || Math.floor(Math.random() * 10000)}</div>
-                    <div class="ref-item">Date: ${new Date().toLocaleDateString('en-GB')}</div>
-                    <div class="ref-item">Status: PAID</div>
-                </div>
-                
-                <div class="content">
-                    <div class="student-info">
-                        <h3 style="margin: 0 0 15px 0; text-decoration: underline;">STUDENT DETAILS</h3>
-                        <table class="info-table">
-                            <tr>
-                                <td class="label">Student Name:</td>
-                                <td>{{ student.name|default:"RAM JEE" }}</td>
-                                <td class="label">Class:</td>
-                                <td>{{ student.student_class|default:"Nursery" }}-{{ student.section|default:"A" }}</td>
-                            </tr>
-                            <tr>
-                                <td class="label">Father's Name:</td>
-                                <td>{{ student.father_name|default:"SURESH JEE" }}</td>
-                                <td class="label">Roll No:</td>
-                                <td>001</td>
-                            </tr>
-                            <tr>
-                                <td class="label">Registration No:</td>
-                                <td>{{ student.reg_number|default:"REG2025001" }}</td>
-                                <td class="label">Session:</td>
-                                <td>2025-26</td>
-                            </tr>
-                        </table>
-                    </div>
-                    
-                    <h3 style="margin: 25px 0 15px 0; text-decoration: underline;">FEE BREAKDOWN</h3>
-                    <table class="fee-table">
-                        <thead>
-                            <tr>
-                                <th>S.N.</th>
-                                <th>Fee Description</th>
-                                <th>Period</th>
-                                <th>Amount (Rs.)</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${JSON.parse(paymentData.fee_types).map((fee, index) => {
-                                const oneTimeFees = ['admission_fee', 'examination_fee', 'library_fee', 'sports_fee', 'laboratory_fee', 'computer_fee'];
-                                const monthsText = oneTimeFees.includes(fee.type) ? '-' : 
-                                    selectedMonths.length === 1 ? selectedMonths[0] : 
-                                    selectedMonths.length === 2 ? selectedMonths.join(', ') :
-                                    `${selectedMonths[0]} to ${selectedMonths[selectedMonths.length-1]}`;
-                                return `<tr><td style="text-align: center;">${index + 1}</td><td>${fee.type.replace('_', ' ').toUpperCase()}</td><td style="text-align: center;">${monthsText}</td><td class="amount-col">${fee.total.toLocaleString()}</td></tr>`;
-                            }).join('')}
-                            ${JSON.parse(paymentData.custom_fees).map((fee, index) => 
-                                `<tr><td style="text-align: center;">${JSON.parse(paymentData.fee_types).length + index + 1}</td><td>${fee.name.toUpperCase()}</td><td style="text-align: center;">One Time</td><td class="amount-col">${fee.amount.toLocaleString()}</td></tr>`
-                            ).join('')}
-                            <tr class="total-row">
-                                <td colspan="3" style="text-align: center;">TOTAL AMOUNT</td>
-                                <td class="amount-col">Rs. ${paymentData.total_fee.toLocaleString()}</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                    
-                    <div class="amount-words">
-                        <strong>Amount in Words:</strong> ${numberToWords(paymentData.total_fee)} Rupees Only
-                    </div>
-                    
-                    <div class="payment-info">
-                        <div class="payment-box">
-                            <strong>Payment Method</strong><br>
-                            ${paymentData.payment_method}
-                        </div>
-                        <div class="payment-box">
-                            <strong>Amount Paid</strong><br>
-                            Rs. ${paymentData.payment_amount.toLocaleString()}
-                        </div>
-                        <div class="payment-box">
-                            <strong>Balance</strong><br>
-                            Rs. ${paymentData.balance.toLocaleString()}
-                        </div>
-                    </div>
-                    
-                    <div class="footer">
-                        <div class="signature">
-                            <div class="signature-line">Cashier</div>
-                        </div>
-                        <div class="signature">
-                            <div class="signature-line">Principal</div>
-                        </div>
-                    </div>
-                    
-                    <div style="text-align: center; margin-top: 30px; font-size: 12px; border-top: 1px solid #000; padding-top: 15px;">
-                        <p><strong>Thank you for your payment!</strong></p>
-                        <p>This is a computer generated receipt.</p>
-                    </div>
-                </div>
-            </div>
-        </body>
-        </html>
-    `;
-    
-    billWindow.document.write(billHTML);
-    billWindow.document.close();
-    
-    billWindow.document.close();
-    billWindow.print();
+    const billUrl = '/print-bill/?data=' + encodeURIComponent(JSON.stringify(paymentData));
+    window.open(billUrl, '_blank');
 }
 </script>
 {% endblock %}

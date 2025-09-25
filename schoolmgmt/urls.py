@@ -87,5 +87,6 @@ urlpatterns = [
     path('api/nepali-date/', views.get_nepali_date_api, name='get_nepali_date_api'),
     path('api/convert-date/', views.convert_date_api, name='convert_date_api'),
     path('api/nepali-sessions/', views.get_nepali_sessions_api, name='get_nepali_sessions_api'),
+    path('print-bill/', views.print_bill, name='print_bill'),
     path('admin/', admin.site.urls),
 ]

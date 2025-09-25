@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fee Receipt</title>
+    <style>
+        @page { 
+            size: A5; 
+            margin: 0; 
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: white;
+            color: black;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+        
+        .receipt {
+            width: 148mm;
+            height: 210mm;
+            margin: 0 auto;
+            background: white;
+            border: 2px solid black;
+            box-sizing: border-box;
+            padding: 8mm;
+        }
+        
+        .header {
+            background: white;
+            color: black;
+            text-align: center;
+            padding: 12px 8px;
+        }
+        
+        .school-title {
+            font-size: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            margin-bottom: 4px;
+            letter-spacing: 1px;
+        }
+        
+        .receipt-title {
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            text-decoration: underline;
+        }
+        
+        .receipt-meta {
+            display: flex;
+            justify-content: space-between;
+            font-size: 9px;
+            font-weight: 600;
+            padding: 4px 8px;
+            margin-top: 6px;
+        }
+        
+        .content {
+            padding: 12px;
+        }
+        
+        .student-section {
+            margin-bottom: 12px;
+            background: white;
+            padding: 10px;
+        }
+        
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            text-align: center;
+            color: black;
+            margin-bottom: 8px;
+            padding-bottom: 4px;
+            text-decoration: underline;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 6px;
+        }
+        
+        .info-item {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            font-size: 9px;
+            color: black;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .info-value {
+            font-weight: 700;
+            font-size: 11px;
+            color: black;
+            padding: 3px 6px;
+            background: white;
+            min-height: 16px;
+            border-bottom: 1px dotted black;
+        }
+        
+        .fees-section {
+            margin: 12px 0;
+        }
+        
+        .fees-header {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            padding: 6px;
+            background: black;
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .signatures {
+            display: flex;
+            justify-content: flex-end;
+            margin-top: 15px;
+            padding-top: 10px;
+        }
+        
+        .signature {
+            text-align: center;
+            width: 45%;
+        }
+        
+        .signature-line {
+            height: 25px;
+            border-bottom: 1px solid black;
+            margin-bottom: 4px;
+        }
+        
+        .signature-label {
+            font-weight: 600;
+            font-size: 9px;
+            color: black;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .print-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        
+        @media print {
+            .print-btn { display: none; }
+            body {
+                margin: 0;
+                padding: 0;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            .receipt {
+                width: 148mm;
+                height: 210mm;
+                margin: 0 auto;
+                padding: 8mm;
+                border: 2px solid black;
+                box-sizing: border-box;
+                page-break-after: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <button class="print-btn" onclick="window.print()">Print</button>
+    
+    <div class="receipt">
+        <div class="header">
+            <div class="school-title">School Management System</div>
+            <div class="receipt-title">Fee Receipt (Office Copy)</div>
+            <div class="receipt-meta">
+                <span>Receipt No: #<span class="receiptNo"></span></span>
+                <span>Date: <span class="receiptDate"></span></span>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="student-section">
+                <h3 class="section-title">Student Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Student Name</span>
+                        <span class="info-value studentName"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Father's Name</span>
+                        <span class="info-value fatherName"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Class</span>
+                        <span class="info-value studentClass"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Roll Number</span>
+                        <span class="info-value regNo"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="fees-section">
+                <div class="fees-header">Fee Details</div>
+                <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+                    <thead>
+                        <tr style="background: #f0f0f0;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 10px;">Fee Type</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 10px;">Period</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: right; font-size: 10px;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="feeTableBody">
+                    </tbody>
+                </table>
+                
+                <div style="margin: 10px 0; padding: 8px; background: #f9f9f9; border: 1px solid #ddd;">
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px;">
+                        <span><strong>Payment Method:</strong> <span class="paymentMethod"></span></span>
+                        <span><strong>Amount Paid:</strong> Rs. <span class="amountPaid"></span></span>
+                    </div>
+                    <div style="text-align: center; font-size: 9px; margin-top: 6px;">
+                        <strong>Amount in Words:</strong> <span class="amountWords"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="signatures">
+                <div class="signature">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Accounts Officer</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="receipt" style="page-break-before: always;">
+        <div class="header">
+            <div class="school-title">School Management System</div>
+            <div class="receipt-title">Fee Receipt (Student Copy)</div>
+            <div class="receipt-meta">
+                <span>Receipt No: #<span class="receiptNo"></span></span>
+                <span>Date: <span class="receiptDate"></span></span>
+            </div>
+        </div>
+        
+        <div class="content">
+            <div class="student-section">
+                <h3 class="section-title">Student Information</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="info-label">Student Name</span>
+                        <span class="info-value studentName"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Father's Name</span>
+                        <span class="info-value fatherName"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Class</span>
+                        <span class="info-value studentClass"></span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Roll Number</span>
+                        <span class="info-value regNo"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="fees-section">
+                <div class="fees-header">Fee Details</div>
+                <table style="width: 100%; border-collapse: collapse; margin: 10px 0;">
+                    <thead>
+                        <tr style="background: #f0f0f0;">
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: left; font-size: 10px;">Fee Type</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: center; font-size: 10px;">Period</th>
+                            <th style="border: 1px solid #ddd; padding: 8px; text-align: right; font-size: 10px;">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody class="feeTableBody">
+                    </tbody>
+                </table>
+                
+                <div style="margin: 10px 0; padding: 8px; background: #f9f9f9; border: 1px solid #ddd;">
+                    <div style="display: flex; justify-content: space-between; font-size: 10px; margin-bottom: 4px;">
+                        <span><strong>Payment Method:</strong> <span class="paymentMethod"></span></span>
+                        <span><strong>Amount Paid:</strong> Rs. <span class="amountPaid"></span></span>
+                    </div>
+                    <div style="text-align: center; font-size: 9px; margin-top: 6px;">
+                        <strong>Amount in Words:</strong> <span class="amountWords"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="signatures">
+                <div class="signature">
+                    <div class="signature-line"></div>
+                    <div class="signature-label">Accounts Officer</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function numberToWords(num) {
+            const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine'];
+            const teens = ['Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen'];
+            const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+            
+            if (num === 0) return 'Zero';
+            if (num < 10) return ones[num];
+            if (num < 20) return teens[num - 10];
+            if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? ' ' + ones[num % 10] : '');
+            if (num < 1000) return ones[Math.floor(num / 100)] + ' Hundred' + (num % 100 ? ' ' + numberToWords(num % 100) : '');
+            if (num < 100000) return numberToWords(Math.floor(num / 1000)) + ' Thousand' + (num % 1000 ? ' ' + numberToWords(num % 1000) : '');
+            return num.toString();
+        }
+
+        // Get data from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        let paymentData = {};
+        try {
+            paymentData = JSON.parse(decodeURIComponent(urlParams.get('data') || '{}'));
+        } catch (e) {
+            console.error('Error parsing payment data:', e);
+        }
+        
+        // Populate both bills
+        document.querySelectorAll('.receiptNo').forEach(el => el.textContent = paymentData.payment_id || Math.floor(Math.random() * 10000));
+        document.querySelectorAll('.receiptDate').forEach(el => el.textContent = new Date().toLocaleDateString('en-GB'));
+        document.querySelectorAll('.studentName').forEach(el => el.textContent = paymentData.student_name || 'RAM JEE');
+        document.querySelectorAll('.studentClass').forEach(el => el.textContent = (paymentData.student_class || 'Nursery') + '-' + (paymentData.section || 'A'));
+        document.querySelectorAll('.fatherName').forEach(el => el.textContent = paymentData.father_name || 'SURESH JEE');
+        document.querySelectorAll('.regNo').forEach(el => el.textContent = paymentData.reg_number || 'REG2025001');
+        document.querySelectorAll('.paymentMethod').forEach(el => el.textContent = paymentData.payment_method || 'Cash');
+        document.querySelectorAll('.amountPaid').forEach(el => el.textContent = (paymentData.payment_amount || 0).toLocaleString());
+        document.querySelectorAll('.amountWords').forEach(el => el.textContent = numberToWords(paymentData.total_fee || 0) + ' Rupees Only');
+
+        // Populate fee tables for both receipts
+        const feeTableBodies = document.querySelectorAll('.feeTableBody');
+        let feeHtml = '';
+        
+        const oneTimeFees = ['admission_fee', 'examination_fee', 'library_fee', 'sports_fee', 'laboratory_fee', 'computer_fee'];
+        const selectedMonths = paymentData.selected_months || [];
+        
+        console.log('Payment data:', paymentData);
+        console.log('Fee types:', paymentData.fee_types);
+        console.log('Selected months:', selectedMonths);
+        
+        // Add fee types
+        if (paymentData.fee_types && paymentData.fee_types.length > 0) {
+            paymentData.fee_types.forEach(fee => {
+                const monthsText = oneTimeFees.includes(fee.type) ? '-' : 
+                    selectedMonths.length === 1 ? selectedMonths[0] : 
+                    selectedMonths.length === 2 ? selectedMonths.join(', ') :
+                    selectedMonths.length > 2 ? `${selectedMonths[0]} to ${selectedMonths[selectedMonths.length-1]}` : '-';
+                
+                feeHtml += `<tr>
+                    <td style="border: 1px solid #ddd; padding: 6px; font-size: 10px;">${fee.type.replace(/_/g, ' ').toUpperCase()}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center; font-size: 10px;">${monthsText}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: right; font-size: 10px;">Rs ${(fee.total || fee.amount || 0).toLocaleString()}</td>
+                </tr>`;
+            });
+        }
+        
+        // Add custom fees
+        if (paymentData.custom_fees && paymentData.custom_fees.length > 0) {
+            paymentData.custom_fees.forEach(fee => {
+                feeHtml += `<tr>
+                    <td style="border: 1px solid #ddd; padding: 6px; font-size: 10px;">${fee.name.toUpperCase()}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center; font-size: 10px;">One Time</td>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: right; font-size: 10px;">Rs ${fee.amount.toLocaleString()}</td>
+                </tr>`;
+            });
+        }
+        
+        // Add total row
+        feeHtml += `<tr style="background: #f9f9f9; font-weight: bold;">
+            <td colspan="2" style="border: 1px solid #ddd; padding: 8px; font-size: 11px;">Total Amount</td>
+            <td style="border: 1px solid #ddd; padding: 8px; text-align: right; font-size: 11px;">Rs ${(paymentData.total_fee || 0).toLocaleString()}</td>
+        </tr>`;
+        
+        feeTableBodies.forEach(tbody => tbody.innerHTML = feeHtml);
+        
+        // Auto print on load (commented out for debugging)
+        // window.onload = function() {
+        //     setTimeout(() => window.print(), 500);
+        // }
+    </script>
+</body>
+</html>
