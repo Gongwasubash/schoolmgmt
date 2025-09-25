@@ -1,0 +1,1284 @@
+{% extends "base.html" %}
+
+{% block title %}Student Daily Expenses{% endblock %}
+
+{% block content %}
+<div class="expense-container">
+    <div class="expense-header">
+        <h1>Student Daily Expenses</h1>
+        <p>Track and manage daily student expenses</p>
+    </div>
+
+    <div class="expense-form">
+        <div class="advanced-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Student Name</label>
+                    <input type="text" id="searchName" placeholder="Enter student name">
+                </div>
+                <div class="form-group">
+                    <label>Class</label>
+                    <select id="searchClass">
+                        <option value="">Select Class</option>
+                        <option value="Nursery">Nursery</option>
+                        <option value="LKG">LKG</option>
+                        <option value="UKG">UKG</option>
+                        <option value="One">One</option>
+                        <option value="Two">Two</option>
+                        <option value="Three">Three</option>
+                        <option value="Four">Four</option>
+                        <option value="Five">Five</option>
+                        <option value="Six">Six</option>
+                        <option value="Seven">Seven</option>
+                        <option value="Eight">Eight</option>
+                        <option value="Nine">Nine</option>
+                        <option value="Ten">Ten</option>
+                        <option value="Eleven">Eleven</option>
+                        <option value="Twelve">Twelve</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Section</label>
+                    <select id="searchSection">
+                        <option value="">Select Section</option>
+                        <option value="A">A</option>
+                        <option value="B">B</option>
+                        <option value="C">C</option>
+                        <option value="D">D</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Registration Number</label>
+                    <input type="text" id="searchReg" placeholder="Enter registration number">
+                </div>
+            </div>
+            <button onclick="advancedSearch()" class="search-btn">Search Students</button>
+        </div>
+        <div id="searchResults" class="search-results" style="display: none;">
+            <div class="results-header">
+                <h3>Search Results</h3>
+            </div>
+            <div id="studentsList"></div>
+        </div>
+    </div>
+
+    <div id="expenseForm" class="expense-form-section" style="display: none;">
+        <div class="selected-student-card" id="selectedStudent"></div>
+        <form onsubmit="addExpense(event)" class="add-expense-form">
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="expenseDescription" placeholder="Enter expense description..." required>
+                </div>
+                <div class="form-group">
+                    <label>Amount (Rs.)</label>
+                    <input type="number" id="expenseAmount" placeholder="0.00" min="0" step="0.01" required>
+                </div>
+            </div>
+            <button type="submit" class="add-expense-btn">Add Expense</button>
+        </form>
+    </div>
+
+    <div id="expensesDisplay" class="expenses-display">
+        <div class="welcome-message">
+            <h3>Search for a student to get started</h3>
+            <p>Use the search box to find a student and manage their daily expenses</p>
+        </div>
+    </div>
+
+    <div class="expenses-table-section">
+        <div class="table-header">
+            <h3>All Student Daily Expenses</h3>
+        </div>
+        <div class="table-container">
+            <table id="expensesTable" class="expenses-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>ID</th>
+                        <th>Student Name</th>
+                        <th>Roll No</th>
+                        <th>Class</th>
+                        <th>Description</th>
+                        <th>Amount (Rs.)</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody id="expensesTableBody">
+                    <tr>
+                        <td colspan="8" class="no-data">Loading expenses...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="loadingOverlay" class="loading-overlay" style="display: none;">
+    <div class="loading-content">
+        <div class="spinner"></div>
+        <p>Loading...</p>
+    </div>
+</div>
+
+<div id="toastContainer" class="toast-container"></div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.expense-container {
+    max-width: 1200px;
+    margin: 20px auto;
+    padding: 20px;
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.expense-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.expense-header h1 {
+    color: #2563eb;
+    margin-bottom: 10px;
+}
+
+.expense-header p {
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.expenses-table-section {
+    margin-bottom: 30px;
+    background: white;
+    border-radius: 10px;
+    border: 2px solid #e5e7eb;
+}
+
+.table-header {
+    padding: 20px;
+    border-bottom: 1px solid #e5e7eb;
+    background: #f8fafc;
+    border-radius: 10px 10px 0 0;
+}
+
+.table-header h3 {
+    margin: 0;
+    color: #1f2937;
+    font-size: 18px;
+}
+
+.table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.expenses-table {
+    width: 100%;
+    min-width: 800px;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.expenses-table th {
+    background: #f8fafc;
+    padding: 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.expenses-table td {
+    padding: 12px;
+    border-bottom: 1px solid #e5e7eb;
+    color: #6b7280;
+}
+
+.expenses-table tbody tr:hover {
+    background: #f8fafc;
+}
+
+.no-data {
+    text-align: center;
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.table-delete-btn {
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+.table-delete-btn:hover {
+    background: #b91c1c;
+}
+
+.table-edit-btn {
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.table-edit-btn:hover {
+    background: #047857;
+}
+
+.table-save-btn {
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-right: 5px;
+}
+
+.table-save-btn:hover {
+    background: #047857;
+}
+
+.table-cancel-btn {
+    background: #6b7280;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.table-cancel-btn:hover {
+    background: #4b5563;
+}
+
+.edit-input {
+    width: 100%;
+    padding: 4px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.expense-form {
+    margin-bottom: 30px;
+}
+
+.advanced-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.search-field {
+    flex: 1;
+    padding: 12px 15px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: border-color 0.3s;
+}
+
+.search-field:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.search-btn {
+    padding: 12px 20px;
+    background: #2563eb;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+    width: fit-content;
+    align-self: flex-start;
+}
+
+.search-btn:hover {
+    background: #1d4ed8;
+}
+
+.search-results {
+    margin-top: 20px;
+}
+
+.results-header {
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.results-header h3 {
+    margin: 0;
+    color: #1f2937;
+}
+
+.student-card {
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 20px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #f8fafc;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.student-card:hover {
+    border-color: #2563eb;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.1);
+}
+
+.student-info h3 {
+    margin: 0 0 10px 0;
+    color: #1f2937;
+    font-size: 18px;
+}
+
+.student-details {
+    display: flex;
+    gap: 10px;
+    font-size: 14px;
+    color: #6b7280;
+    flex-wrap: wrap;
+}
+
+.student-details span {
+    background: #e5e7eb;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.expense-form-section {
+    margin: 30px 0;
+    padding: 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f8fafc;
+}
+
+.selected-student-card {
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+    font-weight: 600;
+    color: #1e40af;
+}
+
+.add-expense-form {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+.form-group {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.form-group label {
+    font-size: 14px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.form-group input,
+.form-group select {
+    padding: 10px 12px;
+    border: 2px solid #e5e7eb;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: border-color 0.3s;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #2563eb;
+}
+
+.add-expense-btn {
+    padding: 12px 24px;
+    background: #059669;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s;
+}
+
+.add-expense-btn:hover {
+    background: #047857;
+}
+
+.expenses-display {
+    margin: 30px 0;
+    padding: 20px;
+    border: 2px solid #e5e7eb;
+    border-radius: 10px;
+    background: #f8fafc;
+    min-height: 200px;
+}
+
+.welcome-message {
+    text-align: center;
+    color: #6b7280;
+    padding: 40px 20px;
+}
+
+.welcome-message h3 {
+    color: #374151;
+    margin-bottom: 10px;
+}
+
+.expense-item {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.expense-details {
+    flex: 1;
+}
+
+.expense-amount {
+    font-weight: bold;
+    color: #059669;
+    margin-left: 1rem;
+}
+
+.expense-meta {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.delete-btn {
+    background: #dc2626;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.delete-btn:hover {
+    background: #b91c1c;
+}
+
+.expense-summary {
+    background: #dbeafe;
+    border: 1px solid #93c5fd;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.expense-summary h3 {
+    margin: 0 0 10px 0;
+    color: #1e40af;
+}
+
+.expense-summary p {
+    margin: 5px 0;
+    color: #374151;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.action-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.action-btn.primary {
+    background: #2563eb;
+    color: white;
+}
+
+.action-btn.primary:hover {
+    background: #1d4ed8;
+}
+
+.action-btn.secondary {
+    background: #6b7280;
+    color: white;
+}
+
+.action-btn.secondary:hover {
+    background: #4b5563;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-content {
+    background: white;
+    padding: 30px;
+    border-radius: 10px;
+    text-align: center;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #2563eb;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 15px;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+}
+
+.toast {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 15px 20px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    animation: slideIn 0.3s ease;
+    min-width: 300px;
+}
+
+.toast-success { border-left: 4px solid #059669; }
+.toast-error { border-left: 4px solid #dc2626; }
+.toast-info { border-left: 4px solid #2563eb; }
+
+.toast button {
+    background: none;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    color: #6b7280;
+    margin-left: 15px;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+@media (max-width: 768px) {
+    .expense-container {
+        margin: 10px;
+        padding: 15px;
+        border-radius: 8px;
+    }
+    
+    .expense-header {
+        margin-bottom: 25px;
+    }
+    
+    .expense-header h1 {
+        font-size: 24px;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .form-group input,
+    .form-group select {
+        padding: 12px;
+        font-size: 16px;
+    }
+    
+    .search-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .student-card {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+        padding: 15px;
+    }
+    
+    .student-details {
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .student-details span {
+        font-size: 12px;
+        padding: 4px 8px;
+    }
+    
+    .expenses-table {
+        font-size: 12px;
+        min-width: 500px;
+    }
+    
+    .expenses-table th,
+    .expenses-table td {
+        padding: 8px 6px;
+    }
+    
+    .table-edit-btn,
+    .table-delete-btn,
+    .table-save-btn,
+    .table-cancel-btn {
+        padding: 6px 8px;
+        font-size: 10px;
+        margin: 2px;
+    }
+    
+    .edit-input {
+        padding: 6px;
+        font-size: 11px;
+    }
+    
+    .expense-form-section {
+        padding: 15px;
+        margin: 20px 0;
+    }
+    
+    .add-expense-btn {
+        padding: 12px 16px;
+        font-size: 14px;
+        width: 100%;
+        max-width: 200px;
+    }
+    
+    .table-header {
+        padding: 15px;
+    }
+    
+    .table-header h3 {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .expense-container {
+        margin: 5px;
+        padding: 10px;
+    }
+    
+    .expense-header h1 {
+        font-size: 20px;
+    }
+    
+    .expense-header p {
+        font-size: 12px;
+    }
+    
+    .form-group label {
+        font-size: 13px;
+    }
+    
+    .student-card {
+        padding: 12px;
+    }
+    
+    .student-info h3 {
+        font-size: 16px;
+    }
+    
+    .expenses-table {
+        font-size: 11px;
+        min-width: 450px;
+    }
+    
+    .expenses-table th,
+    .expenses-table td {
+        padding: 6px 4px;
+    }
+    
+    .table-edit-btn,
+    .table-delete-btn,
+    .table-save-btn,
+    .table-cancel-btn {
+        padding: 4px 6px;
+        font-size: 9px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let selectedStudent = null;
+
+function loadAllExpenses() {
+    fetch('/api/todays-all-expenses/')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayExpensesTable(data.expenses);
+            } else {
+                document.getElementById('expensesTableBody').innerHTML = '<tr><td colspan="8" class="no-data">No expenses found</td></tr>';
+            }
+        })
+        .catch(error => {
+            console.error('Error loading expenses:', error);
+            document.getElementById('expensesTableBody').innerHTML = '<tr><td colspan="8" class="no-data">Error loading expenses</td></tr>';
+        });
+}
+
+function displayExpensesTable(expenses) {
+    const tbody = document.getElementById('expensesTableBody');
+    
+    if (!expenses || expenses.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="8" class="no-data">No expenses recorded</td></tr>';
+        return;
+    }
+    
+    tbody.innerHTML = '';
+    expenses.forEach(expense => {
+        const row = document.createElement('tr');
+        row.setAttribute('data-expense-id', expense.id);
+        row.innerHTML = `
+            <td>${expense.expense_date}</td>
+            <td>STU${expense.student_id.toString().padStart(3, '0')}</td>
+            <td>${expense.student_name}</td>
+            <td>${expense.student_reg_number || 'N/A'}</td>
+            <td>${expense.student_class}</td>
+            <td>${expense.description}</td>
+            <td>Rs. ${expense.amount}</td>
+            <td>
+                <button onclick="editExpenseFromTable(${expense.id}, '${expense.description}', ${expense.amount})" class="table-edit-btn">Edit</button>
+                <button onclick="deleteExpenseFromTable(${expense.id})" class="table-delete-btn">Delete</button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    });
+}
+
+function editExpenseFromTable(expenseId, description, amount) {
+    const row = document.querySelector(`tr[data-expense-id="${expenseId}"]`);
+    if (!row) return;
+    
+    const cells = row.querySelectorAll('td');
+    const descCell = cells[5];
+    const amountCell = cells[6];
+    const actionCell = cells[7];
+    
+    // Replace description cell with input
+    descCell.innerHTML = `<input type="text" value="${description}" class="edit-input" id="edit-desc-${expenseId}">`;
+    
+    // Replace amount cell with input
+    amountCell.innerHTML = `<input type="number" value="${amount}" step="0.01" min="0" class="edit-input" id="edit-amount-${expenseId}">`;
+    
+    // Replace action buttons with save/cancel
+    actionCell.innerHTML = `
+        <button onclick="saveExpenseEdit(${expenseId}, '${description}', ${amount})" class="table-save-btn">Save</button>
+        <button onclick="cancelExpenseEdit(${expenseId}, '${description}', ${amount})" class="table-cancel-btn">Cancel</button>
+    `;
+}
+
+function saveExpenseEdit(expenseId, originalDesc, originalAmount) {
+    const descInput = document.getElementById(`edit-desc-${expenseId}`);
+    const amountInput = document.getElementById(`edit-amount-${expenseId}`);
+    
+    const newDesc = descInput.value.trim();
+    const newAmount = parseFloat(amountInput.value);
+    
+    if (!newDesc || newAmount <= 0) {
+        showToast('Please enter valid description and amount', 'error');
+        return;
+    }
+    
+    // Get the student ID from the expense (we need to find it from the table)
+    const row = document.querySelector(`tr[data-expense-id="${expenseId}"]`);
+    const studentName = row.cells[2].textContent;
+    
+    // Find student by name to get ID
+    fetch(`/api/search-student/?name=${encodeURIComponent(studentName)}`)
+    .then(response => response.json())
+    .then(searchData => {
+        if (searchData.success && searchData.students && searchData.students.length > 0) {
+            const studentId = searchData.students[0].id;
+            
+            // First add new expense with updated values
+            fetch('/api/add-student-expense/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    student_id: studentId,
+                    description: newDesc,
+                    amount: newAmount
+                })
+            })
+            .then(response => response.json())
+            .then(addData => {
+                if (addData.success) {
+                    // Now delete the old expense
+                    fetch('/api/delete-student-expense/', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRFToken': getCookie('csrftoken')
+                        },
+                        body: JSON.stringify({ expense_id: expenseId })
+                    })
+                    .then(response => response.json())
+                    .then(deleteData => {
+                        if (deleteData.success) {
+                            showToast('Expense updated successfully', 'success');
+                            loadAllExpenses();
+                            if (selectedStudent) {
+                                loadStudentExpenses(selectedStudent.id);
+                            }
+                        } else {
+                            showToast('Failed to complete update', 'error');
+                        }
+                    });
+                } else {
+                    showToast('Failed to update expense', 'error');
+                }
+            });
+        } else {
+            showToast('Could not find student for update', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error updating expense: ' + error.message, 'error');
+    });
+}
+
+function cancelExpenseEdit(expenseId, originalDesc, originalAmount) {
+    const row = document.querySelector(`tr[data-expense-id="${expenseId}"]`);
+    if (!row) return;
+    
+    const cells = row.querySelectorAll('td');
+    const descCell = cells[5];
+    const amountCell = cells[6];
+    const actionCell = cells[7];
+    
+    // Restore original values
+    descCell.textContent = originalDesc;
+    amountCell.textContent = `Rs. ${originalAmount}`;
+    actionCell.innerHTML = `
+        <button onclick="editExpenseFromTable(${expenseId}, '${originalDesc}', ${originalAmount})" class="table-edit-btn">Edit</button>
+        <button onclick="deleteExpenseFromTable(${expenseId})" class="table-delete-btn">Delete</button>
+    `;
+}
+
+function deleteExpenseFromTable(expenseId) {
+    if (!confirm('Are you sure you want to delete this expense?')) {
+        return;
+    }
+    
+    fetch('/api/delete-student-expense/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ expense_id: expenseId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Expense deleted successfully', 'success');
+            loadAllExpenses(); // Reload table
+            if (selectedStudent) {
+                loadStudentExpenses(selectedStudent.id);
+            }
+        } else {
+            showToast(data.error || 'Failed to delete expense', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error deleting expense: ' + error.message, 'error');
+    });
+}
+
+function advancedSearch() {
+    const name = document.getElementById('searchName').value.trim();
+    const studentClass = document.getElementById('searchClass').value;
+    const section = document.getElementById('searchSection').value;
+    const regNumber = document.getElementById('searchReg').value.trim();
+    
+    if (!name && !studentClass && !section && !regNumber) {
+        showToast('Please enter at least one search criteria', 'error');
+        return;
+    }
+    
+    const params = {};
+    if (name) params.name = name;
+    if (studentClass) params.class = studentClass;
+    if (section) params.section = section;
+    if (regNumber) params.reg = regNumber;
+    
+    performSearch(params);
+}
+
+function performSearch(params) {
+    showLoading(true);
+    
+    // Build query string
+    const queryString = new URLSearchParams(params).toString();
+    
+    // Make API call to search students
+    fetch(`/api/search-student/?${queryString}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.students && data.students.length > 0) {
+                displaySearchResults(data.students);
+            } else if (data.success && data.student) {
+                displaySearchResults([data.student]);
+            } else {
+                displaySearchResults([]);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showToast('Error searching students', 'error');
+            displaySearchResults([]);
+        })
+        .finally(() => {
+            showLoading(false);
+        });
+}
+
+function clearSearchResults() {
+    // Clear all input fields
+    document.getElementById('searchName').value = '';
+    document.getElementById('searchClass').value = '';
+    document.getElementById('searchSection').value = '';
+    document.getElementById('searchReg').value = '';
+    
+    // Hide results
+    document.getElementById('searchResults').style.display = 'none';
+    document.getElementById('expenseForm').style.display = 'none';
+    document.getElementById('expensesDisplay').innerHTML = `
+        <div class="welcome-message">
+            <h3>Search for a student to get started</h3>
+            <p>Use the search box to find a student and manage their daily expenses</p>
+        </div>
+    `;
+}
+
+function searchStudent() {
+    const query = document.getElementById('studentSearch').value.trim();
+    if (!query) {
+        showToast('Please enter a search term', 'error');
+        return;
+    }
+    
+    showLoading(true);
+    
+    fetch(`/search-student-api/?q=${encodeURIComponent(query)}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displaySearchResults(data.students || [data.student]);
+            } else {
+                showToast(data.error || 'No students found', 'error');
+                document.getElementById('searchResults').style.display = 'none';
+            }
+        })
+        .catch(error => {
+            showToast('Search failed: ' + error.message, 'error');
+        })
+        .finally(() => {
+            showLoading(false);
+        });
+}
+
+function displaySearchResults(students) {
+    const resultsDiv = document.getElementById('searchResults');
+    const studentsList = document.getElementById('studentsList');
+    
+    if (!students || students.length === 0) {
+        resultsDiv.style.display = 'none';
+        return;
+    }
+    
+    studentsList.innerHTML = '';
+    students.forEach(student => {
+        const studentCard = document.createElement('div');
+        studentCard.className = 'student-card';
+        studentCard.onclick = () => selectStudent(student.id, student.name, student.student_class, student.reg_number);
+        studentCard.innerHTML = `
+            <div class="student-info">
+                <h3>${student.name}</h3>
+                <div class="student-details">
+                    <span>Class: ${student.student_class}</span>
+                    <span>Roll: ${student.reg_number}</span>
+                </div>
+            </div>
+        `;
+        studentsList.appendChild(studentCard);
+    });
+    
+    resultsDiv.style.display = 'block';
+}
+
+function selectStudent(id, name, studentClass, regNumber) {
+    selectedStudent = { id, name, studentClass, regNumber };
+    
+    document.getElementById('selectedStudent').innerHTML = `
+        <strong>Selected Student:</strong> ${name} (Class: ${studentClass}, Roll: ${regNumber})
+    `;
+    
+    document.getElementById('expenseForm').style.display = 'block';
+    document.getElementById('searchResults').style.display = 'none';
+    
+    loadStudentExpenses(id);
+}
+
+function loadStudentExpenses(studentId) {
+    fetch(`/api/student-expenses/${studentId}/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                displayStudentExpenses(data);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading expenses:', error);
+        });
+}
+
+function displayStudentExpenses(data) {
+    const displayDiv = document.getElementById('expensesDisplay');
+    
+    let html = `
+        <div class="expense-summary">
+            <h3>${data.student.name} - Today's Expenses</h3>
+            <p><strong>Total Amount:</strong> Rs. ${data.total_amount}</p>
+            <p><strong>Total Transactions:</strong> ${data.expenses.length}</p>
+        </div>
+        <div class="expenses-list">
+    `;
+    
+    if (data.expenses.length > 0) {
+        data.expenses.forEach(expense => {
+            html += `
+                <div class="expense-item">
+                    <div class="expense-details">
+                        <strong>${expense.description}</strong>
+                        <span class="expense-amount">Rs. ${expense.amount}</span>
+                    </div>
+                    <div class="expense-meta">
+                        <small>Time: ${expense.time}</small>
+                        <button onclick="deleteExpense(${expense.id})" class="delete-btn">×</button>
+                    </div>
+                </div>
+            `;
+        });
+    } else {
+        html += '<p>No expenses recorded today.</p>';
+    }
+    
+    html += '</div>';
+    displayDiv.innerHTML = html;
+}
+
+function addExpense(event) {
+    event.preventDefault();
+    
+    if (!selectedStudent) {
+        showToast('Please select a student first', 'error');
+        return;
+    }
+    
+    const description = document.getElementById('expenseDescription').value.trim();
+    const amount = parseFloat(document.getElementById('expenseAmount').value);
+    
+    if (!description || !amount || amount <= 0) {
+        showToast('Please enter valid description and amount', 'error');
+        return;
+    }
+    
+    const expenseData = {
+        student_id: selectedStudent.id,
+        description: description,
+        amount: amount
+    };
+    
+    fetch('/api/add-student-expense/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify(expenseData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Expense added successfully', 'success');
+            document.getElementById('expenseDescription').value = '';
+            document.getElementById('expenseAmount').value = '';
+            loadStudentExpenses(selectedStudent.id);
+            loadAllExpenses(); // Reload table
+        } else {
+            showToast(data.error || 'Failed to add expense', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error adding expense: ' + error.message, 'error');
+    });
+}
+
+function deleteExpense(expenseId) {
+    if (!confirm('Are you sure you want to delete this expense?')) {
+        return;
+    }
+    
+    fetch('/api/delete-student-expense/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({ expense_id: expenseId })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showToast('Expense deleted successfully', 'success');
+            if (selectedStudent) {
+                loadStudentExpenses(selectedStudent.id);
+            }
+        } else {
+            showToast(data.error || 'Failed to delete expense', 'error');
+        }
+    })
+    .catch(error => {
+        showToast('Error deleting expense: ' + error.message, 'error');
+    });
+}
+
+
+
+
+
+function showLoading(show) {
+    document.getElementById('loadingOverlay').style.display = show ? 'flex' : 'none';
+}
+
+function showToast(message, type = 'info') {
+    const toast = document.createElement('div');
+    toast.className = `toast toast-${type}`;
+    toast.innerHTML = `
+        <span>${message}</span>
+        <button onclick="this.parentElement.remove()">×</button>
+    `;
+    
+    document.getElementById('toastContainer').appendChild(toast);
+    
+    setTimeout(() => {
+        if (toast.parentElement) {
+            toast.remove();
+        }
+    }, 5000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Load all expenses on page load
+    loadAllExpenses();
+    
+    // Allow Enter key to search in advanced search fields
+    document.addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            const target = e.target;
+            if (target.id === 'searchName' || target.id === 'searchReg') {
+                advancedSearch();
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

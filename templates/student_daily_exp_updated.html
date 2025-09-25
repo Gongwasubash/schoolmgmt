@@ -1,0 +1,570 @@
+{% extends "base.html" %}
+
+{% block title %}Student Daily Expenses{% endblock %}
+
+{% block content %}
+<div class="expense-dashboard">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="header-left">
+            <h1><i class="fas fa-wallet"></i> Student Daily Expenses</h1>
+            <p>Track and manage daily student expenses</p>
+        </div>
+        <div class="header-right">
+            <div class="date-display">
+                <i class="fas fa-calendar-alt"></i>
+                <span>{{ current_date }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card total">
+            <div class="stat-icon">
+                <i class="fas fa-money-bill-wave"></i>
+            </div>
+            <div class="stat-info">
+                <h3 id="totalAmount">Rs. 0</h3>
+                <p>Total Today</p>
+            </div>
+        </div>
+        <div class="stat-card students">
+            <div class="stat-icon">
+                <i class="fas fa-users"></i>
+            </div>
+            <div class="stat-info">
+                <h3 id="totalStudents">0</h3>
+                <p>Students</p>
+            </div>
+        </div>
+        <div class="stat-card transactions">
+            <div class="stat-icon">
+                <i class="fas fa-receipt"></i>
+            </div>
+            <div class="stat-info">
+                <h3 id="totalTransactions">0</h3>
+                <p>Transactions</p>
+            </div>
+        </div>
+        <div class="stat-card average">
+            <div class="stat-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <div class="stat-info">
+                <h3 id="averageAmount">Rs. 0</h3>
+                <p>Average</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content-grid">
+        <!-- Left Panel - Search & Add -->
+        <div class="left-panel">
+            <!-- Search Student -->
+            <div class="search-card">
+                <h3><i class="fas fa-search"></i> Find Student</h3>
+                <div class="search-box">
+                    <input type="text" id="studentSearch" placeholder="Search by name, ID, or class...">
+                    <button onclick="searchStudent()" class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                <div id="searchResults" class="search-results"></div>
+            </div>
+
+            <!-- Add Expense Form -->
+            <div class="expense-form-card" id="expenseForm" style="display: none;">
+                <h3><i class="fas fa-plus-circle"></i> Add Expense</h3>
+                <div class="selected-student" id="selectedStudent"></div>
+                <form onsubmit="addExpense(event)">
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" id="expenseDescription" placeholder="Enter expense description..." required>
+                    </div>
+                    <div class="form-group">
+                        <label>Amount (Rs.)</label>
+                        <input type="number" id="expenseAmount" placeholder="0.00" min="0" step="0.01" required>
+                    </div>
+                    <button type="submit" class="add-btn">
+                        <i class="fas fa-plus"></i> Add Expense
+                    </button>
+                </form>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="quick-actions-card">
+                <h3><i class="fas fa-bolt"></i> Quick Actions</h3>
+                <button onclick="viewAllExpenses()" class="action-btn primary">
+                    <i class="fas fa-list"></i> View All Today's Expenses
+                </button>
+                <button onclick="exportData()" class="action-btn secondary">
+                    <i class="fas fa-download"></i> Export Data
+                </button>
+                <button onclick="clearAll()" class="action-btn danger">
+                    <i class="fas fa-trash"></i> Clear All
+                </button>
+            </div>
+        </div>
+
+        <!-- Right Panel - Expenses Display -->
+        <div class="right-panel">
+            <div class="expenses-display" id="expensesDisplay">
+                <div class="welcome-message">
+                    <i class="fas fa-search"></i>
+                    <h3>Search for a student to get started</h3>
+                    <p>Use the search box to find a student and manage their daily expenses</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display: none;">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Loading...</p>
+        </div>
+    </div>
+</div>
+
+<!-- Toast Notifications -->
+<div id="toastContainer" class="toast-container"></div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.expense-dashboard {
+    background: #f5f5f5;
+    min-height: 100vh;
+    padding: 0;
+}
+
+.dashboard-header {
+    background: white;
+    padding: 1rem 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #e0e0e0;
+    margin-bottom: 1rem;
+}
+
+.header-left h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #333;
+    margin: 0 0 0.5rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.header-left h1 i {
+    color: #28a745;
+}
+
+.header-left p {
+    color: #666;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.date-display {
+    background: #28a745;
+    color: white;
+    padding: 0.75rem 1rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    padding: 0 2rem 1rem;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+    animation: slideInUp 0.6s ease-out;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.stat-card.total { border-left: 4px solid #28a745; }
+.stat-card.students { border-left: 4px solid #17a2b8; }
+.stat-card.transactions { border-left: 4px solid #ffc107; }
+.stat-card.average { border-left: 4px solid #dc3545; }
+
+.stat-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+.stat-card.total .stat-icon { background: #28a745; }
+.stat-card.students .stat-icon { background: #17a2b8; }
+.stat-card.transactions .stat-icon { background: #ffc107; }
+.stat-card.average .stat-icon { background: #dc3545; }
+
+.stat-icon i {
+    font-size: 20px;
+}
+
+.stat-info h3 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0 0 0.25rem 0;
+}
+
+.stat-info p {
+    font-size: 0.75rem;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 0;
+}
+
+.main-content-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 1rem;
+    padding: 0 2rem 1rem;
+}
+
+.left-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.search-card, .expense-form-card, .quick-actions-card {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.search-card:hover, .expense-form-card:hover, .quick-actions-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+}
+
+.search-card h3, .expense-form-card h3, .quick-actions-card h3 {
+    font-size: 1.125rem;
+    color: #333;
+    margin: 0 0 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.search-card h3 i, .expense-form-card h3 i, .quick-actions-card h3 i {
+    color: #28a745;
+}
+
+.search-box {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.search-box input {
+    flex: 1;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: #28a745;
+}
+
+.search-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.search-btn:hover {
+    background: #218838;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+    color: #333;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    box-sizing: border-box;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: #28a745;
+}
+
+.add-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-weight: 500;
+    transition: background-color 0.3s;
+}
+
+.add-btn:hover {
+    background: #218838;
+}
+
+.action-btn {
+    background: #28a745;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    margin-bottom: 0.5rem;
+    transition: all 0.3s;
+}
+
+.action-btn:hover {
+    background: #218838;
+    transform: translateX(2px);
+}
+
+.action-btn.secondary {
+    background: #6c757d;
+}
+
+.action-btn.secondary:hover {
+    background: #5a6268;
+}
+
+.action-btn.danger {
+    background: #dc3545;
+}
+
+.action-btn.danger:hover {
+    background: #c82333;
+}
+
+.right-panel {
+    background: white;
+    border-radius: 8px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    transition: all 0.3s ease;
+}
+
+.right-panel:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+}
+
+.welcome-message {
+    text-align: center;
+    color: #666;
+    padding: 2rem;
+}
+
+.welcome-message i {
+    font-size: 3rem;
+    color: #28a745;
+    margin-bottom: 1rem;
+}
+
+.welcome-message h3 {
+    color: #333;
+    margin-bottom: 0.5rem;
+}
+
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.loading-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #28a745;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.toast-container {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+}
+
+@media (max-width: 1024px) {
+    .main-content-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .dashboard-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+        padding: 0 1rem 1rem;
+    }
+    
+    .main-content-grid {
+        padding: 0 1rem 1rem;
+    }
+}
+
+.selected-student {
+    background: #f8f9fa;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+}
+
+.search-results {
+    margin-top: 1rem;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.search-result-item {
+    padding: 0.75rem;
+    border: 1px solid #dee2e6;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.search-result-item:hover {
+    background: #f8f9fa;
+}
+
+.search-result-item:last-child {
+    margin-bottom: 0;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Add your JavaScript functions here
+function searchStudent() {
+    // Implementation for student search
+}
+
+function addExpense(event) {
+    event.preventDefault();
+    // Implementation for adding expense
+}
+
+function viewAllExpenses() {
+    // Implementation for viewing all expenses
+}
+
+function exportData() {
+    // Implementation for data export
+}
+
+function clearAll() {
+    // Implementation for clearing all data
+}
+</script>
+{% endblock %}

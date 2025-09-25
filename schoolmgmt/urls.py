@@ -88,5 +88,11 @@ urlpatterns = [
     path('api/convert-date/', views.convert_date_api, name='convert_date_api'),
     path('api/nepali-sessions/', views.get_nepali_sessions_api, name='get_nepali_sessions_api'),
     path('print-bill/', views.print_bill, name='print_bill'),
+    path('student-daily-exp/', views.student_daily_exp, name='student_daily_exp'),
+    path('api/add-student-expense/', views.add_student_expense, name='add_student_expense'),
+    path('api/delete-student-expense/', views.delete_student_expense, name='delete_student_expense'),
+    path('api/student-expenses/<int:student_id>/', views.get_student_expenses_api, name='get_student_expenses_api'),
+    path('api/class-expenses/<str:class_name>/', views.get_class_expenses_api, name='get_class_expenses_api'),
+    path('api/todays-all-expenses/', views.get_todays_all_expenses_api, name='get_todays_all_expenses_api'),
     path('admin/', admin.site.urls),
 ]
