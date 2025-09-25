@@ -393,6 +393,17 @@
             });
         }
         
+        // Add daily expenses
+        if (paymentData.daily_expenses && paymentData.daily_expenses.length > 0) {
+            paymentData.daily_expenses.forEach(expense => {
+                feeHtml += `<tr>
+                    <td style="border: 1px solid #ddd; padding: 6px; font-size: 10px;">${expense.description.toUpperCase()}</td>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: center; font-size: 10px;">-</td>
+                    <td style="border: 1px solid #ddd; padding: 6px; text-align: right; font-size: 10px;">Rs ${expense.amount.toLocaleString()}</td>
+                </tr>`;
+            });
+        }
+        
         // Add total row
         feeHtml += `<tr style="background: #f9f9f9; font-weight: bold;">
             <td colspan="2" style="border: 1px solid #ddd; padding: 8px; font-size: 11px;">Total Amount</td>

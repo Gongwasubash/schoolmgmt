@@ -69,6 +69,26 @@
                 </div>
             </div>
             
+            {% if daily_expenses %}
+            <div class="daily-expenses-section">
+                <h4>Student Daily Expenses</h4>
+                <div class="daily-expenses-container">
+                    {% for expense in daily_expenses %}
+                    <div class="daily-expense-row">
+                        <input type="checkbox" class="dailyExpenseCheckbox" value="{{ expense.id }}" data-amount="{{ expense.amount }}" onchange="calculateFees()">
+                        <span class="expense-description">{{ expense.description }}</span>
+                        <span class="expense-amount">Rs.{{ expense.amount }}</span>
+                        <span class="expense-date">{{ expense.date }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="fee-breakdown">
+                    <h5>Daily Expenses Breakdown</h5>
+                    <div class="breakdown-list" id="dailyExpensesBreakdown"></div>
+                </div>
+            </div>
+            {% endif %}
+            
             <div class="custom-fees-section">
                 <h4>Custom Fees</h4>
                 <div class="custom-fee-container">
@@ -440,6 +460,7 @@
     color: #059669;
 }
 
+.daily-expenses-section,
 .custom-fees-section {
     background: #f8fafc;
     padding: 1rem;
@@ -448,11 +469,49 @@
     margin-bottom: 1.5rem;
 }
 
+.daily-expenses-section {
+    background: #fef3c7;
+    border-color: #f59e0b;
+}
+
+.daily-expense-row {
+    display: grid;
+    grid-template-columns: auto 2fr 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 0.375rem;
+    border: 1px solid #d1d5db;
+    margin-bottom: 0.5rem;
+}
+
+.expense-description {
+    font-weight: 500;
+    color: #374151;
+}
+
+.expense-amount {
+    font-weight: 600;
+    color: #dc2626;
+    text-align: center;
+}
+
+.expense-date {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+.daily-expenses-section h4,
 .custom-fees-section h4 {
     margin: 0 0 0.75rem 0;
     color: #374151;
     font-size: 0.875rem;
     font-weight: 600;
+}
+
+.daily-expenses-section h4 {
+    color: #92400e;
 }
 
 .custom-fee-row {
@@ -672,6 +731,13 @@ function calculateFees() {
         }
     });
     
+    // Add daily expenses
+    const dailyExpenses = document.querySelectorAll('.dailyExpenseCheckbox:checked');
+    dailyExpenses.forEach(checkbox => {
+        const amount = parseFloat(checkbox.dataset.amount) || 0;
+        totalFee += amount;
+    });
+    
     // Add custom fees (no month multiplication)
     const customFees = document.querySelectorAll('.custom-fee-row');
     customFees.forEach(row => {
@@ -686,6 +752,7 @@ function calculateFees() {
     
     updateMonthRange();
     updateFeeBreakdown();
+    updateDailyExpensesBreakdown();
 }
 
 function updateFeeBreakdown() {
@@ -726,6 +793,36 @@ function updateFeeBreakdown() {
     
     // Update custom fees breakdown separately
     updateCustomFeesBreakdown();
+}
+
+function updateDailyExpensesBreakdown() {
+    const dailyExpensesBreakdown = document.getElementById('dailyExpensesBreakdown');
+    if (!dailyExpensesBreakdown) return;
+    
+    const checkedExpenses = document.querySelectorAll('.dailyExpenseCheckbox:checked');
+    let html = '';
+    let dailyTotal = 0;
+    
+    checkedExpenses.forEach(checkbox => {
+        const row = checkbox.closest('.daily-expense-row');
+        const description = row.querySelector('.expense-description').textContent;
+        const amount = parseFloat(checkbox.dataset.amount) || 0;
+        dailyTotal += amount;
+        
+        html += `<div class="breakdown-item">
+            <span>${description}</span>
+            <span>Rs.${amount}</span>
+        </div>`;
+    });
+    
+    if (html) {
+        html += `<div class="breakdown-item">
+            <span>Daily Expenses Total</span>
+            <span>Rs.${dailyTotal}</span>
+        </div>`;
+    }
+    
+    dailyExpensesBreakdown.innerHTML = html;
 }
 
 function updateCustomFeesBreakdown() {
@@ -949,6 +1046,19 @@ function submitPayment() {
         }
     });
     
+    // Collect daily expenses
+    const dailyExpenses = [];
+    document.querySelectorAll('.dailyExpenseCheckbox:checked').forEach(checkbox => {
+        const row = checkbox.closest('.daily-expense-row');
+        const description = row.querySelector('.expense-description').textContent;
+        const amount = parseFloat(checkbox.dataset.amount) || 0;
+        dailyExpenses.push({
+            id: checkbox.value,
+            description: description,
+            amount: amount
+        });
+    });
+    
     // Collect custom fees
     const customFees = [];
     document.querySelectorAll('.custom-fee-row').forEach(row => {
@@ -968,6 +1078,7 @@ function submitPayment() {
         student_id: studentId,
         selected_months: JSON.stringify(selectedMonths),
         fee_types: JSON.stringify(feeTypes),
+        daily_expenses: JSON.stringify(dailyExpenses),
         custom_fees: JSON.stringify(customFees),
         total_fee: parseFloat(document.getElementById('totalFee').value) || 0,
         payment_amount: parseFloat(document.getElementById('paymentAmount').value) || 0,
@@ -1024,7 +1135,8 @@ function printBill() {
         reg_number: '{{ student.reg_number|default:"REG2025001" }}',
         selected_months: JSON.parse(window.lastPaymentData.selected_months),
         fee_types: JSON.parse(window.lastPaymentData.fee_types),
-        custom_fees: JSON.parse(window.lastPaymentData.custom_fees)
+        custom_fees: JSON.parse(window.lastPaymentData.custom_fees),
+        daily_expenses: JSON.parse(window.lastPaymentData.daily_expenses)
     };
     
     const billUrl = '/print-bill/?data=' + encodeURIComponent(JSON.stringify(paymentData));
