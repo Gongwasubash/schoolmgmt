@@ -839,26 +839,29 @@ def submit_payment(request):
             
             payment_ids = []
             
-            # Create separate payment record for each fee type and month combination
+            # Create separate payment record for each fee type with appropriate months
             for fee_type in fee_types:
-                for month in selected_months:
-                    payment = FeePayment.objects.create(
-                        student=student,
-                        selected_months=json.dumps([month]),
-                        fee_types=json.dumps([fee_type]),
-                        custom_fees='[]',
-                        total_fee=fee_type['amount'],
-                        payment_amount=fee_type['amount'],
-                        balance=0,
-                        payment_method=data['payment_method'],
-                        bank_name=data.get('bank_name', ''),
-                        cheque_dd_no=data.get('cheque_dd_no', ''),
-                        cheque_date=cheque_date,
-                        remarks=data.get('remarks', ''),
-                        sms_sent=data.get('sms_sent', False),
-                        whatsapp_sent=data.get('whatsapp_sent', False)
-                    )
-                    payment_ids.append(payment.id)
+                # One-time fees don't need months
+                one_time_fees = ['admission_fee', 'examination_fee', 'library_fee', 'sports_fee', 'laboratory_fee', 'computer_fee']
+                fee_months = [] if fee_type['type'] in one_time_fees else selected_months
+                
+                payment = FeePayment.objects.create(
+                    student=student,
+                    selected_months=json.dumps(fee_months),
+                    fee_types=json.dumps([fee_type]),
+                    custom_fees='[]',
+                    total_fee=fee_type.get('total', fee_type.get('amount', 0)),
+                    payment_amount=fee_type.get('total', fee_type.get('amount', 0)),
+                    balance=0,
+                    payment_method=data['payment_method'],
+                    bank_name=data.get('bank_name', ''),
+                    cheque_dd_no=data.get('cheque_dd_no', ''),
+                    cheque_date=cheque_date,
+                    remarks=data.get('remarks', ''),
+                    sms_sent=data.get('sms_sent', False),
+                    whatsapp_sent=data.get('whatsapp_sent', False)
+                )
+                payment_ids.append(payment.id)
             
             # Create separate payment records for custom fees
             for custom_fee in custom_fees:
@@ -1003,10 +1006,10 @@ def fee_receipt_book(request):
         student.class_name = student.student_class
         student.roll_number = student.reg_number
         
-        # Calculate monthly fee amount
+        # Calculate monthly fee amount (monthly_fee + tuition_fee)
         try:
             fee_structure = FeeStructure.objects.get(class_name=student.student_class)
-            monthly_fee_amount = float(fee_structure.monthly_fee + fee_structure.tuition_fee)
+            monthly_fee_amount = float(fee_structure.monthly_fee) + float(fee_structure.tuition_fee)
         except FeeStructure.DoesNotExist:
             monthly_fee_amount = 4500.0  # 2500 + 2000
         
@@ -1438,18 +1441,8 @@ def fee_receipt_book_api(request):
                     else:
                         student_total_fee += fee_amount
                 
-                # Calculate paid amount for selected fee types
-                payments = FeePayment.objects.filter(student=student)
-                student_paid = Decimal('0')
-                for payment in payments:
-                    if payment.fee_types:
-                        try:
-                            payment_fee_types = json.loads(payment.fee_types)
-                            for fee_data in payment_fee_types:
-                                if fee_data.get('type') in fee_types_filter:
-                                    student_paid += Decimal(str(fee_data.get('amount', 0)))
-                        except json.JSONDecodeError:
-                            pass
+                # Always show actual total paid amount, not filtered
+                student_paid = student.total_paid or Decimal('0')
             elif selected_months and fee_structure:
                 # Calculate fee only for selected months
                 monthly_fee = fee_structure.monthly_fee + fee_structure.tuition_fee
