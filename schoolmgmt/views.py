@@ -421,6 +421,17 @@ def pay_student(request, student_id):
                 paid_fee_months[fee_type] += months
         total_balance += payment.balance
     
+    # Get student daily expenses
+    daily_expenses = StudentDailyExpense.objects.filter(student=student)
+    daily_expenses_data = []
+    for expense in daily_expenses:
+        daily_expenses_data.append({
+            'id': expense.id,
+            'description': expense.description,
+            'amount': float(expense.amount),
+            'date': expense.expense_date.strftime('%Y-%m-%d')
+        })
+    
     context = {
         'student': student,
         'student_id': f'STU{student.id:03d}',
@@ -428,7 +439,8 @@ def pay_student(request, student_id):
         'fee_headings': fee_headings,
         'paid_fee_months': json.dumps(paid_fee_months),
         'student_balance': total_balance,
-        'selected_class': student.student_class
+        'selected_class': student.student_class,
+        'daily_expenses': daily_expenses_data
     }
     return render(request, 'pay.html', context)
 
@@ -907,6 +919,12 @@ def submit_payment(request):
                     student.save()
                     break
             
+            # Delete paid daily expenses
+            daily_expenses = json.loads(data.get('daily_expenses', '[]'))
+            if daily_expenses:
+                expense_ids = [expense['id'] for expense in daily_expenses]
+                StudentDailyExpense.objects.filter(id__in=expense_ids).delete()
+            
             return JsonResponse({'success': True, 'payment_ids': payment_ids})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
@@ -1352,6 +1370,15 @@ def credit_slip(request, student_id):
     
     pending_fees = []
     total_pending = 0
+    
+    # Add student daily expenses
+    daily_expenses = StudentDailyExpense.objects.filter(student=student)
+    for expense in daily_expenses:
+        pending_fees.append({
+            'name': expense.description,
+            'amount': float(expense.amount)
+        })
+        total_pending += float(expense.amount)
     
     if fee_structure:
         # Get paid months and fee types

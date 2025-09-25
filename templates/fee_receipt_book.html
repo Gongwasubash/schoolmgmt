@@ -699,9 +699,9 @@
                     <th>Student Details</th>
                     <th>Total Fee</th>
                     <th>Paid</th>
+                    <th>Student Daily Expenses</th>
                     <th>Fee Breakdown</th>
                     <th>Status</th>
-
                     <th class="hide-mobile">Last Payment</th>
                     <th>Actions</th>
                 </tr>
@@ -727,6 +727,9 @@
                     </td>
                     <td>
                         <div class="fee-amount" style="color: #28a745;">Rs{{ student.paid_amount|floatformat:0 }}</div>
+                    </td>
+                    <td>
+                        <div class="fee-amount" style="color: #dc3545;">Rs{{ student.daily_expenses_total|default:0|floatformat:0 }}</div>
                     </td>
                     <td>
                         <div class="fee-details" style="font-size: 0.75rem; color: #666;">
@@ -942,6 +945,9 @@ class FeeReceiptBook {
                 </td>
                 <td>
                     <div class="fee-amount" style="color: #28a745;">Rs${Math.round(student.paid_amount || 0).toLocaleString()}</div>
+                </td>
+                <td>
+                    <div class="fee-amount" style="color: #dc3545;">Rs${Math.round(student.daily_expenses_total || 0).toLocaleString()}</div>
                 </td>
                 <td>
                     <div class="fee-details" style="font-size: 0.75rem; color: #666;">
