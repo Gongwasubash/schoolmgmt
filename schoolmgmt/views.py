@@ -1892,20 +1892,27 @@ def create_subject(request):
 def edit_subject(request):
     if request.method == 'POST':
         try:
-            subject_id = request.POST.get('subject_id')
+            # Handle both JSON and form data
+            if request.content_type == 'application/json':
+                data = json.loads(request.body)
+                subject_id = data.get('subject_id')
+            else:
+                subject_id = request.POST.get('subject_id')
+                data = request.POST
+            
             subject = get_object_or_404(Subject, id=subject_id)
             
-            code = request.POST.get('code')
+            code = data.get('code')
             
             # Check if subject code already exists (excluding current subject)
             if Subject.objects.filter(code=code).exclude(id=subject_id).exists():
                 return JsonResponse({'success': False, 'error': f'Subject code "{code}" already exists. Please use a different code.'})
             
-            subject.name = request.POST.get('name')
+            subject.name = data.get('name')
             subject.code = code
-            subject.class_name = request.POST.get('class_name')
-            subject.max_marks = int(request.POST.get('max_marks', 100))
-            subject.pass_marks = int(request.POST.get('pass_marks', 35))
+            subject.class_name = data.get('class_name')
+            subject.max_marks = int(data.get('max_marks', 100))
+            subject.pass_marks = int(data.get('pass_marks', 35))
             subject.save()
             
             return JsonResponse({'success': True, 'subject_id': subject.id})

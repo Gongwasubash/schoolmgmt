@@ -602,20 +602,25 @@
                     <tr data-subject-id="{{ subject.id }}">
                         <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
                             <input type="checkbox" name="subject_select" value="{{ subject.id }}" style="margin-right: 8px;">
-                            {{ subject.name }}
+                            <input type="text" class="inline-edit" data-field="name" data-subject-id="{{ subject.id }}" value="{{ subject.name }}" onblur="updateSubjectField({{ subject.id }}, 'name', this.value)" style="border: none; background: transparent; width: 100%; font-size: 14px; padding: 2px;" onfocus="this.style.background='#f8f9fa'; this.style.border='1px solid #007bff'" onblur="this.style.background='transparent'; this.style.border='none'">
                         </td>
-                        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">{{ subject.code }}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
+                            <input type="text" class="inline-edit" data-field="code" data-subject-id="{{ subject.id }}" value="{{ subject.code }}" onblur="updateSubjectField({{ subject.id }}, 'code', this.value)" style="border: none; background: transparent; width: 100%; font-size: 14px; padding: 2px;" onfocus="this.style.background='#f8f9fa'; this.style.border='1px solid #007bff'" onblur="this.style.background='transparent'; this.style.border='none'">
+                        </td>
                         <td class="class-name-cell" data-original="{{ subject.class_name }}" style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
-                            <select class="class-dropdown" data-subject-id="{{ subject.id }}" onchange="updateSubjectClass({{ subject.id }}, this.value)" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 80px; background: white; cursor: pointer;">
+                            <select class="class-dropdown" data-subject-id="{{ subject.id }}" onchange="updateSubjectField({{ subject.id }}, 'class_name', this.value)" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 100%; background: white; cursor: pointer;">
                                 {% for class_name in available_classes %}
                                 <option value="{{ class_name }}" {% if class_name == subject.class_name %}selected{% endif %} data-original="{{ class_name }}">{{ class_name }}</option>
                                 {% endfor %}
                             </select>
                         </td>
-                        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">{{ subject.max_marks }}</td>
-                        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">{{ subject.pass_marks }}</td>
                         <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
-                            <button class="btn btn-sm" onclick="editSubject({{ subject.id }}, '{{ subject.name }}', '{{ subject.code }}', '{{ subject.class_name }}', {{ subject.max_marks }}, {{ subject.pass_marks }})" style="margin-right: 5px; font-size: 0.7rem; padding: 0.25rem 0.5rem;">Edit</button>
+                            <input type="number" class="inline-edit" data-field="max_marks" data-subject-id="{{ subject.id }}" value="{{ subject.max_marks }}" onblur="updateSubjectField({{ subject.id }}, 'max_marks', this.value)" style="border: none; background: transparent; width: 100%; font-size: 14px; padding: 2px;" onfocus="this.style.background='#f8f9fa'; this.style.border='1px solid #007bff'" onblur="this.style.background='transparent'; this.style.border='none'">
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
+                            <input type="number" class="inline-edit" data-field="pass_marks" data-subject-id="{{ subject.id }}" value="{{ subject.pass_marks }}" onblur="updateSubjectField({{ subject.id }}, 'pass_marks', this.value)" style="border: none; background: transparent; width: 100%; font-size: 14px; padding: 2px;" onfocus="this.style.background='#f8f9fa'; this.style.border='1px solid #007bff'" onblur="this.style.background='transparent'; this.style.border='none'">
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
                             <button class="btn btn-sm btn-danger" onclick="deleteSubject({{ subject.id }}, '{{ subject.name }}')" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">Delete</button>
                         </td>
                     </tr>
@@ -948,16 +953,7 @@ function deleteAllSubjects() {
     }
 }
 
-function editSubject(id, name, code, className, maxMarks, passMarks) {
-    const form = document.getElementById('subjectForm');
-    form.querySelector('input[name="name"]').value = name;
-    form.querySelector('input[name="code"]').value = code;
-    form.querySelector('select[name="class_name"]').value = className;
-    form.querySelector('input[name="max_marks"]').value = maxMarks;
-    form.querySelector('input[name="pass_marks"]').value = passMarks;
-    form.dataset.editId = id;
-    form.querySelector('button[type="submit"]').textContent = 'Update Subject';
-}
+// Inline editing is now available - no separate edit function needed
 
 function importData() {
     const input = document.createElement('input');
@@ -1137,13 +1133,21 @@ function deleteSelectedSubjects() {
     }
 }
 
-function updateSubjectClass(subjectId, newClass) {
+function updateSubjectField(subjectId, fieldName, newValue) {
+    if (!newValue || newValue.trim() === '') {
+        alert('Field cannot be empty');
+        location.reload();
+        return;
+    }
+    
+    const data = {
+        subject_id: subjectId
+    };
+    data[fieldName] = newValue;
+    
     fetch('{% url "edit_subject" %}', {
         method: 'POST',
-        body: JSON.stringify({
-            subject_id: subjectId,
-            class_name: newClass
-        }),
+        body: JSON.stringify(data),
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': '{{ csrf_token }}'
@@ -1152,15 +1156,20 @@ function updateSubjectClass(subjectId, newClass) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            console.log('Class updated successfully');
+            // Show brief success indicator
+            const row = document.querySelector(`tr[data-subject-id="${subjectId}"]`);
+            row.style.backgroundColor = '#d4edda';
+            setTimeout(() => {
+                row.style.backgroundColor = '';
+            }, 1000);
         } else {
-            alert('Error updating class: ' + data.error);
+            alert('Error updating ' + fieldName + ': ' + data.error);
             location.reload();
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error updating class');
+        alert('Error updating ' + fieldName);
         location.reload();
     });
 }
