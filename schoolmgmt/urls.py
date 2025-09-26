@@ -16,6 +16,8 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from django.conf import settings
+from django.conf.urls.static import static
 from . import views
 
 urlpatterns = [
@@ -94,5 +96,11 @@ urlpatterns = [
     path('api/student-expenses/<int:student_id>/', views.get_student_expenses_api, name='get_student_expenses_api'),
     path('api/class-expenses/<str:class_name>/', views.get_class_expenses_api, name='get_class_expenses_api'),
     path('api/todays-all-expenses/', views.get_todays_all_expenses_api, name='get_todays_all_expenses_api'),
+    path('school-settings/', views.school_settings, name='school_settings'),
+    path('school-settings-test/', views.school_settings_test, name='school_settings_test'),
     path('admin/', admin.site.urls),
 ]
+
+# Serve media files during development
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

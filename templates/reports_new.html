@@ -1,0 +1,1173 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Marksheet Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.marksheet-dashboard {
+    background: #f5f5f5;
+    min-height: 100vh;
+    padding: 2rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dashboard-header {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    margin-bottom: 2rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.dashboard-header h1 {
+    color: #2563eb;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0 0 0.5rem 0;
+}
+
+.dashboard-header p {
+    color: #666;
+    font-size: 1.1rem;
+    margin: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-card.exams .stat-icon { background: #007bff; }
+.stat-card.subjects .stat-icon { background: #28a745; }
+.stat-card.marksheets .stat-icon { background: #ffc107; }
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.stat-content p {
+    color: #666;
+    margin: 0;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.quick-actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.quick-action-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    text-align: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.quick-action-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+}
+
+.quick-action-icon {
+    font-size: 2.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.quick-action-title {
+    font-weight: 600;
+    color: #333;
+    margin-bottom: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.quick-action-desc {
+    font-size: 0.875rem;
+    color: #666;
+}
+
+.main-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.content-section {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.section-header {
+    background: #f8f9fa;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e9ecef;
+    text-align: center;
+}
+
+.section-header h3 {
+    margin: 0;
+    color: #2563eb;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.section-body {
+    padding: 2rem;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-grid-full {
+    grid-column: 1 / -1;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    color: #333;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 0.875rem;
+    transition: border-color 0.3s;
+    box-sizing: border-box;
+}
+
+.form-group input:focus, .form-group select:focus {
+    outline: none;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.checkbox-group {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    gap: 0.75rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 1rem;
+    background: #f9fafb;
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #374151;
+    margin: 0;
+    padding: 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    background: white;
+    border: 1px solid #e5e7eb;
+}
+
+.checkbox-label:hover {
+    background: #f3f4f6;
+    border-color: #d1d5db;
+    transform: translateY(-1px);
+}
+
+.checkbox-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    padding: 0;
+    accent-color: #2563eb;
+    cursor: pointer;
+}
+
+.btn {
+    background: #2563eb;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+}
+
+.btn:hover {
+    background: #1d4ed8;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+}
+
+.btn-success {
+    background: #28a745;
+}
+
+.btn-success:hover {
+    background: #218838;
+    box-shadow: 0 4px 8px rgba(40, 167, 69, 0.3);
+}
+
+.data-section {
+    background: white;
+    border-radius: 10px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-bottom: 2rem;
+}
+
+.data-header {
+    background: #f8f9fa;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e9ecef;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.data-header h3 {
+    margin: 0;
+    color: #333;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.data-controls {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.data-controls input, .data-controls select {
+    padding: 0.5rem;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.data-body {
+    padding: 2rem;
+}
+
+.data-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.data-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid #f1f3f4;
+}
+
+.data-item:last-child {
+    border-bottom: none;
+}
+
+.data-info h4 {
+    color: #333;
+    font-size: 1rem;
+    font-weight: 600;
+    margin: 0 0 0.25rem 0;
+}
+
+.data-info p {
+    color: #666;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.data-actions {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.badge {
+    background: #e9ecef;
+    color: #495057;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+}
+
+.btn-sm {
+    padding: 0.375rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+.btn-danger {
+    background: #dc3545;
+}
+
+.btn-danger:hover {
+    background: #c82333;
+    box-shadow: 0 4px 8px rgba(220, 53, 69, 0.3);
+}
+
+@media (max-width: 1024px) {
+    .main-content {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .marksheet-dashboard {
+        padding: 1rem;
+    }
+    
+    .main-content {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .quick-actions {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
+    }
+    
+    .section-body {
+        padding: 1.5rem;
+    }
+    
+    .form-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .checkbox-group {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 0.5rem;
+        padding: 0.75rem;
+    }
+    
+    .checkbox-label {
+        padding: 0.375rem;
+        font-size: 0.8rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 2rem;
+    }
+    
+    .data-header {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .data-controls {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-header h1 {
+        font-size: 1.75rem;
+    }
+    
+    .section-body {
+        padding: 1rem;
+    }
+    
+    .form-group input, .form-group select {
+        padding: 0.625rem;
+        font-size: 0.8rem;
+    }
+    
+    .checkbox-group {
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    }
+    
+    .btn {
+        padding: 0.625rem 1.25rem;
+        font-size: 0.8rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="marksheet-dashboard">
+    <div class="dashboard-header">
+        <h1>📊 Marksheet Dashboard</h1>
+        <p>Manage exams, subjects, and student marksheets efficiently</p>
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card exams">
+            <div class="stat-icon">📝</div>
+            <div class="stat-content">
+                <h3>{{ total_exams }}</h3>
+                <p>Total Exams</p>
+            </div>
+        </div>
+        
+        <div class="stat-card subjects">
+            <div class="stat-icon">📚</div>
+            <div class="stat-content">
+                <h3>{{ total_subjects }}</h3>
+                <p>Total Subjects</p>
+            </div>
+        </div>
+        
+        <div class="stat-card marksheets">
+            <div class="stat-icon">🎓</div>
+            <div class="stat-content">
+                <h3>{{ total_marksheets }}</h3>
+                <p>Total Marksheets</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="quick-actions">
+        <div class="quick-action-card">
+            <div class="quick-action-icon">⚡</div>
+            <div class="quick-action-title">Quick Exam</div>
+            <div class="quick-action-desc">Create exam for single class</div>
+        </div>
+        <div class="quick-action-card">
+            <div class="quick-action-icon">📋</div>
+            <div class="quick-action-title">Bulk Subjects</div>
+            <div class="quick-action-desc">Add multiple subjects</div>
+        </div>
+        <div class="quick-action-card">
+            <div class="quick-action-icon">📊</div>
+            <div class="quick-action-title">Generate Reports</div>
+            <div class="quick-action-desc">Export marksheets</div>
+        </div>
+        <div class="quick-action-card">
+            <div class="quick-action-icon">⚙️</div>
+            <div class="quick-action-title">Settings</div>
+            <div class="quick-action-desc">Configure system</div>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <div class="content-section" data-category="exam">
+            <div class="section-header">
+                <h3>📝 Create New Exam</h3>
+            </div>
+            <div class="section-body">
+                <form id="examForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Exam Name</label>
+                            <input type="text" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Exam Type</label>
+                            <select name="exam_type" required>
+                                <option value="">Select Type</option>
+                                <option value="First Term">First Term</option>
+                                <option value="Mid Term">Mid Term</option>
+                                <option value="Final Term">Final Term</option>
+                                <option value="Unit Test">Unit Test</option>
+                                <option value="Annual">Annual</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Exam Date</label>
+                            <input type="date" name="exam_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Session</label>
+                            <input type="text" name="session" value="2024-25" required>
+                        </div>
+                    </div>
+                    <div class="form-group form-grid-full">
+                        <label>Classes</label>
+                        <div class="checkbox-group">
+                            {% for class_name in available_classes %}
+                            <label class="checkbox-label" data-original="{{ class_name }}">
+                                <input type="checkbox" name="class_names" value="{{ class_name }}">
+                                {{ class_name }}
+                            </label>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <button type="submit" class="btn">Create Exam</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-section" data-category="subject">
+        <div class="data-header">
+            <h3>Subjects</h3>
+            <div class="data-controls">
+                <button class="btn btn-success btn-sm" onclick="importData()">📥 Import</button>
+                <button class="btn btn-sm" onclick="exportData()">📤 Export</button>
+                <select onchange="filterByClass(this.value)" id="classFilter">
+                    <option value="">All Classes</option>
+                    {% for class_name in available_classes %}
+                    <option value="{{ class_name }}" data-original="{{ class_name }}">{{ class_name }}</option>
+                    {% endfor %}
+                </select>
+                <button class="btn btn-danger btn-sm" onclick="deleteAllSubjects()">🗑️ Delete All</button>
+                <input type="text" placeholder="Filter subjects..." onkeyup="filterSubjects(this.value)">
+                <select onchange="sortSubjects(this.value)">
+                    <option value="name">Sort by Name</option>
+                    <option value="class">Sort by Class</option>
+                    <option value="code">Sort by Code</option>
+                </select>
+            </div>
+        </div>
+        <div class="data-body">
+            <table style="width: 100%; border-collapse: collapse;">
+                <thead>
+                    <tr style="background: #f8f9fa;">
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">
+                            <input type="checkbox" id="selectAll" onchange="toggleSelectAll(this)" style="margin-right: 8px;">
+                            Subject Name
+                        </th>
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">Code</th>
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">Class</th>
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">Max Marks</th>
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">Pass Marks</th>
+                        <th style="padding: 0.75rem; text-align: left; border-bottom: 2px solid #dee2e6;">
+                            Actions
+                            <button class="btn btn-danger btn-sm" onclick="deleteSelectedSubjects()" style="margin-left: 10px; font-size: 0.7rem; padding: 0.25rem 0.5rem;">🗑️ Delete Selected</button>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody id="subjectsTableBody">
+                    {% for subject in subjects %}
+                    <tr data-subject-id="{{ subject.id }}">
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
+                            <input type="checkbox" name="subject_select" value="{{ subject.id }}" style="margin-right: 8px;">
+                            {{ subject.name }}
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">{{ subject.code }}</td>
+                        <td class="class-name-cell" data-original="{{ subject.class_name }}" style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
+                            <select class="class-dropdown" data-subject-id="{{ subject.id }}" onchange="updateSubjectClass({{ subject.id }}, this.value)" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 80px; background: white; cursor: pointer;">
+                                {% for class_name in available_classes %}
+                                <option value="{{ class_name }}" {% if class_name == subject.class_name %}selected{% endif %} data-original="{{ class_name }}">{{ class_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">{{ subject.max_marks }}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">{{ subject.pass_marks }}</td>
+                        <td style="padding: 0.75rem; border-bottom: 1px solid #dee2e6;">
+                            <button class="btn btn-sm" onclick="editSubject({{ subject.id }}, '{{ subject.name }}', '{{ subject.code }}', '{{ subject.class_name }}', {{ subject.max_marks }}, {{ subject.pass_marks }})" style="margin-right: 5px; font-size: 0.7rem; padding: 0.25rem 0.5rem;">Edit</button>
+                            <button class="btn btn-sm btn-danger" onclick="deleteSubject({{ subject.id }}, '{{ subject.name }}')" style="font-size: 0.7rem; padding: 0.25rem 0.5rem;">Delete</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" style="padding: 1rem; text-align: center; color: #666;">No subjects added yet</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="data-section" data-category="exam">
+        <div class="data-header">
+            <h3>Recent Exams</h3>
+            <div class="data-controls">
+                <input type="text" placeholder="Filter exams..." onkeyup="filterExams(this.value)">
+                <select onchange="sortExams(this.value)">
+                    <option value="date">Sort by Date</option>
+                    <option value="name">Sort by Name</option>
+                    <option value="class">Sort by Class</option>
+                </select>
+            </div>
+        </div>
+        <div class="data-body">
+            <ul class="data-list">
+                {% regroup recent_exams by name as grouped_exams %}
+                {% for exam_group in grouped_exams %}
+                <li class="data-item">
+                    <div class="data-info">
+                        <h4>{{ exam_group.grouper }}</h4>
+                        <p>
+                            {% if exam_group.list|length == 1 %}
+                                {{ exam_group.list.0.class_name }} - {{ exam_group.list.0.exam_date }}
+                            {% else %}
+                                {% if exam_group.list.0.class_name == "All Classes" %}
+                                    All Classes - {{ exam_group.list.0.exam_date }}
+                                {% else %}
+                                    Multiple Classes - {{ exam_group.list.0.exam_date }}
+                                {% endif %}
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="data-actions">
+                        <span class="badge">{{ exam_group.list.0.exam_type }}</span>
+                        <button class="btn btn-sm btn-danger" onclick="deleteExam({{ exam_group.list.0.id }}, '{{ exam_group.grouper }}', '{{ exam_group.list.0.class_name }}')">Delete</button>
+                    </div>
+                </li>
+                {% empty %}
+                <li class="data-item">
+                    <p>No exams created yet</p>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+
+<script>
+// Form submission handlers and other JavaScript from original file
+document.getElementById('examForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const selectedClasses = Array.from(this.querySelectorAll('input[name="class_names"]:checked')).map(cb => cb.value);
+    if (selectedClasses.length === 0) {
+        alert('Please select at least one class');
+        return;
+    }
+    
+    const formData = new FormData(this);
+    formData.delete('class_names');
+    formData.append('selected_classes', JSON.stringify(selectedClasses));
+    
+    fetch('{% url "create_exam" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Exam created successfully!');
+            this.reset();
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+});
+
+document.getElementById('subjectForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const formData = new FormData(this);
+    const editId = this.dataset.editId;
+    
+    if (editId) {
+        formData.append('subject_id', editId);
+    }
+    
+    const url = editId ? '{% url "edit_subject" %}' : '{% url "create_subject" %}';
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(editId ? 'Subject updated successfully!' : 'Subject added successfully!');
+            this.reset();
+            delete this.dataset.editId;
+            this.querySelector('button[type="submit"]').textContent = 'Add Subject';
+            location.reload();
+        } else {
+            alert('Error: ' + data.error);
+        }
+    });
+});
+
+function deleteExam(examId, examName, examClass) {
+    if (confirm(`Are you sure you want to delete exam "${examName}" for class ${examClass}?\n\nThis will also delete all associated marksheets.`)) {
+        fetch('{% url "delete_exam" %}', {
+            method: 'POST',
+            body: JSON.stringify({ exam_id: examId }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Exam deleted successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting exam');
+        });
+    }
+}
+
+function filterExams(searchTerm) {
+    const examItems = document.querySelectorAll('.data-item');
+    examItems.forEach(item => {
+        const text = item.textContent.toLowerCase();
+        item.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
+    });
+}
+
+function sortExams(sortBy) {
+    const examList = document.querySelector('.data-list');
+    const items = Array.from(examList.querySelectorAll('.data-item'));
+    
+    items.sort((a, b) => {
+        const aText = a.querySelector('.data-info h4').textContent;
+        const bText = b.querySelector('.data-info h4').textContent;
+        return aText.localeCompare(bText);
+    });
+    
+    examList.innerHTML = '';
+    items.forEach(item => examList.appendChild(item));
+}
+
+// Convert class names from numeric to word format
+function convertClassNames() {
+    const classNameMapping = {
+        '1st': 'One',
+        '2nd': 'Two',
+        '3rd': 'Three',
+        '4th': 'Four',
+        '5th': 'Five',
+        '6th': 'Six',
+        '7th': 'Seven',
+        '8th': 'Eight',
+        '9th': 'Nine',
+        '10th': 'Ten',
+        '11th': 'Eleven',
+        '12th': 'Twelve'
+    };
+    
+    // Convert class names in table cells
+    const classCells = document.querySelectorAll('.class-name-cell');
+    classCells.forEach(cell => {
+        const originalClass = cell.dataset.original;
+        const convertedClass = classNameMapping[originalClass] || originalClass;
+        cell.textContent = convertedClass;
+    });
+    
+    // Convert class names in dropdown options
+    const classOptions = document.querySelectorAll('select[name="class_name"] option[data-original], #classFilter option[data-original], .class-dropdown option[data-original]');
+    classOptions.forEach(option => {
+        const originalClass = option.dataset.original;
+        const convertedClass = classNameMapping[originalClass] || originalClass;
+        option.textContent = convertedClass;
+    });
+    
+    // Convert class names in checkbox labels
+    const checkboxLabels = document.querySelectorAll('.checkbox-label[data-original]');
+    checkboxLabels.forEach(label => {
+        const originalClass = label.dataset.original;
+        const convertedClass = classNameMapping[originalClass] || originalClass;
+        const textNode = label.childNodes[label.childNodes.length - 1];
+        if (textNode.nodeType === Node.TEXT_NODE) {
+            textNode.textContent = ' ' + convertedClass;
+        }
+    });
+}
+
+function filterSubjects(searchTerm) {
+    const subjectRows = document.querySelectorAll('#subjectsTableBody tr');
+    subjectRows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        row.style.display = text.includes(searchTerm.toLowerCase()) ? '' : 'none';
+    });
+}
+
+function filterByClass(selectedClass) {
+    const subjectRows = document.querySelectorAll('#subjectsTableBody tr');
+    
+    subjectRows.forEach(row => {
+        if (selectedClass === '') {
+            row.style.display = '';
+        } else {
+            const classCell = row.querySelector('.class-name-cell');
+            if (classCell) {
+                const originalClass = classCell.dataset.original;
+                row.style.display = originalClass === selectedClass ? '' : 'none';
+            }
+        }
+    });
+}
+
+function sortSubjects(sortBy) {
+    const tbody = document.getElementById('subjectsTableBody');
+    const rows = Array.from(tbody.querySelectorAll('tr'));
+    
+    rows.sort((a, b) => {
+        let aText, bText;
+        if (sortBy === 'name') {
+            aText = a.cells[0].textContent;
+            bText = b.cells[0].textContent;
+        } else if (sortBy === 'code') {
+            aText = a.cells[1].textContent;
+            bText = b.cells[1].textContent;
+        } else if (sortBy === 'class') {
+            aText = a.cells[2].textContent;
+            bText = b.cells[2].textContent;
+        }
+        return aText.localeCompare(bText);
+    });
+    
+    tbody.innerHTML = '';
+    rows.forEach(row => tbody.appendChild(row));
+}
+
+function deleteSubject(id, name) {
+    if (confirm(`Are you sure you want to delete subject "${name}"?`)) {
+        fetch('{% url "delete_subject" %}', {
+            method: 'POST',
+            body: JSON.stringify({ subject_id: id }),
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Subject deleted successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + data.error);
+            }
+        });
+    }
+}
+
+function deleteAllSubjects() {
+    const rows = document.querySelectorAll('#subjectsTableBody tr[data-subject-id]');
+    if (rows.length === 0) {
+        alert('No subjects to delete');
+        return;
+    }
+    
+    if (confirm(`Are you sure you want to delete ALL ${rows.length} subjects? This action cannot be undone.`)) {
+        let deleted = 0;
+        let errors = 0;
+        
+        rows.forEach(row => {
+            const subjectId = row.dataset.subjectId;
+            fetch('{% url "delete_subject" %}', {
+                method: 'POST',
+                body: JSON.stringify({ subject_id: subjectId }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    deleted++;
+                } else {
+                    errors++;
+                }
+                
+                if (deleted + errors === rows.length) {
+                    alert(`Deleted ${deleted} subjects successfully. ${errors} errors.`);
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                errors++;
+                if (deleted + errors === rows.length) {
+                    alert(`Deleted ${deleted} subjects successfully. ${errors} errors.`);
+                    location.reload();
+                }
+            });
+        });
+    }
+}
+
+function editSubject(id, name, code, className, maxMarks, passMarks) {
+    const form = document.getElementById('subjectForm');
+    form.querySelector('input[name="name"]').value = name;
+    form.querySelector('input[name="code"]').value = code;
+    form.querySelector('select[name="class_name"]').value = className;
+    form.querySelector('input[name="max_marks"]').value = maxMarks;
+    form.querySelector('input[name="pass_marks"]').value = passMarks;
+    form.dataset.editId = id;
+    form.querySelector('button[type="submit"]').textContent = 'Update Subject';
+}
+
+function importData() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv,.json';
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            try {
+                let subjects = [];
+                
+                if (file.name.endsWith('.csv')) {
+                    const lines = event.target.result.split('\n');
+                    for (let i = 1; i < lines.length; i++) {
+                        if (lines[i].trim()) {
+                            const values = lines[i].split(',');
+                            subjects.push({
+                                name: values[0]?.replace(/"/g, '').trim(),
+                                code: values[1]?.replace(/"/g, '').trim(),
+                                class_name: values[2]?.replace(/"/g, '').trim(),
+                                max_marks: parseInt(values[3]) || 100,
+                                pass_marks: parseInt(values[4]) || 35
+                            });
+                        }
+                    }
+                } else if (file.name.endsWith('.json')) {
+                    subjects = JSON.parse(event.target.result);
+                }
+                
+                if (subjects.length > 0) {
+                    importSubjectsToServer(subjects);
+                } else {
+                    alert('No valid subjects found in file.');
+                }
+            } catch (error) {
+                alert('Error reading file: ' + error.message);
+            }
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+function importSubjectsToServer(subjects) {
+    let imported = 0;
+    let errors = [];
+    
+    subjects.forEach(subject => {
+        const formData = new FormData();
+        formData.append('name', subject.name);
+        formData.append('code', subject.code);
+        formData.append('class_name', subject.class_name);
+        formData.append('max_marks', subject.max_marks);
+        formData.append('pass_marks', subject.pass_marks);
+        
+        fetch('{% url "create_subject" %}', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                imported++;
+            } else {
+                errors.push(`${subject.name}: ${data.error}`);
+            }
+            
+            if (imported + errors.length === subjects.length) {
+                alert(`Import completed: ${imported} subjects imported successfully.`);
+                location.reload();
+            }
+        })
+        .catch(error => {
+            errors.push(`${subject.name}: Network error`);
+            if (imported + errors.length === subjects.length) {
+                alert(`Import completed with errors: ${imported} imported, ${errors.length} failed.`);
+                location.reload();
+            }
+        });
+    });
+}
+
+function exportData() {
+    const rows = document.querySelectorAll('#subjectsTableBody tr');
+    const subjects = [];
+    
+    rows.forEach(row => {
+        if (row.cells.length > 1) {
+            const nameCell = row.cells[0].textContent.trim();
+            const name = nameCell.substring(nameCell.indexOf(' ') + 1); // Remove checkbox
+            subjects.push({
+                name: name,
+                code: row.cells[1].textContent.trim(),
+                class: row.cells[2].querySelector('select')?.value || row.cells[2].textContent.trim(),
+                maxMarks: row.cells[3].textContent.trim(),
+                passMarks: row.cells[4].textContent.trim()
+            });
+        }
+    });
+    
+    if (subjects.length === 0) {
+        alert('No subjects to export');
+        return;
+    }
+    
+    const csv = 'Name,Code,Class,Max Marks,Pass Marks\n' + 
+        subjects.map(s => `"${s.name}","${s.code}","${s.class}",${s.maxMarks},${s.passMarks}`).join('\n');
+    
+    const blob = new Blob([csv], {type: 'text/csv'});
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `subjects_${new Date().toISOString().split('T')[0]}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+}
+
+function toggleSelectAll(checkbox) {
+    const subjectCheckboxes = document.querySelectorAll('input[name="subject_select"]');
+    subjectCheckboxes.forEach(cb => {
+        cb.checked = checkbox.checked;
+    });
+}
+
+function deleteSelectedSubjects() {
+    const selectedCheckboxes = document.querySelectorAll('input[name="subject_select"]:checked');
+    if (selectedCheckboxes.length === 0) {
+        alert('Please select subjects to delete');
+        return;
+    }
+    
+    const selectedIds = Array.from(selectedCheckboxes).map(cb => cb.value);
+    const count = selectedIds.length;
+    
+    if (confirm(`Are you sure you want to delete ${count} selected subject(s)? This action cannot be undone.`)) {
+        let deleted = 0;
+        let errors = 0;
+        
+        selectedIds.forEach(subjectId => {
+            fetch('{% url "delete_subject" %}', {
+                method: 'POST',
+                body: JSON.stringify({ subject_id: subjectId }),
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}'
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    deleted++;
+                } else {
+                    errors++;
+                }
+                
+                if (deleted + errors === selectedIds.length) {
+                    alert(`Deleted ${deleted} subjects successfully. ${errors} errors.`);
+                    location.reload();
+                }
+            })
+            .catch(error => {
+                errors++;
+                if (deleted + errors === selectedIds.length) {
+                    alert(`Deleted ${deleted} subjects successfully. ${errors} errors.`);
+                    location.reload();
+                }
+            });
+        });
+    }
+}
+
+function updateSubjectClass(subjectId, newClass) {
+    fetch('{% url "edit_subject" %}', {
+        method: 'POST',
+        body: JSON.stringify({
+            subject_id: subjectId,
+            class_name: newClass
+        }),
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log('Class updated successfully');
+        } else {
+            alert('Error updating class: ' + data.error);
+            location.reload();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating class');
+        location.reload();
+    });
+}
+
+// Initialize class name conversion when page loads
+window.addEventListener('load', function() {
+    convertClassNames();
+});
+</script>
+{% endblock %}

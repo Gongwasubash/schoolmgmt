@@ -182,3 +182,61 @@
     </div>
 </div>
 {% endblock %}
+
+{% block extra_js %}
+<!-- School Settings Popup -->
+<div id="schoolSettingsModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>School Settings</h2>
+            <span class="close" onclick="closeSchoolSettingsPopup()">&times;</span>
+        </div>
+        <div class="modal-body">
+            <form id="schoolSettingsForm">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label>School Name</label>
+                    <input type="text" name="school_name" value="Everest Academy" required>
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea name="address" rows="3" placeholder="Enter school address"></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Phone</label>
+                    <input type="tel" name="phone" placeholder="Enter phone number">
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" name="email" placeholder="Enter email address">
+                </div>
+                <div class="form-group">
+                    <label>Logo</label>
+                    <input type="file" name="logo" accept="image/*">
+                </div>
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">Save Settings</button>
+                    <button type="button" class="btn-secondary" onclick="closeSchoolSettingsPopup()">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openSchoolSettingsPopup() {
+        document.getElementById('schoolSettingsModal').style.display = 'flex';
+    }
+    
+    function closeSchoolSettingsPopup() {
+        document.getElementById('schoolSettingsModal').style.display = 'none';
+    }
+    
+    window.onclick = function(event) {
+        const modal = document.getElementById('schoolSettingsModal');
+        if (event.target == modal) {
+            closeSchoolSettingsPopup();
+        }
+    }
+</script>
+{% endblock %}

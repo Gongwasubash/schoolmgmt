@@ -1,496 +1,667 @@
-{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Class Marksheets - {{ exam.name }}</title>
+    <title>SEE Marksheet - {{ exam.name }}</title>
     <style>
+        @page { 
+            size: A4 portrait; 
+            margin: 8mm;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
+        }
+        
+        * { 
+            margin: 0; 
+            padding: 0; 
+            box-sizing: border-box; 
+        }
+        
         @media print {
-            body * { visibility: hidden; }
-            .grade-sheet, .grade-sheet * { visibility: visible; }
-            .grade-sheet { position: absolute; top: 0; left: 0; width: 100%; }
             .no-print { display: none !important; }
-            .page-break { page-break-before: always; }
-            
-            .marks-table {
-                border: 2px solid #000 !important;
+            .sidebar { display: none !important; }
+            .main-content { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
+            .see-marksheet { 
+                margin: 0 !important; 
                 box-shadow: none !important;
+                width: 100% !important;
+                height: 267mm !important;
+                padding: 0 !important;
+                page-break-after: always;
                 background: white !important;
+                border: none !important;
             }
-            
-            .marks-table th {
-                border: 1px solid #000 !important;
+            body { 
                 background: white !important;
-                color: #000 !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            
-            .marks-table td {
-                border: 1px solid #000 !important;
-                background: white !important;
-                color: #000 !important;
+                font-size: 12px !important;
             }
         }
 
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-        
         body {
             font-family: 'Times New Roman', serif;
             margin: 0;
-            padding: 20px;
-            background: #e6f3ff;
+            padding: 0;
+            background: #f5f5f5;
+            color: #000;
+            line-height: 1.2;
+            font-size: 12px;
         }
 
-        .grade-sheet {
+        .sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            height: 100vh;
+            position: fixed;
+            left: 0;
+            top: 0;
+            padding: 20px;
+            overflow-y: auto;
+            z-index: 1001;
+        }
+
+        .sidebar h3 {
+            margin: 0 0 20px 0;
+            color: #ecf0f1;
+            border-bottom: 2px solid #34495e;
+            padding-bottom: 10px;
+        }
+
+        .sidebar-nav {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .sidebar-nav li {
+            margin-bottom: 10px;
+        }
+
+        .sidebar-nav a {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: block;
+            padding: 10px;
+            border-radius: 5px;
+            transition: background 0.3s;
+        }
+
+        .sidebar-nav a:hover {
+            background: #34495e;
+            color: white;
+        }
+
+        .main-content {
+            margin-left: 250px;
+            padding: 20px;
+            width: calc(100% - 250px);
+        }
+
+        .see-marksheet {
             width: 210mm;
             height: 297mm;
-            margin: 0 auto 20px auto;
-            background: #e6f3ff;
-            padding: 10mm;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            margin: 0 auto 15px;
+            background: white;
+            padding: 6mm;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             position: relative;
-            border: 2px solid #000;
+            page-break-after: always;
+            page-break-inside: avoid;
+            border: 1px solid #000;
+        }
+
+        .see-header {
             display: flex;
-            flex-direction: column;
+            align-items: center;
+            padding-bottom: 3mm;
+            margin-bottom: 3mm;
+        }
+
+        .nepal-emblem {
+            width: 25mm;
+            height: 25mm;
+            border: 1px solid #000;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
             justify-content: center;
-        }
-        
-        .grade-sheet::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: url('{% static "img/Everest-Crest-Square.png" %}') repeat;
-            background-size: 20px 20px;
-            opacity: 0.05;
-            z-index: 0;
-            pointer-events: none;
-        }
-        
-
-        
-        .grade-sheet > * {
-            position: relative;
-            z-index: 1;
-        }
-        
-        @media print {
-            @page {
-                size: A4;
-                margin: 0;
-            }
-            
-            body {
-                margin: 0;
-                padding: 0;
-            }
-            
-            .grade-sheet {
-                width: 210mm !important;
-                height: 297mm !important;
-                margin: 0 !important;
-                padding: 10mm !important;
-                box-shadow: none !important;
-                border: none !important;
-                page-break-after: always;
-            }
+            font-size: 10px;
+            font-weight: bold;
+            margin-right: 8mm;
+            flex-shrink: 0;
         }
 
-        .header-section {
+        .header-content {
+            flex: 1;
             text-align: center;
-            border-bottom: 3px solid #1976d2;
-            padding-bottom: 8px;
-            margin-bottom: 10px;
-            position: relative;
         }
 
-        .school-logo {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 75px;
-            height: 75px;
-        }
-        
-        .school-logo img {
-            width: 100%;
-            height: 100%;
-            object-fit: contain;
-        }
-
-        .school-name {
-            font-size: 24px;
+        .government-header {
+            font-size: 20px;
             font-weight: bold;
-            color: #000;
-            margin: 0;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
+            margin-bottom: 1mm;
         }
 
-        .school-details {
-            margin: 6px 0;
-            font-size: 12px;
-            color: #1976d2;
+        .ministry-name {
+            font-size: 11px;
+            margin-bottom: 1mm;
         }
 
-        .certificate-title {
-            font-size: 18px;
+        .board-name {
+            font-size: 13px;
             font-weight: bold;
-            color: #1976d2;
-            margin: 12px 0 6px 0;
+            margin-bottom: 1mm;
+        }
+
+        .marksheet-title {
+            font-size: 16px;
+            font-weight: bold;
             text-decoration: underline;
+            margin-bottom: 2mm;
         }
 
-        .exam-title {
+        .exam-type {
             font-size: 14px;
             font-weight: bold;
-            color: #1976d2;
-            margin: 0;
+            margin-bottom: 1mm;
+        }
+
+        .exam-details {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 3mm;
+            font-size: 10px;
         }
 
         .student-info {
-            margin: 8px 0;
-            font-size: 14px;
-            line-height: 1.3;
+            margin-bottom: 3mm;
         }
 
-        .info-fields {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 8px 0;
+        .student-info-header {
+            background: #f0f0f0;
+            padding: 1.5mm;
+            font-weight: bold;
+            text-align: center;
+            font-size: 11px;
         }
 
-        .field {
+        .student-details {
+            padding: 2mm;
+        }
+
+        .student-columns {
             display: flex;
-            align-items: center;
+            gap: 10mm;
+        }
+
+        .student-column {
+            flex: 1;
+        }
+
+        .student-row {
+            display: flex;
+            margin-bottom: 1.5mm;
+        }
+
+        .student-label {
+            width: 30%;
             font-weight: bold;
         }
 
-        .field-label {
-            min-width: 100px;
-            color: #333;
-        }
-
-        .field-value {
-            border-bottom: 2px dotted #333;
-            padding: 2px 10px;
-            min-width: 150px;
-            text-align: center;
+        .student-value {
+            width: 70%;
+            border-bottom: 1px solid #000;
+            padding-left: 2mm;
         }
 
         .marks-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 8px 0;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid #1976d2;
+            border: 1px solid #000;
+            margin-bottom: 3mm;
+            font-size: 10px;
         }
 
         .marks-table th {
-            background: rgba(249, 250, 251, 0.2);
-            color: #374151;
-            padding: 12px 10px;
+            background: #f0f0f0;
+            border: 1px solid #000;
+            padding: 1.5mm;
             text-align: center;
             font-weight: bold;
-            font-size: 13px;
-            border: 1px solid #1976d2;
         }
 
         .marks-table td {
-            padding: 12px 10px;
+            border: 1px solid #000;
+            padding: 1.5mm;
             text-align: center;
-            border: 1px solid #1976d2;
-            font-size: 13px;
-            font-weight: bold;
-            color: #374151;
-            background: rgba(255, 255, 255, 0.2);
         }
 
         .subject-name {
             text-align: left !important;
-            font-weight: 500;
-            color: #374151;
+            padding-left: 3mm !important;
         }
 
-        .signature-section {
+        .total-row {
+            background: #f0f0f0;
+            font-weight: bold;
+        }
+
+        .eca-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #000;
+            margin-bottom: 3mm;
+            font-size: 9px;
+        }
+
+        .eca-table th {
+            background: #f0f0f0;
+            border: 1px solid #000;
+            padding: 1.5mm;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .eca-table td {
+            border: 1px solid #000;
+            padding: 1.5mm;
+            text-align: center;
+        }
+
+        .eca-table td:first-child,
+        .eca-table td:nth-child(5) {
+            text-align: left;
+            padding-left: 2mm;
+        }
+
+        .eca-header {
+            font-size: 11px;
+        }
+
+        .eca-checkbox {
+            font-size: 12px;
+        }
+
+        .result-summary {
             display: flex;
             justify-content: space-between;
-            margin-top: 15px;
+            margin-bottom: 3mm;
         }
 
-        .signature-box {
-            border-top: 2px dotted #333;
-            padding-top: 8px;
+        .result-box {
+            border: 1px solid #000;
+            padding: 2mm;
+            width: 48%;
+            font-size: 10px;
+        }
+
+        .result-title {
             font-weight: bold;
-            font-size: 12px;
-            width: 120px;
             text-align: center;
+            border-bottom: 1px solid #000;
+            padding-bottom: 1mm;
+            margin-bottom: 1.5mm;
+            font-size: 11px;
+        }
+
+        .grade-scale {
+            font-size: 9px;
+        }
+
+        .grade-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.5mm;
+        }
+
+        .see-footer {
+            position: absolute;
+            bottom: 8mm;
+            left: 8mm;
+            right: 8mm;
+            padding-top: 2mm;
+        }
+
+        .signatures {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .signature-block {
+            text-align: center;
+            width: 30%;
+        }
+
+        .signature-line {
+            border-bottom: 1px solid #000;
+            margin-bottom: 2mm;
+            height: 10mm;
+        }
+
+        .signature-title {
+            font-size: 10px;
+            font-weight: bold;
         }
 
         .print-btn {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: #333;
+            background: #2c3e50;
             color: white;
             border: none;
-            padding: 10px 20px;
+            padding: 12px 24px;
             border-radius: 5px;
             cursor: pointer;
-            font-weight: bold;
+            font-weight: 600;
             z-index: 1000;
         }
 
         .print-btn:hover {
-            background: #555;
+            background: #34495e;
+        }
+
+        .sidebar-actions {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #34495e;
+        }
+
+        .sidebar-btn {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        .sidebar-btn:hover {
+            background: #2980b9;
         }
     </style>
 </head>
 <body>
-    <button class="print-btn no-print" onclick="window.print()">Print All Marksheets</button>
-
-    {% for data in marksheets_data %}
-    <div class="grade-sheet {% if not forloop.first %}page-break{% endif %}">
-        <!-- Header Section -->
-        <div class="header-section">
-            <div class="school-logo"><img src="{% static 'img/Everest-Crest-Square.png' %}" alt="Everest Academy Logo"></div>
-            <h1 class="school-name">EVEREST ACADEMY</h1>
-            <div class="school-details">
-                Baneshwor-10, Kathmandu<br>
-                Phone: 01-4567890 | Email: everestacademy@gmail.com
-            </div>
-            <h2 class="certificate-title">GRADE - SHEET</h2>
-            <h3 class="exam-title">{{ exam.exam_type|upper }} EXAMINATION</h3>
-        </div>
-
-        <!-- Student Info Section -->
-        <div class="student-info">
-            <div class="info-fields">
-                <div class="field">
-                    <span class="field-label">Student Name:</span>
-                    <span class="field-value">{{ data.student.name }}</span>
-                </div>
-                <div class="field">
-                    <span class="field-label">Roll No:</span>
-                    <span class="field-value">{{ data.student.reg_number }}</span>
-                </div>
-                <div class="field">
-                    <span class="field-label">Grade:</span>
-                    <span class="field-value">{{ data.student.student_class }}</span>
-                </div>
-                <div class="field">
-                    <span class="field-label">Section:</span>
-                    <span class="field-value">{{ data.student.section }}</span>
-                </div>
-                <div class="field">
-                    <span class="field-label">Date:</span>
-                    <span class="field-value">{{ current_nepali_date }}</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Marks Table -->
-        <table class="marks-table">
-            <thead>
-                <tr>
-                    <th rowspan="2" style="width: 8%;">S.No</th>
-                    <th rowspan="2" style="width: 25%;">Subjects</th>
-                    <th rowspan="2" style="width: 12%;">Credit Hours</th>
-                    <th colspan="2" style="width: 24%;">Obtained Marks</th>
-                    <th rowspan="2" style="width: 10%;">Total</th>
-                    <th rowspan="2" style="width: 8%;">Grade</th>
-                    <th rowspan="2" style="width: 8%;">Final</th>
-                    <th rowspan="2" style="width: 15%;">Remarks</th>
-                </tr>
-                <tr>
-                    <th style="width: 12%;">Theory</th>
-                    <th style="width: 12%;">Practical</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for marksheet in data.marksheets %}
-                <tr>
-                    <td>{{ forloop.counter }}</td>
-                    <td class="subject-name">{{ marksheet.subject.name|default:"N/A" }}</td>
-                    <td>4</td>
-                    <td>{{ marksheet.marks_obtained|default:"0" }}</td>
-                    <td>-</td>
-                    <td class="total-marks">{{ marksheet.grade|default:"F" }}</td>
-                    <td class="grade-cell">{{ marksheet.grade_points|default:"0" }}</td>
-                    <td class="final-grade-cell">{{ marksheet.grade|default:"F" }}</td>
-                    <td class="remarks-cell">{{ marksheet.status|default:"Fail" }}</td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="9" style="text-align: center; padding: 20px; color: #666;">
-                        No marks available for this exam
-                    </td>
-                </tr>
-                {% endfor %}
-                <tr style="background: rgba(25, 118, 210, 0.1); border-top: 2px solid #1976d2;">
-                    <td colspan="9" style="font-weight: bold; font-size: 16px; text-align: center; padding: 15px;">Grade Point Average (GPA): <span class="gpa-display">0.00</span> (<span class="gpa-grade">NG</span>)</td>
-                </tr>
-            </tbody>
-        </table>
-
-        <!-- GPA and ECA Section -->
-        <div style="margin: 15px 0;">
-            <div style="margin-top: 15px;">
-                <h3 style="text-align: center; font-weight: bold; color: #333; margin-bottom: 10px; font-size: 14px;">GRADING SCALE</h3>
-                <table class="marks-table">
-                    <thead>
-                        <tr>
-                            <th>Marks Range</th>
-                            <th>Grade</th>
-                            <th>Performance</th>
-                            <th>Grade Point</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>90 to 100</td>
-                            <td>A+</td>
-                            <td>Outstanding</td>
-                            <td>4.0</td>
-                        </tr>
-                        <tr>
-                            <td>80 to below 90</td>
-                            <td>A</td>
-                            <td>Excellent</td>
-                            <td>3.6</td>
-                        </tr>
-                        <tr>
-                            <td>70 to below 80</td>
-                            <td>B+</td>
-                            <td>Very Good</td>
-                            <td>3.2</td>
-                        </tr>
-                        <tr>
-                            <td>60 to below 70</td>
-                            <td>B</td>
-                            <td>Good</td>
-                            <td>2.8</td>
-                        </tr>
-                        <tr>
-                            <td>50 to below 60</td>
-                            <td>C+</td>
-                            <td>Satisfactory</td>
-                            <td>2.4</td>
-                        </tr>
-                        <tr>
-                            <td>40 to below 50</td>
-                            <td>C</td>
-                            <td>Acceptable</td>
-                            <td>2.0</td>
-                        </tr>
-                        <tr>
-                            <td>30 to below 40</td>
-                            <td>D</td>
-                            <td>Basic</td>
-                            <td>1.6</td>
-                        </tr>
-                        <tr>
-                            <td>0 to below 30</td>
-                            <td>NG</td>
-                            <td>Not Graded</td>
-                            <td>0.0</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-
-        <!-- Signature Section -->
-        <div class="signature-section">
-            <div class="signature-box">Class Teacher</div>
-            <div class="signature-box">Principal</div>
-            
+    <button class="print-btn no-print" onclick="window.print()">Print Marksheets</button>
+    
+    <div class="sidebar no-print">
+        <h3>SEE Marksheets</h3>
+        <ul class="sidebar-nav">
+            <li><a href="/reports/">← Back to Reports</a></li>
+            <li><a href="#" onclick="window.print()">Print All Marksheets</a></li>
+        </ul>
+        
+        <div class="sidebar-actions">
+            <button class="sidebar-btn" onclick="window.print()">Print All</button>
+            <button class="sidebar-btn" onclick="window.close()">Close Window</button>
         </div>
     </div>
-    {% empty %}
-    <div class="grade-sheet">
-        <div class="header-section">
-            <div class="school-logo"><img src="{% static 'img/Everest-Crest-Square.png' %}" alt="Everest Academy Logo"></div>
-            <h1 class="school-name">EVEREST ACADEMY</h1>
-            <div class="school-details">
-                Baneshwor-10, Kathmandu<br>
-                Phone: 01-4567890 | Email: everestacademy@gmail.com
+    
+    <div class="main-content">
+        {% for data in marksheets_data %}
+        <div class="see-marksheet">
+            <!-- SEE Header -->
+            <div class="see-header">
+                <div class="nepal-emblem">
+                    {% if school.logo %}
+                        <img src="{{ school.logo.url }}" alt="School Logo" style="width: 100%; height: 100%; object-fit: contain;">
+                    {% else %}
+                        LOGO
+                    {% endif %}
+                </div>
+                <div class="header-content">
+                    <div class="government-header">{{ school.school_name|default:"SCHOOL NAME" }}</div>
+                    <div class="ministry-name">{{ school.address|default:"School Address" }}</div>
+                    <div class="board-name">{{ school.phone|default:"Contact Number" }}</div>
+                    <div class="marksheet-title">STUDENT MARKSHEET</div>
+                    <div class="exam-type">{{ exam.exam_type|default:"EXAM TYPE" }}</div>
+                    <div class="ministry-name">Exam Year: {{ exam.session|default:"2081 BS" }}</div>
+                </div>
             </div>
-            <h2 class="certificate-title">GRADE - SHEET</h2>
-            <h3 class="exam-title">{{ exam.exam_type|upper }} EXAMINATION</h3>
-        </div>
-        <div style="text-align: center; padding: 50px; font-size: 18px; color: #666;">
-            No student marksheets found for this exam.
-        </div>
-    </div>
-    {% endfor %}
-    <script>
-        function getGradeInfo(totalValue) {
-            const grade = totalValue.toString().toUpperCase().trim();
-            switch(grade) {
-                case 'A+': return { points: 4.0, performance: 'Outstanding' };
-                case 'A': return { points: 3.6, performance: 'Excellent' };
-                case 'B+': return { points: 3.2, performance: 'Very Good' };
-                case 'B': return { points: 2.8, performance: 'Good' };
-                case 'C+': return { points: 2.4, performance: 'Satisfactory' };
-                case 'C': return { points: 2.0, performance: 'Acceptable' };
-                case 'D+':
-                case 'D': return { points: 1.6, performance: 'Basic' };
-                default: return { points: 0.0, performance: 'Not Graded' };
-            }
-        }
 
-        function getGradeFromGPA(gpa) {
-            if (gpa >= 4.0) return 'A+';
-            if (gpa >= 3.6) return 'A';
-            if (gpa >= 3.2) return 'B+';
-            if (gpa >= 2.8) return 'B';
-            if (gpa >= 2.4) return 'C+';
-            if (gpa >= 2.0) return 'C';
-            if (gpa >= 1.6) return 'D';
-            return 'NG';
-        }
+            <!-- Student Information -->
+            <div class="student-info">
+                <div class="student-info-header">Student's Particulars</div>
+                <div class="student-details">
+                    <div class="student-columns">
+                        <div class="student-column">
+                            <div class="student-row">
+                                <div class="student-label">Name:</div>
+                                <div class="student-value">{{ data.student.name|upper }}</div>
+                            </div>
+                            <div class="student-row">
+                                <div class="student-label">Father's Name:</div>
+                                <div class="student-value">{{ data.student.father_name|upper }}</div>
+                            </div>
+                            <div class="student-row">
+                                <div class="student-label">Class:</div>
+                                <div class="student-value">{{ data.student.student_class|default:"" }}</div>
+                            </div>
+                        </div>
+                        <div class="student-column">
+                            <div class="student-row">
+                                <div class="student-label">Section:</div>
+                                <div class="student-value">{{ data.student.section.name|default:data.student.section|default:"" }}</div>
+                            </div>
+                            <div class="student-row">
+                                <div class="student-label">Roll:</div>
+                                <div class="student-value">{{ data.student.reg_number|default:"" }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
-        document.addEventListener('DOMContentLoaded', function() {
-            document.querySelectorAll('.grade-sheet').forEach(sheet => {
-                const rows = sheet.querySelectorAll('.marks-table tbody tr');
-                let totalGradePoints = 0;
-                let subjectCount = 0;
-                
-                rows.forEach(row => {
-                    const totalCell = row.querySelector('.total-marks');
-                    const gradeCell = row.querySelector('.grade-cell');
-                    const finalGradeCell = row.querySelector('.final-grade-cell');
-                    const remarksCell = row.querySelector('.remarks-cell');
+            <!-- Marks Table -->
+            <table class="marks-table">
+                <thead>
+                    <tr>
+                        <th rowspan="2">Subject</th>
+                        <th colspan="2">Theory</th>
+                        <th colspan="2">Practical</th>
+                        <th rowspan="2">Total</th>
+                        <th rowspan="2">Grade</th>
+                        <th rowspan="2">Grade Point</th>
+                    </tr>
+                    <tr>
+                        <th>FM</th>
+                        <th>OM</th>
+                        <th>FM</th>
+                        <th>OM</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for marksheet in data.marksheets %}
+                    <tr>
+                        <td class="subject-name">{{ marksheet.subject.name }}</td>
+                        <td>{{ marksheet.subject.theory_marks|default:marksheet.subject.max_marks }}</td>
+                        <td>{{ marksheet.theory_obtained|default:marksheet.marks_obtained }}</td>
+                        <td>{{ marksheet.subject.practical_marks|default:"-" }}</td>
+                        <td>{{ marksheet.practical_obtained|default:"-" }}</td>
+                        <td>{{ marksheet.marks_obtained }}</td>
+                        <td>{{ marksheet.grade }}</td>
+                        <td>{{ marksheet.grade_point|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
                     
-                    if (totalCell && gradeCell && finalGradeCell && remarksCell && row.cells.length > 5) {
-                        const totalValue = totalCell.textContent.trim();
-                        const gradeInfo = getGradeInfo(totalValue);
-                        
-                        gradeCell.textContent = gradeInfo.points.toFixed(1);
-                        finalGradeCell.textContent = totalValue;
-                        remarksCell.textContent = gradeInfo.performance;
-                        
-                        totalGradePoints += gradeInfo.points;
-                        subjectCount++;
-                    }
-                });
+                    <!-- Total Row -->
+                    <tr class="total-row">
+                        <td class="subject-name">TOTAL</td>
+                        <td>{{ data.total_theory_marks|default:data.total_marks }}</td>
+                        <td>{{ data.total_theory_obtained|default:data.obtained_marks }}</td>
+                        <td>{{ data.total_practical_marks|default:"-" }}</td>
+                        <td>{{ data.total_practical_obtained|default:"-" }}</td>
+                        <td>{{ data.obtained_marks }}</td>
+                        <td>{{ data.overall_grade }}</td>
+                        <td>{{ data.total_grade_points|default:"-" }}</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- ECA/CCA Table -->
+            <table class="eca-table">
+                <thead>
+                    <tr>
+                        <th colspan="8" class="eca-header">ECA, CCA & OVERALL GRADE</th>
+                    </tr>
+                    <tr>
+                        <th>Description</th>
+                        <th>A</th>
+                        <th>B</th>
+                        <th>C</th>
+                        <th>Description</th>
+                        <th>A</th>
+                        <th>B</th>
+                        <th>C</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>English Handwriting</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>English Speaking</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>English Spelling</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>Nepali Handwriting</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Nepali Speaking</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>Nepali Spelling</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>General Behaviour</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>Class Activities</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Homework</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>Rhymes / Songs</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Physical Training (P.T)</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>Neatness</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Art/Craft</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>Dance</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                    <tr>
+                        <td>Music</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                        <td>Games</td>
+                        <td></td>
+                        <td></td>
+                        <td></td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <!-- Result Summary -->
+            <div class="result-summary">
+                <div class="result-box">
+                    <div class="result-title">RESULT</div>
+                    <div>Total Marks: {{ data.obtained_marks }}/{{ data.total_marks }}</div>
+                    <div>Percentage: {{ data.percentage }}%</div>
+                    <div>Grade: {{ data.overall_grade }}</div>
+                    <div>GPA: {{ data.total_grade_points|default:"N/A" }}</div>
+                    <div>Result: {{ data.overall_status|upper }}</div>
+                </div>
                 
-                const gpa = subjectCount > 0 ? (totalGradePoints / subjectCount) : 0;
-                const gradeAlphabet = getGradeFromGPA(gpa);
-                const gpaDisplay = sheet.querySelector('.gpa-display');
-                const gpaGrade = sheet.querySelector('.gpa-grade');
-                if (gpaDisplay) gpaDisplay.textContent = gpa.toFixed(2);
-                if (gpaGrade) gpaGrade.textContent = gradeAlphabet;
-            });
+                <div class="result-box">
+                    <div class="result-title">GRADING SCALE</div>
+                    <div class="grade-scale">
+                        <div class="grade-row"><span>90-100: A+ (3.6-4.0)</span></div>
+                        <div class="grade-row"><span>80-89: A (3.2-3.6)</span></div>
+                        <div class="grade-row"><span>70-79: B+ (2.8-3.2)</span></div>
+                        <div class="grade-row"><span>60-69: B (2.4-2.8)</span></div>
+                        <div class="grade-row"><span>50-59: C+ (2.0-2.4)</span></div>
+                        <div class="grade-row"><span>40-49: C (1.6-2.0)</span></div>
+                        <div class="grade-row"><span>30-39: D+ (1.2-1.6)</span></div>
+                        <div class="grade-row"><span>20-29: D (0.8-1.2)</span></div>
+                        <div class="grade-row"><span>0-19: E (0.0-0.8)</span></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="see-footer">
+                <div class="signatures">
+                    <div class="signature-block">
+                        <div class="signature-line"></div>
+                        <div class="signature-title">Class Teacher</div>
+                    </div>
+                    
+                    <div class="signature-block">
+                        <div class="signature-line"></div>
+                        <div class="signature-title">Principal</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% empty %}
+        <div class="see-marksheet">
+            <div style="text-align: center; padding: 50mm; font-size: 18px; color: #666;">
+                No marksheet data available for this exam.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <script>
+        window.addEventListener('load', function() {
+            // Optional: Auto-print when page loads
+            // window.print();
         });
         
-
+        function printMarksheets() {
+            window.print();
+        }
     </script>
 </body>
 </html>

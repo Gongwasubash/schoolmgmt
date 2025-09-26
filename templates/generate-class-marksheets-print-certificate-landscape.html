@@ -386,10 +386,22 @@
         <div class="corner-decoration bottom-right"></div>
         
         <div class="header-section">
-            <div class="emblem">SP</div>
-            <div class="institution-name">Sarathi Pathshala</div>
-            <div class="institution-address">Budhanilkantha-8, Chyasal, Kathmandu</div>
-            <div class="institution-address">Phone: 01-5912328 | Email: sarathipathshala@gmail.com</div>
+            {% if school.logo %}
+            <div style="text-align: center; margin-bottom: 10px;">
+                <img src="{{ school.logo.url }}" alt="School Logo" style="max-height: 60px; width: auto;">
+            </div>
+            {% else %}
+            <div class="emblem">{{ school.school_name|first|default:"SP" }}</div>
+            {% endif %}
+            <div class="institution-name">{{ school.school_name|default:"Sarathi Pathshala" }}</div>
+            <div class="institution-address">{{ school.address|default:"Budhanilkantha-8, Chyasal, Kathmandu" }}</div>
+            {% if school.phone or school.email %}
+            <div class="institution-address">
+                {% if school.phone %}Phone: {{ school.phone }}{% endif %}
+                {% if school.phone and school.email %} | {% endif %}
+                {% if school.email %}Email: {{ school.email }}{% endif %}
+            </div>
+            {% endif %}
             
             <div class="certificate-title">Academic Certificate</div>
             <div class="exam-info">{{ exam.exam_type|upper }} Examination - {{ exam.session|default:"2024-25" }}</div>
