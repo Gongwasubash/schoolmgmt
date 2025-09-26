@@ -323,8 +323,6 @@
                 <button class="btn btn-warning" onclick="autoFillMarks()">Auto Fill Marks</button>
                 <button class="btn btn-primary" onclick="calculateResults()">Calculate Results</button>
                 <button class="btn btn-success" onclick="generateMarksheets()">Generate Marksheets</button>
-                <button class="btn btn-primary" onclick="generateSEEStyleReports()">SEE Style Grade Sheets</button>
-                <button class="btn btn-success" onclick="generateGradeSheetCertificate()">Grade Sheet Certificate</button>
                 <button class="btn btn-danger" onclick="clearAllMarks()">Clear All Marks</button>
             </div>
         </div>
@@ -335,6 +333,39 @@
 let currentExam = null;
 let currentSubject = null;
 let studentsData = [];
+
+// Convert class names from numeric to word format
+function convertClassNames() {
+    const classNameMapping = {
+        '1st': 'One',
+        '2nd': 'Two',
+        '3rd': 'Three',
+        '4th': 'Four',
+        '5th': 'Five',
+        '6th': 'Six',
+        '7th': 'Seven',
+        '8th': 'Eight',
+        '9th': 'Nine',
+        '10th': 'Ten',
+        '11th': 'Eleven',
+        '12th': 'Twelve'
+    };
+    
+    // Convert class names in any table cells with class-name data
+    const classCells = document.querySelectorAll('[data-class-name]');
+    classCells.forEach(cell => {
+        const originalClass = cell.dataset.className;
+        const convertedClass = classNameMapping[originalClass] || originalClass;
+        cell.textContent = convertedClass;
+    });
+    
+    // Convert class names in selected class input
+    const selectedClassInput = document.getElementById('selectedClass');
+    if (selectedClassInput && selectedClassInput.value) {
+        const convertedClass = classNameMapping[selectedClassInput.value] || selectedClassInput.value;
+        selectedClassInput.value = convertedClass;
+    }
+}
 
 function loadClassStudents() {
     const examSelect = document.getElementById('examSelect');
@@ -348,7 +379,23 @@ function loadClassStudents() {
     }
     
     const examClass = selectedOption.dataset.class;
-    document.getElementById('selectedClass').value = examClass;
+    const classNameMapping = {
+        '1st': 'One',
+        '2nd': 'Two',
+        '3rd': 'Three',
+        '4th': 'Four',
+        '5th': 'Five',
+        '6th': 'Six',
+        '7th': 'Seven',
+        '8th': 'Eight',
+        '9th': 'Nine',
+        '10th': 'Ten',
+        '11th': 'Eleven',
+        '12th': 'Twelve'
+    };
+    
+    const displayClass = classNameMapping[examClass] || examClass;
+    document.getElementById('selectedClass').value = displayClass;
     
     // Load subjects for this class
     fetch(`/api/subjects-by-class/${examClass}/`)
@@ -366,6 +413,9 @@ function loadClassStudents() {
                     option.dataset.passMarks = subject.pass_marks;
                     subjectSelect.appendChild(option);
                 });
+                
+                // Convert any class names that might be displayed
+                convertClassNames();
             } else {
                 alert('Error: ' + data.error);
             }
@@ -800,24 +850,10 @@ function generateMarksheets() {
     window.open(`/generate-class-marksheets-print/${currentExam}/`, '_blank');
 }
 
-function generateSEEStyleReports() {
-    if (!currentExam) {
-        alert('Please select an exam first');
-        return;
-    }
-    
-    alert('Opening SEE-style grade sheet reports...');
-    window.open(`/generate-class-marksheets-print-see-style/${currentExam}/`, '_blank');
-}
+// Initialize class name conversion when page loads
+window.addEventListener('load', function() {
+    convertClassNames();
+});
 
-function generateGradeSheetCertificate() {
-    if (!currentExam) {
-        alert('Please select an exam first');
-        return;
-    }
-    
-    alert('Opening grade sheet certificate...');
-    window.open(`/grade-sheet-certificate/`, '_blank');
-}
 </script>
 {% endblock %}

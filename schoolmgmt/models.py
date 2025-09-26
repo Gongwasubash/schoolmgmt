@@ -2,6 +2,35 @@ from django.db import models
 from datetime import datetime
 from .nepali_calendar import NepaliCalendar
 
+class SchoolDetail(models.Model):
+    school_name = models.CharField(max_length=200, default="Everest Academy")
+    logo = models.ImageField(upload_to='school_logos/', blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    phone = models.CharField(max_length=20, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "School Detail"
+        verbose_name_plural = "School Details"
+    
+    def __str__(self):
+        return self.school_name
+    
+    @classmethod
+    def get_current_school(cls):
+        school, created = cls.objects.get_or_create(
+            pk=1,
+            defaults={
+                'school_name': 'Everest Academy',
+                'address': 'Kathmandu, Nepal',
+                'phone': '+977-1-4444444',
+                'email': 'info@everestacademy.edu.np'
+            }
+        )
+        return school
+
 class Student(models.Model):
     GENDER_CHOICES = [
         ('Boy', 'Boy'),

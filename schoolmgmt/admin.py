@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense
+from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -41,3 +41,36 @@ class StudentDailyExpenseAdmin(admin.ModelAdmin):
     list_filter = ['expense_date', 'student__student_class']
     search_fields = ['student__name', 'description']
     ordering = ['-created_at']
+
+@admin.register(Session)
+class SessionAdmin(admin.ModelAdmin):
+    list_display = ['name', 'name_nepali', 'start_date', 'end_date', 'is_active', 'created_at']
+    list_filter = ['is_active', 'start_date']
+    search_fields = ['name', 'name_nepali']
+    ordering = ['-start_date']
+
+@admin.register(Subject)
+class SubjectAdmin(admin.ModelAdmin):
+    list_display = ['name', 'code', 'class_name', 'max_marks', 'pass_marks']
+    list_filter = ['class_name', 'max_marks', 'pass_marks']
+    search_fields = ['name', 'code', 'class_name']
+    ordering = ['class_name', 'name']
+
+@admin.register(Exam)
+class ExamAdmin(admin.ModelAdmin):
+    list_display = ['name', 'exam_type', 'class_name', 'exam_date', 'session', 'session_nepali']
+    list_filter = ['exam_type', 'class_name', 'session', 'exam_date']
+    search_fields = ['name', 'class_name', 'session']
+    ordering = ['-exam_date']
+
+@admin.register(Marksheet)
+class MarksheetAdmin(admin.ModelAdmin):
+    list_display = ['student', 'exam', 'subject', 'marks_obtained', 'percentage', 'grade', 'status', 'session']
+    list_filter = ['exam__exam_type', 'subject__class_name', 'session', 'exam__exam_date']
+    search_fields = ['student__name', 'exam__name', 'subject__name']
+    ordering = ['-exam__exam_date', 'student__name']
+
+@admin.register(SchoolDetail)
+class SchoolDetailAdmin(admin.ModelAdmin):
+    list_display = ['school_name', 'phone', 'email', 'updated_at']
+    fields = ['school_name', 'logo', 'address', 'phone', 'email']

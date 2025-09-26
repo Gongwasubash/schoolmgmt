@@ -70,11 +70,23 @@
 <body>
     <div class="certificate">
         <div class="header">
+            {% if school.logo %}
+            <div style="text-align: center; margin-bottom: 8px;">
+                <img src="{{ school.logo.url }}" alt="School Logo" style="max-height: 40px; width: auto;">
+            </div>
+            {% else %}
             <div class="logo"></div>
-            <div class="school-name">SARATHI PATHSHALA</div>
-            <div class="school-details">Budhanilkantha-8, Chyasal, Kathmandu<br>Phone: 01-5912328 | Email: sarathipathshala@gmail.com</div>
+            {% endif %}
+            <div class="school-name">{{ school.school_name|default:"SARATHI PATHSHALA" }}</div>
+            <div class="school-details">{{ school.address|default:"Budhanilkantha-8, Chyasal, Kathmandu" }}<br>
+            {% if school.phone or school.email %}
+            {% if school.phone %}Phone: {{ school.phone }}{% endif %}
+            {% if school.phone and school.email %} | {% endif %}
+            {% if school.email %}Email: {{ school.email }}{% endif %}
+            {% endif %}
+            </div>
             <div class="title">GRADE - SHEET</div>
-            <div class="subtitle">FIRST TERM EXAMINATION</div>
+            <div class="subtitle">{{ exam.exam_type|upper }} EXAMINATION</div>
         </div>
         
         <div class="student-info">

@@ -182,7 +182,20 @@
 <body>
     <div class="receipt">
         <div class="header">
-            <div class="school-title">School Management System</div>
+            {% if school.logo %}
+            <div style="text-align: center; margin-bottom: 8px;">
+                <img src="{{ school.logo.url }}" alt="School Logo" style="max-height: 50px; width: auto;">
+            </div>
+            {% endif %}
+            <div class="school-title">{{ school.school_name|default:"School Management System" }}</div>
+            {% if school.address %}<div style="font-size: 10px; margin: 2px 0;">{{ school.address }}</div>{% endif %}
+            {% if school.phone or school.email %}
+            <div style="font-size: 9px; margin: 2px 0;">
+                {% if school.phone %}Phone: {{ school.phone }}{% endif %}
+                {% if school.phone and school.email %} | {% endif %}
+                {% if school.email %}Email: {{ school.email }}{% endif %}
+            </div>
+            {% endif %}
             <div class="receipt-title">Credit Slip</div>
             <div class="receipt-meta">
                 <span>Slip No: CS{{ student.id|stringformat:"04d" }}</span>

@@ -1,0 +1,430 @@
+{% extends "base.html" %}
+
+{% block title %}Add New Subject{% endblock %}
+
+{% block content %}
+<div class="subject-form-container">
+    <div class="form-header">
+        <div class="header-content">
+            <h1>📚 Add New Subject</h1>
+            <p>Create and manage academic subjects for your school</p>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <form id="subjectForm" class="modern-form">
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="subjectName">Subject Name</label>
+                    <input type="text" id="subjectName" name="name" placeholder="e.g., Mathematics" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="subjectCode">Subject Code</label>
+                    <input type="text" id="subjectCode" name="code" placeholder="e.g., MATH101" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="className">Class</label>
+                    <select id="className" name="class_name" required>
+                        <option value="">Select Class</option>
+                        {% for class_name in available_classes %}
+                        <option value="{{ class_name }}">{{ class_name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="maxMarks">Maximum Marks</label>
+                    <input type="number" id="maxMarks" name="max_marks" value="100" min="1" max="1000" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="passMarks">Pass Marks</label>
+                    <input type="number" id="passMarks" name="pass_marks" value="35" min="1" max="1000" required>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="resetForm()">
+                    <span class="btn-icon">🔄</span>
+                    Reset
+                </button>
+                <button type="submit" class="btn-primary">
+                    <span class="btn-icon">✅</span>
+                    Add Subject
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="info-card">
+        <h3>📋 Quick Tips</h3>
+        <ul>
+            <li>Subject codes should be unique across all classes</li>
+            <li>Pass marks typically range from 30-40% of maximum marks</li>
+            <li>Use clear, descriptive subject names</li>
+            <li>Consider standard naming conventions for consistency</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.subject-form-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+.form-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px 12px 0 0;
+    margin-bottom: 0;
+}
+
+.header-content h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.header-content p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.form-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.modern-form {
+    width: 100%;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #fafafa;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #667eea;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    transform: translateY(-1px);
+}
+
+.form-group input:valid,
+.form-group select:valid {
+    border-color: #10b981;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn-primary,
+.btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 2px solid #e5e7eb;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+.info-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border-left: 4px solid #10b981;
+}
+
+.info-card h3 {
+    margin: 0 0 1rem 0;
+    color: #374151;
+    font-size: 1.1rem;
+}
+
+.info-card ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: #6b7280;
+}
+
+.info-card li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .subject-form-container {
+        padding: 1rem;
+    }
+
+    .form-header {
+        padding: 1.5rem;
+    }
+
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .form-card {
+        padding: 1.5rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .subject-form-container {
+        padding: 0.5rem;
+    }
+
+    .form-header {
+        padding: 1rem;
+    }
+
+    .header-content h1 {
+        font-size: 1.25rem;
+    }
+
+    .form-card {
+        padding: 1rem;
+    }
+}
+
+/* Loading State */
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary.loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 0.5rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Success Animation */
+.form-card.success {
+    animation: successPulse 0.6s ease-out;
+}
+
+@keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('subjectForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+    submitBtn.innerHTML = '<span class="btn-icon">⏳</span> Adding...';
+    
+    const formData = new FormData(this);
+    const editId = this.dataset.editId;
+    
+    if (editId) {
+        formData.append('subject_id', editId);
+    }
+    
+    const url = editId ? '{% url "edit_subject" %}' : '{% url "create_subject" %}';
+    
+    fetch(url, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Success animation
+            document.querySelector('.form-card').classList.add('success');
+            
+            submitBtn.innerHTML = '<span class="btn-icon">✅</span> Success!';
+            submitBtn.style.background = '#10b981';
+            
+            setTimeout(() => {
+                alert(editId ? 'Subject updated successfully!' : 'Subject added successfully!');
+                this.reset();
+                delete this.dataset.editId;
+                submitBtn.innerHTML = originalText;
+                submitBtn.style.background = '';
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+                document.querySelector('.form-card').classList.remove('success');
+            }, 1500);
+        } else {
+            throw new Error(data.error);
+        }
+    })
+    .catch(error => {
+        submitBtn.innerHTML = '<span class="btn-icon">❌</span> Error';
+        submitBtn.style.background = '#ef4444';
+        
+        setTimeout(() => {
+            alert('Error: ' + error.message);
+            submitBtn.innerHTML = originalText;
+            submitBtn.style.background = '';
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('loading');
+        }, 1500);
+    });
+});
+
+function resetForm() {
+    const form = document.getElementById('subjectForm');
+    form.reset();
+    delete form.dataset.editId;
+    form.querySelector('button[type="submit"]').innerHTML = '<span class="btn-icon">✅</span> Add Subject';
+}
+
+// Auto-generate subject code based on subject name
+document.getElementById('subjectName').addEventListener('input', function() {
+    const codeField = document.getElementById('subjectCode');
+    if (!codeField.value) {
+        const code = this.value
+            .toUpperCase()
+            .replace(/[^A-Z0-9]/g, '')
+            .substring(0, 6);
+        codeField.value = code;
+    }
+});
+
+// Validate pass marks against max marks
+document.getElementById('passMarks').addEventListener('input', function() {
+    const maxMarks = parseInt(document.getElementById('maxMarks').value);
+    const passMarks = parseInt(this.value);
+    
+    if (passMarks >= maxMarks) {
+        this.setCustomValidity('Pass marks must be less than maximum marks');
+    } else {
+        this.setCustomValidity('');
+    }
+});
+
+document.getElementById('maxMarks').addEventListener('input', function() {
+    const passMarksField = document.getElementById('passMarks');
+    const maxMarks = parseInt(this.value);
+    const passMarks = parseInt(passMarksField.value);
+    
+    if (passMarks >= maxMarks) {
+        passMarksField.setCustomValidity('Pass marks must be less than maximum marks');
+    } else {
+        passMarksField.setCustomValidity('');
+    }
+});
+</script>
+{% endblock %}

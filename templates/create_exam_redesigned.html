@@ -1,0 +1,612 @@
+{% extends "base.html" %}
+
+{% block title %}Create New Exam{% endblock %}
+
+{% block content %}
+<div class="exam-form-container">
+    <div class="form-header">
+        <div class="header-content">
+            <h1>📝 Create New Exam</h1>
+            <p>Set up examinations and assessments for your students</p>
+        </div>
+    </div>
+
+    <div class="form-card">
+        <form id="examForm" class="modern-form">
+            <div class="form-section">
+                <h3 class="section-title">📋 Basic Information</h3>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="examName">Exam Name</label>
+                        <input type="text" id="examName" name="name" placeholder="e.g., First Terminal Exam" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="examType">Exam Type</label>
+                        <select id="examType" name="exam_type" required>
+                            <option value="">Select Exam Type</option>
+                            <option value="First Term">First Term</option>
+                            <option value="Mid Term">Mid Term</option>
+                            <option value="Final Term">Final Term</option>
+                            <option value="Unit Test">Unit Test</option>
+                            <option value="Annual">Annual</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="examDate">Exam Date</label>
+                        <input type="date" id="examDate" name="exam_date" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="session">Academic Session</label>
+                        <input type="text" id="session" name="session" value="{{ current_nepali_session }}" placeholder="e.g., 2081-82" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h3 class="section-title">🎓 Select Classes</h3>
+                <div class="class-selection">
+                    <div class="selection-header">
+                        <button type="button" class="btn-select-all" onclick="selectAllClasses()">Select All</button>
+                        <button type="button" class="btn-clear-all" onclick="clearAllClasses()">Clear All</button>
+                    </div>
+                    <div class="class-grid">
+                        {% for class_name in available_classes %}
+                        <label class="class-card">
+                            <input type="checkbox" name="class_names" value="{{ class_name }}">
+                            <div class="card-content">
+                                <span class="class-icon">📚</span>
+                                <span class="class-name">{{ class_name }}</span>
+                                <span class="checkmark">✓</span>
+                            </div>
+                        </label>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <button type="button" class="btn-secondary" onclick="resetForm()">
+                    <span class="btn-icon">🔄</span>
+                    Reset
+                </button>
+                <button type="submit" class="btn-primary">
+                    <span class="btn-icon">🚀</span>
+                    Create Exam
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="info-cards">
+        <div class="info-card">
+            <h3>💡 Exam Guidelines</h3>
+            <ul>
+                <li>Choose a clear, descriptive exam name</li>
+                <li>Select appropriate exam type for proper categorization</li>
+                <li>Ensure exam date is set correctly</li>
+                <li>Select all relevant classes for the exam</li>
+            </ul>
+        </div>
+
+        <div class="info-card">
+            <h3>📅 Session Information</h3>
+            <p>Current Nepali Session: <strong>{{ current_nepali_session }}</strong></p>
+            <p>Current Date: <strong>{{ current_nepali_date }}</strong></p>
+            <p>You can modify the session if needed for historical exams.</p>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.exam-form-container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 2rem;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+.form-header {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+    padding: 2rem;
+    border-radius: 12px 12px 0 0;
+    margin-bottom: 0;
+}
+
+.header-content h1 {
+    margin: 0 0 0.5rem 0;
+    font-size: 2rem;
+    font-weight: 700;
+}
+
+.header-content p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+}
+
+.form-card {
+    background: white;
+    padding: 2.5rem;
+    border-radius: 0 0 12px 12px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.modern-form {
+    width: 100%;
+}
+
+.form-section {
+    margin-bottom: 2.5rem;
+}
+
+.section-title {
+    color: #374151;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0 0 1.5rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #e5e7eb;
+}
+
+.form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.form-group {
+    position: relative;
+}
+
+.form-group label {
+    display: block;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 0.5rem;
+    font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    background: #fafafa;
+    box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+    outline: none;
+    border-color: #4f46e5;
+    background: white;
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+    transform: translateY(-1px);
+}
+
+.class-selection {
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: 12px;
+    border: 2px solid #e5e7eb;
+}
+
+.selection-header {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    justify-content: flex-end;
+}
+
+.btn-select-all,
+.btn-clear-all {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.btn-select-all {
+    background: #10b981;
+    color: white;
+}
+
+.btn-select-all:hover {
+    background: #059669;
+}
+
+.btn-clear-all {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-clear-all:hover {
+    background: #dc2626;
+}
+
+.class-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+}
+
+.class-card {
+    position: relative;
+    cursor: pointer;
+    display: block;
+}
+
+.class-card input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem;
+    background: white;
+    border: 2px solid #e5e7eb;
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 100px;
+    justify-content: center;
+}
+
+.class-card:hover .card-content {
+    border-color: #4f46e5;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(79, 70, 229, 0.15);
+}
+
+.class-card input:checked + .card-content {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    border-color: #4f46e5;
+    color: white;
+}
+
+.class-icon {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.class-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-align: center;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    font-size: 1.2rem;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.class-card input:checked + .card-content .checkmark {
+    opacity: 1;
+}
+
+.form-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    padding-top: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+}
+
+.btn-primary,
+.btn-secondary {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
+}
+
+.btn-secondary {
+    background: #f3f4f6;
+    color: #6b7280;
+    border: 2px solid #e5e7eb;
+}
+
+.btn-secondary:hover {
+    background: #e5e7eb;
+    color: #374151;
+}
+
+.btn-icon {
+    font-size: 1.1rem;
+}
+
+.info-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.5rem;
+}
+
+.info-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+    border-left: 4px solid #10b981;
+}
+
+.info-card h3 {
+    margin: 0 0 1rem 0;
+    color: #374151;
+    font-size: 1.1rem;
+}
+
+.info-card ul {
+    margin: 0;
+    padding-left: 1.5rem;
+    color: #6b7280;
+}
+
+.info-card li {
+    margin-bottom: 0.5rem;
+    line-height: 1.5;
+}
+
+.info-card p {
+    margin: 0 0 0.5rem 0;
+    color: #6b7280;
+    line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .exam-form-container {
+        padding: 1rem;
+    }
+
+    .form-header {
+        padding: 1.5rem;
+    }
+
+    .header-content h1 {
+        font-size: 1.5rem;
+    }
+
+    .form-card {
+        padding: 1.5rem;
+    }
+
+    .form-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+
+    .class-grid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .btn-primary,
+    .btn-secondary {
+        width: 100%;
+    }
+
+    .selection-header {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 480px) {
+    .exam-form-container {
+        padding: 0.5rem;
+    }
+
+    .form-header {
+        padding: 1rem;
+    }
+
+    .header-content h1 {
+        font-size: 1.25rem;
+    }
+
+    .form-card {
+        padding: 1rem;
+    }
+
+    .class-grid {
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+    }
+
+    .card-content {
+        padding: 1rem 0.5rem;
+        min-height: 80px;
+    }
+}
+
+/* Loading State */
+.btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.btn-primary.loading::after {
+    content: '';
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-left: 0.5rem;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Success Animation */
+.form-card.success {
+    animation: successPulse 0.6s ease-out;
+}
+
+@keyframes successPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('examForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const selectedClasses = Array.from(this.querySelectorAll('input[name="class_names"]:checked')).map(cb => cb.value);
+    if (selectedClasses.length === 0) {
+        alert('Please select at least one class for the exam');
+        return;
+    }
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    
+    // Show loading state
+    submitBtn.disabled = true;
+    submitBtn.classList.add('loading');
+    submitBtn.innerHTML = '<span class="btn-icon">⏳</span> Creating...';
+    
+    const formData = new FormData(this);
+    formData.delete('class_names');
+    formData.append('selected_classes', JSON.stringify(selectedClasses));
+    
+    fetch('{% url "create_exam" %}', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Success animation
+            document.querySelector('.form-card').classList.add('success');
+            
+            submitBtn.innerHTML = '<span class="btn-icon">✅</span> Success!';
+            submitBtn.style.background = '#10b981';
+            
+            setTimeout(() => {
+                alert(`Exam created successfully for ${selectedClasses.length} class(es)!`);
+                this.reset();
+                submitBtn.innerHTML = originalText;
+                submitBtn.style.background = '';
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('loading');
+                document.querySelector('.form-card').classList.remove('success');
+            }, 1500);
+        } else {
+            throw new Error(data.error);
+        }
+    })
+    .catch(error => {
+        submitBtn.innerHTML = '<span class="btn-icon">❌</span> Error';
+        submitBtn.style.background = '#ef4444';
+        
+        setTimeout(() => {
+            alert('Error: ' + error.message);
+            submitBtn.innerHTML = originalText;
+            submitBtn.style.background = '';
+            submitBtn.disabled = false;
+            submitBtn.classList.remove('loading');
+        }, 1500);
+    });
+});
+
+function selectAllClasses() {
+    const checkboxes = document.querySelectorAll('input[name="class_names"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = true;
+    });
+}
+
+function clearAllClasses() {
+    const checkboxes = document.querySelectorAll('input[name="class_names"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.checked = false;
+    });
+}
+
+function resetForm() {
+    const form = document.getElementById('examForm');
+    form.reset();
+    clearAllClasses();
+}
+
+// Set minimum date to today
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('examDate').setAttribute('min', today);
+});
+
+// Auto-update session based on exam date
+document.getElementById('examDate').addEventListener('change', function() {
+    const examDate = new Date(this.value);
+    const year = examDate.getFullYear();
+    const month = examDate.getMonth() + 1; // JavaScript months are 0-indexed
+    
+    // Nepali academic year typically starts in April (Baisakh)
+    let nepaliYear;
+    if (month >= 4) {
+        nepaliYear = year + 57; // Convert to Nepali year
+    } else {
+        nepaliYear = year + 56;
+    }
+    
+    const sessionField = document.getElementById('session');
+    if (!sessionField.value || sessionField.value === '{{ current_nepali_session }}') {
+        sessionField.value = `${nepaliYear}-${String(nepaliYear + 1).slice(-2)}`;
+    }
+});
+</script>
+{% endblock %}

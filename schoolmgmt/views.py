@@ -3,7 +3,7 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
-from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense
+from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail
 from django.db import models
 from django.db.models import F, Q
 import json
@@ -213,6 +213,39 @@ def reports(request):
     # Get all subjects for marks entry
     subjects = Subject.objects.all().order_by('class_name', 'name')
     
+    # Get available classes from Student model CLASS_CHOICES and actual database classes
+    predefined_classes = [choice[0] for choice in Student.CLASS_CHOICES]
+    actual_classes = list(Student.objects.values_list('student_class', flat=True).distinct().order_by('student_class'))
+    # Combine and remove duplicates while preserving order
+    available_classes = list(dict.fromkeys(predefined_classes + actual_classes))
+    
+    # Get class statistics
+    class_name_mapping = {
+        '1st': 'One',
+        '2nd': 'Two',
+        '3rd': 'Three',
+        '4th': 'Four',
+        '5th': 'Five',
+        '6th': 'Six',
+        '7th': 'Seven',
+        '8th': 'Eight',
+        '9th': 'Nine',
+        '10th': 'Ten',
+        '11th': 'Eleven',
+        '12th': 'Twelve'
+    }
+    
+    class_data = []
+    for class_name in available_classes:
+        student_count = Student.objects.filter(student_class=class_name).count()
+        subject_count = Subject.objects.filter(class_name=class_name).count()
+        display_name = class_name_mapping.get(class_name, class_name)
+        class_data.append({
+            'name': display_name,
+            'student_count': student_count,
+            'subject_count': subject_count
+        })
+    
     # Get comprehensive Nepali date and session info
     nepali_info = get_comprehensive_nepali_info()
     nepali_months = get_nepali_months_list()
@@ -228,6 +261,8 @@ def reports(request):
         'students': students,
         'exams': exams,
         'subjects': subjects,
+        'available_classes': available_classes,
+        'class_data': class_data,
         'nepali_info': nepali_info,
         'current_nepali_date': nepali_info['formatted_full'],
         'current_nepali_session': nepali_info['session'],
@@ -1359,6 +1394,7 @@ def generate_receipt_pdf(request, payment_id):
 
 def credit_slip(request, student_id):
     student = get_object_or_404(Student, id=student_id)
+    school = SchoolDetail.get_current_school()
     
     selected_months = [m.strip() for m in request.GET.get('months', '').split(',') if m.strip()]
     selected_fee_types = [f.strip() for f in request.GET.get('fee_types', '').split(',') if f.strip()]
@@ -1452,6 +1488,7 @@ def credit_slip(request, student_id):
     
     context = {
         'student': student,
+        'school': school,
         'pending_fees': pending_fees,
         'total_pending': total_pending,
         'current_date': datetime.now().strftime('%B %d, %Y')
@@ -1793,7 +1830,8 @@ def fee_pending_report(request):
 def create_exam(request):
     if request.method == 'POST':
         try:
-            class_name = request.POST.get('class_name')
+            selected_classes_json = request.POST.get('selected_classes')
+            selected_classes = json.loads(selected_classes_json) if selected_classes_json else []
             exam_date = request.POST.get('exam_date')
             
             # Convert exam date to Nepali if provided
@@ -1805,25 +1843,8 @@ def create_exam(request):
                 except:
                     pass
             
-            if class_name == 'All Classes':
-                # Create exam for all classes
-                all_classes = ['Nursery', 'LKG', 'UKG', '1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th', '11th', '12th']
-                created_exams = []
-                
-                for cls in all_classes:
-                    exam = Exam.objects.create(
-                        name=request.POST.get('name'),
-                        exam_type=request.POST.get('exam_type'),
-                        class_name=cls,
-                        exam_date=exam_date,
-                        exam_date_nepali=exam_date_nepali,
-                        session=request.POST.get('session')
-                    )
-                    created_exams.append(exam.id)
-                
-                return JsonResponse({'success': True, 'message': f'Created exams for all classes', 'exam_ids': created_exams})
-            else:
-                # Create exam for single class
+            created_exams = []
+            for class_name in selected_classes:
                 exam = Exam.objects.create(
                     name=request.POST.get('name'),
                     exam_type=request.POST.get('exam_type'),
@@ -1832,7 +1853,13 @@ def create_exam(request):
                     exam_date_nepali=exam_date_nepali,
                     session=request.POST.get('session')
                 )
-                return JsonResponse({'success': True, 'exam_id': exam.id})
+                created_exams.append(exam.id)
+            
+            return JsonResponse({
+                'success': True, 
+                'message': f'Created exams for {len(selected_classes)} classes', 
+                'exam_ids': created_exams
+            })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     
@@ -1842,9 +1869,15 @@ def create_exam(request):
 def create_subject(request):
     if request.method == 'POST':
         try:
+            code = request.POST.get('code')
+            
+            # Check if subject code already exists
+            if Subject.objects.filter(code=code).exists():
+                return JsonResponse({'success': False, 'error': f'Subject code "{code}" already exists. Please use a different code.'})
+            
             subject = Subject.objects.create(
                 name=request.POST.get('name'),
-                code=request.POST.get('code'),
+                code=code,
                 class_name=request.POST.get('class_name'),
                 max_marks=int(request.POST.get('max_marks', 100)),
                 pass_marks=int(request.POST.get('pass_marks', 35))
@@ -1862,8 +1895,14 @@ def edit_subject(request):
             subject_id = request.POST.get('subject_id')
             subject = get_object_or_404(Subject, id=subject_id)
             
+            code = request.POST.get('code')
+            
+            # Check if subject code already exists (excluding current subject)
+            if Subject.objects.filter(code=code).exclude(id=subject_id).exists():
+                return JsonResponse({'success': False, 'error': f'Subject code "{code}" already exists. Please use a different code.'})
+            
             subject.name = request.POST.get('name')
-            subject.code = request.POST.get('code')
+            subject.code = code
             subject.class_name = request.POST.get('class_name')
             subject.max_marks = int(request.POST.get('max_marks', 100))
             subject.pass_marks = int(request.POST.get('pass_marks', 35))
@@ -2195,18 +2234,40 @@ def subjects_by_class_api(request, class_name):
         subjects = Subject.objects.filter(class_name=class_name).order_by('name')
         subjects_data = []
         
+        # Class name mapping for display
+        class_name_mapping = {
+            '1st': 'One',
+            '2nd': 'Two',
+            '3rd': 'Three',
+            '4th': 'Four',
+            '5th': 'Five',
+            '6th': 'Six',
+            '7th': 'Seven',
+            '8th': 'Eight',
+            '9th': 'Nine',
+            '10th': 'Ten',
+            '11th': 'Eleven',
+            '12th': 'Twelve'
+        }
+        
+        display_class_name = class_name_mapping.get(class_name, class_name)
+        
         for subject in subjects:
             subjects_data.append({
                 'id': subject.id,
                 'name': subject.name,
                 'code': subject.code,
+                'class_name': display_class_name,
+                'original_class_name': subject.class_name,
                 'max_marks': subject.max_marks,
                 'pass_marks': subject.pass_marks
             })
         
         return JsonResponse({
             'success': True,
-            'subjects': subjects_data
+            'subjects': subjects_data,
+            'class_name': display_class_name,
+            'original_class_name': class_name
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
@@ -2217,11 +2278,29 @@ def marksheet_data_api(request, exam_id, subject_id):
         exam = get_object_or_404(Exam, id=exam_id)
         subject = get_object_or_404(Subject, id=subject_id)
         
+        # Class name mapping for display
+        class_name_mapping = {
+            '1st': 'One',
+            '2nd': 'Two',
+            '3rd': 'Three',
+            '4th': 'Four',
+            '5th': 'Five',
+            '6th': 'Six',
+            '7th': 'Seven',
+            '8th': 'Eight',
+            '9th': 'Nine',
+            '10th': 'Ten',
+            '11th': 'Eleven',
+            '12th': 'Twelve'
+        }
+        
         # Validate that subject belongs to exam's class
         if subject.class_name != exam.class_name:
+            display_subject_class = class_name_mapping.get(subject.class_name, subject.class_name)
+            display_exam_class = class_name_mapping.get(exam.class_name, exam.class_name)
             return JsonResponse({
                 'success': False, 
-                'error': f'Subject {subject.name} does not belong to class {exam.class_name}'
+                'error': f'Subject {subject.name} does not belong to class {display_exam_class}'
             })
         
         # Get students for this exam's class
@@ -2690,6 +2769,7 @@ def save_student_marks(request):
 def generate_class_marksheets_new_tab(request, exam_id):
     """Generate marksheets for all students in an exam - opens in new tab without sidebar"""
     exam = get_object_or_404(Exam, id=exam_id)
+    school = SchoolDetail.get_current_school()
     students = Student.objects.filter(student_class=exam.class_name).order_by('name')
     
     marksheets_data = []
@@ -2751,6 +2831,7 @@ def generate_class_marksheets_new_tab(request, exam_id):
     # Add cache busting and debug info
     context = {
         'exam': exam,
+        'school': school,
         'marksheets_data': marksheets_data,
         'current_date': datetime.now().strftime('%B %d, %Y'),
         'current_nepali_date': current_nepali_date,
@@ -2769,6 +2850,7 @@ def generate_class_marksheets_new_tab(request, exam_id):
 def generate_class_marksheets_see_style(request, exam_id):
     """Generate SEE-style marksheets for all students in an exam"""
     exam = get_object_or_404(Exam, id=exam_id)
+    school = SchoolDetail.get_current_school()
     students = Student.objects.filter(student_class=exam.class_name).order_by('name')
     
     marksheets_data = []
@@ -2822,6 +2904,7 @@ def generate_class_marksheets_see_style(request, exam_id):
     
     context = {
         'exam': exam,
+        'school': school,
         'marksheets_data': marksheets_data,
         'current_date': datetime.now().strftime('%B %d, %Y')
     }
@@ -2837,6 +2920,7 @@ def generate_class_marksheets_see_style(request, exam_id):
 def generate_class_marksheets_print_see_style(request, exam_id):
     """Generate improved SEE-style marksheets for printing in A4 format"""
     exam = get_object_or_404(Exam, id=exam_id)
+    school = SchoolDetail.get_current_school()
     students = Student.objects.filter(student_class=exam.class_name).order_by('name')
     
     marksheets_data = []
@@ -2890,6 +2974,7 @@ def generate_class_marksheets_print_see_style(request, exam_id):
     
     context = {
         'exam': exam,
+        'school': school,
         'marksheets_data': marksheets_data,
         'current_date': datetime.now().strftime('%B %d, %Y')
     }
@@ -3157,7 +3242,8 @@ def student_attendance_dashboard(request):
 
 def print_bill(request):
     """Print bill page"""
-    return render(request, 'print_bill.html')
+    school = SchoolDetail.get_current_school()
+    return render(request, 'print_bill.html', {'school': school})
 
 def student_daily_exp(request):
     """Student daily expenses page"""
@@ -3417,3 +3503,43 @@ def get_todays_all_expenses_api(request):
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+def school_settings_test(request):
+    """Test view to debug template loading"""
+    try:
+        school = SchoolDetail.get_current_school()
+        return render(request, 'school_settings_test.html', {'school': school})
+    except Exception as e:
+        return HttpResponse(f'Error: {str(e)}')
+
+def school_settings(request):
+    try:
+        from .models import SchoolDetail
+        school = SchoolDetail.get_current_school()
+        
+        if request.method == 'POST':
+            # Handle form submission
+            school.school_name = request.POST.get('school_name', school.school_name)
+            school.address = request.POST.get('address', school.address)
+            school.phone = request.POST.get('phone', school.phone)
+            school.email = request.POST.get('email', school.email)
+            
+            # Handle logo upload
+            if 'logo' in request.FILES:
+                school.logo = request.FILES['logo']
+            
+            school.save()
+            messages.success(request, 'School settings updated successfully!')
+            return redirect('school_settings')
+        
+        return render(request, 'school_settings.html', {'school': school})
+    except Exception as e:
+        # Fallback with default values if there's an issue
+        default_school = type('obj', (object,), {
+            'school_name': 'Everest Academy',
+            'address': 'Kathmandu, Nepal',
+            'phone': '+977-1-4444444',
+            'email': 'info@everestacademy.edu.np',
+            'logo': None
+        })
+        return render(request, 'school_settings.html', {'school': default_school})
