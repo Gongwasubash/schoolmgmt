@@ -4,20 +4,6 @@
 
 {% block content %}
 <div class="school-dashboard">
-    <!-- Top Header -->
-    <div class="top-header">
-        <div class="header-left">
-            <h1>Top School Management System in India</h1>
-            <div class="header-subtitle">
-                <span>Digital School ERP Software | Ver: 23</span>
-                <button class="update-btn">Check for Update</button>
-            </div>
-        </div>
-        <div class="breadcrumb">
-            Home / Dashboard
-        </div>
-    </div>
-
     <!-- Summary Stats -->
     <div class="summary-stats">
         <div class="stat-card students">
@@ -80,15 +66,30 @@
     <!-- Main Content Grid -->
     <div class="main-grid">
         <div class="left-column">
-            <!-- Today's Collection -->
-            <div class="collection-card">
-                <h3>Today's Collection</h3>
-                <div class="collection-amount">
-                    <span class="currency">Rs.</span>
-                    <span class="amount">0</span>
-                </div>
-                <div class="collection-label">Total Collection</div>
-            </div>
+            <!-- Collection Table -->
+            <table class="collection-table">
+                <tr class="collection-row">
+                    <th class="collection-cell collection-header">Period</th>
+                    <th class="collection-cell collection-header">Amount</th>
+                </tr>
+                <tr class="collection-row" onclick="window.location.href='{% url 'todays_collection' %}'">
+                    <td class="collection-cell" data-label="Period">Today's Collection</td>
+                    <td class="collection-cell" data-label="Amount">Rs. {{ todays_collection|floatformat:0 }}</td>
+                </tr>
+                <tr class="collection-row" onclick="window.location.href='{% url 'weekly_collection' %}'">
+                    <td class="collection-cell" data-label="Period">Weekly Collection</td>
+                    <td class="collection-cell" data-label="Amount">Rs. {{ weekly_collection|floatformat:0 }}</td>
+                </tr>
+                <tr class="collection-row" onclick="window.location.href='{% url 'monthly_collection' %}'">
+                    <td class="collection-cell" data-label="Period">Monthly Collection</td>
+                    <td class="collection-cell" data-label="Amount">Rs. {{ monthly_collection|floatformat:0 }}</td>
+                </tr>
+                <tr class="collection-row" onclick="window.location.href='{% url 'yearly_collection' %}'">
+                    <td class="collection-cell" data-label="Period">Yearly Collection</td>
+                    <td class="collection-cell" data-label="Amount">Rs. {{ yearly_collection|floatformat:0 }}</td>
+                </tr>
+            </table>
+
 
             <!-- Action Buttons -->
             <div class="action-buttons">

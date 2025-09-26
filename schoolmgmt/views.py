@@ -7,7 +7,7 @@ from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet,
 from django.db import models
 from django.db.models import F, Q
 import json
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from django.db.models import Count, Sum, Max
 from decimal import Decimal
 import csv
@@ -59,6 +59,35 @@ def home(request):
     today = date.today()
     todays_birthdays = Student.objects.filter(dob__month=today.month, dob__day=today.day).count()
     
+    # Calculate today's collection from fee payments
+    todays_collection = FeePayment.objects.filter(payment_date=today).aggregate(
+        total=Sum('payment_amount')
+    )['total'] or 0
+    
+    # Calculate weekly collection
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+    weekly_collection = FeePayment.objects.filter(
+        payment_date__range=[week_start, week_end]
+    ).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    # Calculate monthly collection
+    month_start = today.replace(day=1)
+    if today.month == 12:
+        month_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+    monthly_collection = FeePayment.objects.filter(
+        payment_date__range=[month_start, month_end]
+    ).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    # Calculate yearly collection
+    year_start = today.replace(month=1, day=1)
+    year_end = today.replace(month=12, day=31)
+    yearly_collection = FeePayment.objects.filter(
+        payment_date__range=[year_start, year_end]
+    ).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
     # Get class-wise data
     class_data = Student.objects.values('student_class').annotate(count=Count('student_class')).order_by('student_class')
     
@@ -73,6 +102,10 @@ def home(request):
         'boys_count': boys_count,
         'girls_count': girls_count,
         'todays_birthdays': todays_birthdays,
+        'todays_collection': float(todays_collection),
+        'weekly_collection': float(weekly_collection),
+        'monthly_collection': float(monthly_collection),
+        'yearly_collection': float(yearly_collection),
         'class_data': class_data,
         'religion_data': religion_data,
         'nepali_info': nepali_info,
@@ -3518,6 +3551,107 @@ def school_settings_test(request):
         return render(request, 'school_settings_test.html', {'school': school})
     except Exception as e:
         return HttpResponse(f'Error: {str(e)}')
+
+def todays_collection(request):
+    """Display today's collection details"""
+    today = date.today()
+    
+    # Get today's payments
+    payments = FeePayment.objects.filter(payment_date=today).select_related('student').order_by('-payment_date', '-id')
+    
+    # Calculate totals
+    total_collection = payments.aggregate(total=Sum('payment_amount'))['total'] or 0
+    total_payments = payments.count()
+    
+    context = {
+        'payments': payments,
+        'total_collection': float(total_collection),
+        'total_payments': total_payments,
+        'current_date': today.strftime('%B %d, %Y')
+    }
+    
+    return render(request, 'todays_collection.html', context)
+
+def weekly_collection(request):
+    """Display this week's collection details"""
+    from datetime import timedelta
+    
+    today = date.today()
+    # Get start of week (Monday)
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+    
+    # Get this week's payments
+    payments = FeePayment.objects.filter(
+        payment_date__range=[week_start, week_end]
+    ).select_related('student').order_by('-payment_date', '-id')
+    
+    # Calculate totals
+    total_collection = payments.aggregate(total=Sum('payment_amount'))['total'] or 0
+    total_payments = payments.count()
+    
+    context = {
+        'payments': payments,
+        'total_collection': float(total_collection),
+        'total_payments': total_payments,
+        'week_start': week_start,
+        'week_end': week_end
+    }
+    
+    return render(request, 'weekly_collection.html', context)
+
+def monthly_collection(request):
+    """Display this month's collection details"""
+    today = date.today()
+    # Get start and end of current month
+    month_start = today.replace(day=1)
+    if today.month == 12:
+        month_end = today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)
+    else:
+        month_end = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+    
+    # Get this month's payments
+    payments = FeePayment.objects.filter(
+        payment_date__range=[month_start, month_end]
+    ).select_related('student').order_by('-payment_date', '-id')
+    
+    # Calculate totals
+    total_collection = payments.aggregate(total=Sum('payment_amount'))['total'] or 0
+    total_payments = payments.count()
+    
+    context = {
+        'payments': payments,
+        'total_collection': float(total_collection),
+        'total_payments': total_payments,
+        'current_month': today
+    }
+    
+    return render(request, 'monthly_collection.html', context)
+
+def yearly_collection(request):
+    """Display this year's collection details"""
+    today = date.today()
+    # Get start and end of current year
+    year_start = today.replace(month=1, day=1)
+    year_end = today.replace(month=12, day=31)
+    
+    # Get this year's payments
+    payments = FeePayment.objects.filter(
+        payment_date__range=[year_start, year_end]
+    ).select_related('student').order_by('-payment_date', '-id')
+    
+    # Calculate totals
+    total_collection = payments.aggregate(total=Sum('payment_amount'))['total'] or 0
+    total_payments = payments.count()
+    
+    context = {
+        'payments': payments,
+        'total_collection': float(total_collection),
+        'total_payments': total_payments,
+        'current_year': today.year
+    }
+    
+    return render(request, 'yearly_collection.html', context)
 
 def school_settings(request):
     try:
