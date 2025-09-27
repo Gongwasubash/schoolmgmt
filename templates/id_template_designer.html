@@ -1,0 +1,1092 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ID Template Designer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f5f5f5;
+            overflow: hidden;
+        }
+
+        .designer-container {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            background: #2c3e50;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            height: 60px;
+        }
+
+        .toolbar h1 {
+            font-size: 18px;
+        }
+
+        .toolbar-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+
+        .btn:hover {
+            opacity: 0.8;
+        }
+
+        /* Main Content */
+        .main-content {
+            display: flex;
+            margin-top: 60px;
+            height: calc(100vh - 60px);
+        }
+
+        /* Left Panel - Elements */
+        .left-panel {
+            width: 250px;
+            background: white;
+            border-right: 1px solid #ddd;
+            overflow-y: auto;
+        }
+
+        .panel-section {
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .panel-title {
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .element-list {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+
+        .element-item {
+            padding: 10px;
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: grab;
+            text-align: center;
+            font-size: 12px;
+            transition: all 0.3s;
+        }
+
+        .element-item:hover {
+            background: #e9ecef;
+            transform: translateY(-2px);
+        }
+
+        .element-item:active {
+            cursor: grabbing;
+        }
+
+        /* Canvas Area */
+        .canvas-area {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #f8f9fa;
+            position: relative;
+        }
+
+        .canvas-toolbar {
+            background: white;
+            padding: 10px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .canvas-container {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        .id-canvas {
+            width: 207px;
+            height: 328px;
+            background: white;
+            border: 2px solid #ddd;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transform-origin: center;
+        }
+
+        /* Right Panel - Properties */
+        .right-panel {
+            width: 300px;
+            background: white;
+            border-left: 1px solid #ddd;
+            overflow-y: auto;
+        }
+
+        .properties-panel {
+            padding: 15px;
+        }
+
+        .property-group {
+            margin-bottom: 20px;
+        }
+
+        .property-label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        .property-input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .color-input {
+            width: 50px;
+            height: 35px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Draggable Elements */
+        .draggable-element {
+            position: absolute;
+            border: 1px dashed transparent;
+            cursor: move;
+            min-width: 50px;
+            min-height: 20px;
+        }
+
+        .draggable-element:hover {
+            border-color: #3498db;
+        }
+
+        .draggable-element.selected {
+            border-color: #e74c3c;
+            border-style: solid;
+        }
+
+        .resize-handle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #e74c3c;
+            border: 1px solid white;
+            border-radius: 50%;
+        }
+
+        .resize-handle.nw { top: -4px; left: -4px; cursor: nw-resize; }
+        .resize-handle.ne { top: -4px; right: -4px; cursor: ne-resize; }
+        .resize-handle.sw { bottom: -4px; left: -4px; cursor: sw-resize; }
+        .resize-handle.se { bottom: -4px; right: -4px; cursor: se-resize; }
+
+        /* Element Styles */
+        .text-element {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #000;
+            padding: 2px;
+        }
+
+        .image-element {
+            background: #f0f0f0;
+            border: 1px solid #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            color: #666;
+        }
+
+        .shape-element {
+            background: #3498db;
+        }
+
+        /* Templates */
+        .template-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .template-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s;
+        }
+
+        .template-item:hover {
+            background: #f8f9fa;
+            border-color: #3498db;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+        }
+
+        .modal-content {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            width: 400px;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <!-- Toolbar -->
+    <div class="toolbar">
+        <h1>ID Template Designer</h1>
+        <div class="toolbar-actions">
+            <button class="btn btn-primary" onclick="newTemplate()">New</button>
+            <button class="btn btn-primary" onclick="loadTemplate()">Load</button>
+            <button class="btn btn-success" onclick="saveTemplate()">Save</button>
+            <button class="btn btn-primary" onclick="previewTemplate()">Preview</button>
+        </div>
+    </div>
+
+    <div class="main-content">
+        <!-- Left Panel -->
+        <div class="left-panel">
+            <!-- Templates Section -->
+            <div class="panel-section">
+                <div class="panel-title">ID Card Templates</div>
+                <div style="display: grid; grid-template-columns: 1fr; gap: 8px;">
+                    <div class="template-item" onclick="loadQuickTemplate('classic_vertical')">
+                        <div>Classic Vertical</div>
+                    </div>
+                    <div class="template-item" onclick="loadQuickTemplate('modern_horizontal')">
+                        <div>Modern Horizontal</div>
+                    </div>
+                    <div class="template-item" onclick="loadQuickTemplate('minimalist')">
+                        <div>Minimalist Card</div>
+                    </div>
+                    <div class="template-item" onclick="loadQuickTemplate('corporate')">
+                        <div>Corporate Style</div>
+                    </div>
+                    <div class="template-item" onclick="loadQuickTemplate('creative')">
+                        <div>Creative Design</div>
+                    </div>
+                    <div class="template-item" onclick="loadQuickTemplate('elegant')">
+                        <div>Elegant Blue</div>
+                    </div>
+                    <div class="template-item" onclick="loadQuickTemplate('tech_modern')">
+                        <div>Tech Modern</div>
+                    </div>
+                    <div class="template-item" onclick="loadQuickTemplate('school_pride')">
+                        <div>School Pride</div>
+                    </div>
+                    <div class="template-item" onclick="loadQuickTemplate('premium')">
+                        <div>Premium Gold</div>
+                    </div>
+                    <div class="template-item" onclick="loadQuickTemplate('nature_green')">
+                        <div>Nature Green</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Elements Section -->
+            <div class="panel-section">
+                <div class="panel-title">Elements</div>
+                <div class="element-list">
+                    <div class="element-item" draggable="true" data-type="text" data-content="Text">
+                        📝 Text
+                    </div>
+                    <div class="element-item" draggable="true" data-type="image" data-content="Photo">
+                        🖼️ Photo
+                    </div>
+                    <div class="element-item" draggable="true" data-type="text" data-content="Name">
+                        👤 Name
+                    </div>
+                    <div class="element-item" draggable="true" data-type="text" data-content="ID Number">
+                        🔢 ID No.
+                    </div>
+                    <div class="element-item" draggable="true" data-type="text" data-content="Class">
+                        🎓 Class
+                    </div>
+                    <div class="element-item" draggable="true" data-type="text" data-content="School Name">
+                        🏫 School
+                    </div>
+                    <div class="element-item" draggable="true" data-type="shape" data-content="Rectangle">
+                        ⬜ Shape
+                    </div>
+                    <div class="element-item" draggable="true" data-type="image" data-content="Logo">
+                        🏷️ Logo
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Canvas Area -->
+        <div class="canvas-area">
+            <div class="canvas-toolbar">
+                <div>
+                    <label>Template Name: </label>
+                    <input type="text" id="templateName" placeholder="Enter template name" style="padding: 5px;">
+                </div>
+                <div class="zoom-controls">
+                    <button class="btn" onclick="zoomOut()">-</button>
+                    <span id="zoomLevel">100%</span>
+                    <button class="btn" onclick="zoomIn()">+</button>
+                </div>
+            </div>
+            <div class="canvas-container">
+                <div class="id-canvas" id="canvas" ondrop="drop(event)" ondragover="allowDrop(event)">
+                    <!-- Elements will be added here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel -->
+        <div class="right-panel">
+            <div class="properties-panel">
+                <div class="panel-title">Properties</div>
+                <div id="propertiesContent">
+                    <p style="color: #666; text-align: center; margin-top: 50px;">
+                        Select an element to edit properties
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Save Modal -->
+    <div id="saveModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Save Template</h3>
+                <button class="close-btn" onclick="closeSaveModal()">&times;</button>
+            </div>
+            <div>
+                <label class="property-label">Template Name:</label>
+                <input type="text" id="saveTemplateName" class="property-input" placeholder="Enter template name">
+                <br><br>
+                <label class="property-label">Description:</label>
+                <textarea id="templateDescription" class="property-input" rows="3" placeholder="Template description"></textarea>
+                <br><br>
+                <div style="text-align: right;">
+                    <button class="btn" onclick="closeSaveModal()">Cancel</button>
+                    <button class="btn btn-success" onclick="confirmSave()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedElement = null;
+        let draggedElement = null;
+        let zoomLevel = 1;
+        let elementCounter = 0;
+
+        // Drag and Drop
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            if (!draggedElement) return;
+
+            const canvas = document.getElementById('canvas');
+            const rect = canvas.getBoundingClientRect();
+            const x = (ev.clientX - rect.left) / zoomLevel;
+            const y = (ev.clientY - rect.top) / zoomLevel;
+
+            createElement(draggedElement.type, draggedElement.content, x, y);
+            draggedElement = null;
+        }
+
+        // Element drag start
+        document.querySelectorAll('.element-item').forEach(item => {
+            item.addEventListener('dragstart', function(e) {
+                draggedElement = {
+                    type: this.dataset.type,
+                    content: this.dataset.content
+                };
+            });
+        });
+
+        // Create Element
+        function createElement(type, content, x, y) {
+            elementCounter++;
+            const element = document.createElement('div');
+            element.className = `draggable-element ${type}-element`;
+            element.id = `element_${elementCounter}`;
+            element.style.left = x + 'px';
+            element.style.top = y + 'px';
+
+            if (type === 'text') {
+                element.textContent = content;
+                element.style.fontSize = '14px';
+                element.style.fontFamily = 'Arial';
+                element.style.color = '#000000';
+            } else if (type === 'image') {
+                element.style.width = '80px';
+                element.style.height = '100px';
+                element.textContent = content;
+                element.style.backgroundColor = '#f0f0f0';
+                element.style.border = '1px solid #ccc';
+                element.style.display = 'flex';
+                element.style.alignItems = 'center';
+                element.style.justifyContent = 'center';
+            } else if (type === 'shape') {
+                element.style.width = '100px';
+                element.style.height = '50px';
+                element.style.backgroundColor = '#3498db';
+            }
+
+            // Make draggable
+            makeDraggable(element);
+            
+            // Add to canvas
+            document.getElementById('canvas').appendChild(element);
+            
+            // Select the new element
+            selectElement(element);
+        }
+
+        // Make element draggable
+        function makeDraggable(element) {
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
+
+            element.addEventListener('mousedown', function(e) {
+                if (e.target.classList.contains('resize-handle')) return;
+                
+                selectElement(element);
+                isDragging = true;
+                startX = e.clientX;
+                startY = e.clientY;
+                startLeft = parseInt(element.style.left) || 0;
+                startTop = parseInt(element.style.top) || 0;
+                
+                e.preventDefault();
+            });
+
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                
+                const deltaX = (e.clientX - startX) / zoomLevel;
+                const deltaY = (e.clientY - startY) / zoomLevel;
+                
+                element.style.left = (startLeft + deltaX) + 'px';
+                element.style.top = (startTop + deltaY) + 'px';
+            });
+
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+            });
+        }
+
+        // Select Element
+        function selectElement(element) {
+            // Remove previous selection
+            document.querySelectorAll('.draggable-element').forEach(el => {
+                el.classList.remove('selected');
+                el.querySelectorAll('.resize-handle').forEach(handle => handle.remove());
+            });
+
+            // Select new element
+            element.classList.add('selected');
+            selectedElement = element;
+            
+            // Add resize handles
+            addResizeHandles(element);
+            
+            // Update properties panel
+            updatePropertiesPanel(element);
+        }
+
+        // Add resize handles
+        function addResizeHandles(element) {
+            const handles = ['nw', 'ne', 'sw', 'se'];
+            handles.forEach(position => {
+                const handle = document.createElement('div');
+                handle.className = `resize-handle ${position}`;
+                element.appendChild(handle);
+            });
+        }
+
+        // Update Properties Panel
+        function updatePropertiesPanel(element) {
+            const panel = document.getElementById('propertiesContent');
+            const type = element.classList.contains('text-element') ? 'text' : 
+                        element.classList.contains('image-element') ? 'image' : 'shape';
+
+            let html = `
+                <div class="property-group">
+                    <label class="property-label">Position</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" class="property-input" placeholder="X" value="${parseInt(element.style.left) || 0}" 
+                               onchange="updateElementProperty('left', this.value + 'px')">
+                        <input type="number" class="property-input" placeholder="Y" value="${parseInt(element.style.top) || 0}"
+                               onchange="updateElementProperty('top', this.value + 'px')">
+                    </div>
+                </div>
+                <div class="property-group">
+                    <label class="property-label">Size</label>
+                    <div style="display: flex; gap: 10px;">
+                        <input type="number" class="property-input" placeholder="Width" value="${parseInt(element.style.width) || 'auto'}"
+                               onchange="updateElementProperty('width', this.value + 'px')">
+                        <input type="number" class="property-input" placeholder="Height" value="${parseInt(element.style.height) || 'auto'}"
+                               onchange="updateElementProperty('height', this.value + 'px')">
+                    </div>
+                </div>
+            `;
+
+            if (type === 'text') {
+                html += `
+                    <div class="property-group">
+                        <label class="property-label">Text</label>
+                        <input type="text" class="property-input" value="${element.textContent}" 
+                               onchange="updateElementProperty('textContent', this.value)">
+                    </div>
+                    <div class="property-group">
+                        <label class="property-label">Font Size</label>
+                        <input type="number" class="property-input" value="${parseInt(element.style.fontSize) || 14}"
+                               onchange="updateElementProperty('fontSize', this.value + 'px')">
+                    </div>
+                    <div class="property-group">
+                        <label class="property-label">Font Family</label>
+                        <select class="property-input" onchange="updateElementProperty('fontFamily', this.value)">
+                            <option value="Arial" ${element.style.fontFamily === 'Arial' ? 'selected' : ''}>Arial</option>
+                            <option value="Times New Roman" ${element.style.fontFamily === 'Times New Roman' ? 'selected' : ''}>Times New Roman</option>
+                            <option value="Helvetica" ${element.style.fontFamily === 'Helvetica' ? 'selected' : ''}>Helvetica</option>
+                        </select>
+                    </div>
+                    <div class="property-group">
+                        <label class="property-label">Color</label>
+                        <input type="color" class="color-input" value="${element.style.color || '#000000'}"
+                               onchange="updateElementProperty('color', this.value)">
+                    </div>
+                `;
+            } else if (type === 'shape') {
+                html += `
+                    <div class="property-group">
+                        <label class="property-label">Background Color</label>
+                        <input type="color" class="color-input" value="${element.style.backgroundColor || '#3498db'}"
+                               onchange="updateElementProperty('backgroundColor', this.value)">
+                    </div>
+                `;
+            }
+
+            html += `
+                <div class="property-group">
+                    <button class="btn" onclick="deleteElement()" style="background: #e74c3c; color: white; width: 100%;">
+                        Delete Element
+                    </button>
+                </div>
+            `;
+
+            panel.innerHTML = html;
+        }
+
+        // Update Element Property
+        function updateElementProperty(property, value) {
+            if (!selectedElement) return;
+            
+            if (property === 'textContent') {
+                selectedElement.textContent = value;
+            } else {
+                selectedElement.style[property] = value;
+            }
+        }
+
+        // Delete Element
+        function deleteElement() {
+            if (selectedElement) {
+                selectedElement.remove();
+                selectedElement = null;
+                document.getElementById('propertiesContent').innerHTML = `
+                    <p style="color: #666; text-align: center; margin-top: 50px;">
+                        Select an element to edit properties
+                    </p>
+                `;
+            }
+        }
+
+        // Zoom functions
+        function zoomIn() {
+            zoomLevel = Math.min(zoomLevel + 0.1, 2);
+            updateZoom();
+        }
+
+        function zoomOut() {
+            zoomLevel = Math.max(zoomLevel - 0.1, 0.5);
+            updateZoom();
+        }
+
+        function updateZoom() {
+            const canvas = document.getElementById('canvas');
+            canvas.style.transform = `scale(${zoomLevel})`;
+            document.getElementById('zoomLevel').textContent = Math.round(zoomLevel * 100) + '%';
+        }
+
+        // Template functions
+        function newTemplate() {
+            if (confirm('Create new template? This will clear the current design.')) {
+                document.getElementById('canvas').innerHTML = '';
+                document.getElementById('templateName').value = '';
+                selectedElement = null;
+                elementCounter = 0;
+            }
+        }
+
+        function loadQuickTemplate(type) {
+            newTemplate();
+            
+            switch(type) {
+                case 'classic_vertical':
+                    // Classic Vertical Layout
+                    createElement('shape', 'Header', 0, 0); // Header background
+                    document.querySelector('#element_1').style.backgroundColor = '#2c3e50';
+                    document.querySelector('#element_1').style.width = '207px';
+                    document.querySelector('#element_1').style.height = '60px';
+                    createElement('text', 'SCHOOL NAME', 20, 20);
+                    document.querySelector('#element_2').style.color = 'white';
+                    document.querySelector('#element_2').style.fontSize = '14px';
+                    document.querySelector('#element_2').style.fontWeight = 'bold';
+                    createElement('text', 'STUDENT ID CARD', 20, 40);
+                    document.querySelector('#element_3').style.color = 'white';
+                    document.querySelector('#element_3').style.fontSize = '10px';
+                    createElement('image', 'Photo', 65, 80);
+                    document.querySelector('#element_4').style.width = '80px';
+                    document.querySelector('#element_4').style.height = '100px';
+                    createElement('text', 'Name: [Student Name]', 20, 200);
+                    createElement('text', 'ID: [Student ID]', 20, 220);
+                    createElement('text', 'Class: [Class]', 20, 240);
+                    createElement('text', 'Session: 2025-26', 20, 260);
+                    break;
+                    
+                case 'modern_horizontal':
+                    // Modern Horizontal Layout
+                    createElement('shape', 'Side Panel', 0, 0);
+                    document.querySelector('#element_1').style.backgroundColor = '#3498db';
+                    document.querySelector('#element_1').style.width = '80px';
+                    document.querySelector('#element_1').style.height = '328px';
+                    createElement('image', 'Photo', 10, 50);
+                    document.querySelector('#element_2').style.width = '60px';
+                    document.querySelector('#element_2').style.height = '80px';
+                    createElement('text', 'SCHOOL NAME', 90, 20);
+                    document.querySelector('#element_3').style.fontSize = '12px';
+                    document.querySelector('#element_3').style.fontWeight = 'bold';
+                    createElement('text', 'STUDENT ID', 90, 40);
+                    document.querySelector('#element_4').style.fontSize = '10px';
+                    createElement('text', '[Student Name]', 90, 80);
+                    createElement('text', 'ID: [Student ID]', 90, 100);
+                    createElement('text', 'Class: [Class]', 90, 120);
+                    break;
+                    
+                case 'minimalist':
+                    // Minimalist Design
+                    createElement('shape', 'Border', 5, 5);
+                    document.querySelector('#element_1').style.backgroundColor = 'transparent';
+                    document.querySelector('#element_1').style.border = '2px solid #ddd';
+                    document.querySelector('#element_1').style.width = '197px';
+                    document.querySelector('#element_1').style.height = '318px';
+                    createElement('text', 'SCHOOL NAME', 20, 30);
+                    document.querySelector('#element_2').style.fontSize = '16px';
+                    document.querySelector('#element_2').style.color = '#333';
+                    createElement('image', 'Photo', 65, 60);
+                    document.querySelector('#element_3').style.width = '80px';
+                    document.querySelector('#element_3').style.height = '100px';
+                    createElement('text', '[Student Name]', 20, 180);
+                    document.querySelector('#element_4').style.fontSize = '14px';
+                    createElement('text', 'ID: [Student ID]', 20, 200);
+                    createElement('text', 'Class: [Class]', 20, 220);
+                    break;
+                    
+                case 'corporate':
+                    // Corporate Style
+                    createElement('shape', 'Background', 0, 0);
+                    document.querySelector('#element_1').style.backgroundColor = '#1a1a1a';
+                    document.querySelector('#element_1').style.width = '207px';
+                    document.querySelector('#element_1').style.height = '328px';
+                    createElement('shape', 'Header', 0, 0);
+                    document.querySelector('#element_2').style.backgroundColor = '#ff6b35';
+                    document.querySelector('#element_2').style.width = '207px';
+                    document.querySelector('#element_2').style.height = '50px';
+                    createElement('text', 'SCHOOL NAME', 20, 25);
+                    document.querySelector('#element_3').style.color = 'white';
+                    document.querySelector('#element_3').style.fontSize = '12px';
+                    createElement('image', 'Photo', 65, 70);
+                    document.querySelector('#element_4').style.width = '80px';
+                    document.querySelector('#element_4').style.height = '100px';
+                    createElement('text', '[Student Name]', 20, 190);
+                    document.querySelector('#element_5').style.color = 'white';
+                    createElement('text', 'ID: [Student ID]', 20, 210);
+                    document.querySelector('#element_6').style.color = '#ccc';
+                    break;
+                    
+                case 'creative':
+                    // Creative Gradient Design
+                    createElement('shape', 'Gradient BG', 0, 0);
+                    document.querySelector('#element_1').style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
+                    document.querySelector('#element_1').style.width = '207px';
+                    document.querySelector('#element_1').style.height = '328px';
+                    createElement('shape', 'Circle', 150, 20);
+                    document.querySelector('#element_2').style.backgroundColor = 'rgba(255,255,255,0.2)';
+                    document.querySelector('#element_2').style.borderRadius = '50%';
+                    document.querySelector('#element_2').style.width = '40px';
+                    document.querySelector('#element_2').style.height = '40px';
+                    createElement('text', 'SCHOOL NAME', 20, 30);
+                    document.querySelector('#element_3').style.color = 'white';
+                    document.querySelector('#element_3').style.fontSize = '14px';
+                    createElement('image', 'Photo', 65, 80);
+                    document.querySelector('#element_4').style.width = '80px';
+                    document.querySelector('#element_4').style.height = '100px';
+                    createElement('text', '[Student Name]', 20, 200);
+                    document.querySelector('#element_5').style.color = 'white';
+                    break;
+                    
+                case 'elegant':
+                    // Elegant Blue Design
+                    createElement('shape', 'Header', 0, 0);
+                    document.querySelector('#element_1').style.backgroundColor = '#34495e';
+                    document.querySelector('#element_1').style.width = '207px';
+                    document.querySelector('#element_1').style.height = '80px';
+                    createElement('text', 'SCHOOL NAME', 20, 30);
+                    document.querySelector('#element_2').style.color = 'white';
+                    document.querySelector('#element_2').style.fontSize = '16px';
+                    createElement('text', 'STUDENT IDENTITY', 20, 50);
+                    document.querySelector('#element_3').style.color = '#ecf0f1';
+                    createElement('image', 'Photo', 20, 100);
+                    document.querySelector('#element_4').style.width = '70px';
+                    document.querySelector('#element_4').style.height = '90px';
+                    createElement('text', '[Student Name]', 100, 120);
+                    createElement('text', 'ID: [Student ID]', 100, 140);
+                    break;
+                    
+                case 'tech_modern':
+                    // Tech Modern Design
+                    createElement('shape', 'Side Strip', 0, 0);
+                    document.querySelector('#element_1').style.backgroundColor = '#00d4aa';
+                    document.querySelector('#element_1').style.width = '10px';
+                    document.querySelector('#element_1').style.height = '328px';
+                    createElement('text', 'SCHOOL NAME', 20, 20);
+                    document.querySelector('#element_2').style.fontSize = '14px';
+                    document.querySelector('#element_2').style.color = '#2c3e50';
+                    createElement('shape', 'Photo Frame', 60, 60);
+                    document.querySelector('#element_3').style.backgroundColor = '#f8f9fa';
+                    document.querySelector('#element_3').style.width = '90px';
+                    document.querySelector('#element_3').style.height = '110px';
+                    createElement('image', 'Photo', 65, 65);
+                    document.querySelector('#element_4').style.width = '80px';
+                    document.querySelector('#element_4').style.height = '100px';
+                    createElement('text', '[Student Name]', 20, 190);
+                    break;
+                    
+                case 'school_pride':
+                    // School Pride Design
+                    createElement('shape', 'Top Banner', 0, 0);
+                    document.querySelector('#element_1').style.backgroundColor = '#e74c3c';
+                    document.querySelector('#element_1').style.width = '207px';
+                    document.querySelector('#element_1').style.height = '40px';
+                    createElement('text', 'SCHOOL NAME', 20, 25);
+                    document.querySelector('#element_2').style.color = 'white';
+                    document.querySelector('#element_2').style.fontSize = '12px';
+                    createElement('shape', 'Bottom Banner', 0, 288);
+                    document.querySelector('#element_3').style.backgroundColor = '#e74c3c';
+                    document.querySelector('#element_3').style.width = '207px';
+                    document.querySelector('#element_3').style.height = '40px';
+                    createElement('image', 'Photo', 65, 80);
+                    document.querySelector('#element_4').style.width = '80px';
+                    document.querySelector('#element_4').style.height = '100px';
+                    createElement('text', '[Student Name]', 20, 200);
+                    break;
+                    
+                case 'premium':
+                    // Premium Gold Design
+                    createElement('shape', 'Gold Frame', 5, 5);
+                    document.querySelector('#element_1').style.backgroundColor = '#f1c40f';
+                    document.querySelector('#element_1').style.width = '197px';
+                    document.querySelector('#element_1').style.height = '318px';
+                    createElement('shape', 'Inner Frame', 15, 15);
+                    document.querySelector('#element_2').style.backgroundColor = 'white';
+                    document.querySelector('#element_2').style.width = '177px';
+                    document.querySelector('#element_2').style.height = '298px';
+                    createElement('text', 'SCHOOL NAME', 30, 40);
+                    document.querySelector('#element_3').style.fontSize = '14px';
+                    document.querySelector('#element_3').style.color = '#2c3e50';
+                    createElement('image', 'Photo', 65, 80);
+                    document.querySelector('#element_4').style.width = '80px';
+                    document.querySelector('#element_4').style.height = '100px';
+                    createElement('text', '[Student Name]', 30, 200);
+                    break;
+                    
+                case 'nature_green':
+                    // Nature Green Design
+                    createElement('shape', 'Green BG', 0, 0);
+                    document.querySelector('#element_1').style.background = 'linear-gradient(to bottom, #27ae60, #2ecc71)';
+                    document.querySelector('#element_1').style.width = '207px';
+                    document.querySelector('#element_1').style.height = '100px';
+                    createElement('text', 'SCHOOL NAME', 20, 30);
+                    document.querySelector('#element_2').style.color = 'white';
+                    document.querySelector('#element_2').style.fontSize = '14px';
+                    createElement('text', 'ECO FRIENDLY CAMPUS', 20, 50);
+                    document.querySelector('#element_3').style.color = '#ecf0f1';
+                    document.querySelector('#element_3').style.fontSize = '10px';
+                    createElement('image', 'Photo', 65, 120);
+                    document.querySelector('#element_4').style.width = '80px';
+                    document.querySelector('#element_4').style.height = '100px';
+                    createElement('text', '[Student Name]', 20, 240);
+                    break;
+            }
+            
+            document.getElementById('templateName').value = type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) + ' Template';
+        }
+
+        function saveTemplate() {
+            document.getElementById('saveModal').style.display = 'block';
+            document.getElementById('saveTemplateName').value = document.getElementById('templateName').value;
+        }
+
+        function closeSaveModal() {
+            document.getElementById('saveModal').style.display = 'none';
+        }
+
+        function confirmSave() {
+            const templateName = document.getElementById('saveTemplateName').value;
+            const description = document.getElementById('templateDescription').value;
+            
+            if (!templateName) {
+                alert('Please enter a template name');
+                return;
+            }
+
+            // Collect template data
+            const elements = [];
+            document.querySelectorAll('.draggable-element').forEach(el => {
+                const elementData = {
+                    id: el.id,
+                    type: el.classList.contains('text-element') ? 'text' : 
+                          el.classList.contains('image-element') ? 'image' : 'shape',
+                    content: el.textContent,
+                    style: {
+                        left: el.style.left,
+                        top: el.style.top,
+                        width: el.style.width,
+                        height: el.style.height,
+                        fontSize: el.style.fontSize,
+                        fontFamily: el.style.fontFamily,
+                        color: el.style.color,
+                        backgroundColor: el.style.backgroundColor
+                    }
+                };
+                elements.push(elementData);
+            });
+
+            const templateData = {
+                name: templateName,
+                description: description,
+                elements: elements,
+                created: new Date().toISOString()
+            };
+
+            // Save to localStorage (in real app, save to server)
+            const savedTemplates = JSON.parse(localStorage.getItem('idTemplates') || '[]');
+            savedTemplates.push(templateData);
+            localStorage.setItem('idTemplates', JSON.stringify(savedTemplates));
+
+            alert('Template saved successfully!');
+            closeSaveModal();
+        }
+
+        function loadTemplate() {
+            const savedTemplates = JSON.parse(localStorage.getItem('idTemplates') || '[]');
+            if (savedTemplates.length === 0) {
+                alert('No saved templates found');
+                return;
+            }
+
+            const templateName = prompt('Available templates:\n' + 
+                savedTemplates.map((t, i) => `${i + 1}. ${t.name}`).join('\n') + 
+                '\n\nEnter template number to load:');
+            
+            const templateIndex = parseInt(templateName) - 1;
+            if (templateIndex >= 0 && templateIndex < savedTemplates.length) {
+                loadTemplateData(savedTemplates[templateIndex]);
+            }
+        }
+
+        function loadTemplateData(templateData) {
+            newTemplate();
+            document.getElementById('templateName').value = templateData.name;
+            
+            templateData.elements.forEach(elementData => {
+                const element = document.createElement('div');
+                element.className = `draggable-element ${elementData.type}-element`;
+                element.id = elementData.id;
+                element.textContent = elementData.content;
+                
+                // Apply styles
+                Object.keys(elementData.style).forEach(prop => {
+                    if (elementData.style[prop]) {
+                        element.style[prop] = elementData.style[prop];
+                    }
+                });
+                
+                makeDraggable(element);
+                document.getElementById('canvas').appendChild(element);
+            });
+        }
+
+        function previewTemplate() {
+            // Fetch live data and show preview
+            fetch('/api/preview-id-template/')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const canvas = document.getElementById('canvas');
+                        let previewHTML = canvas.innerHTML;
+                        
+                        // Replace placeholder text with live data
+                        previewHTML = previewHTML.replace(/\[Student Name\]/g, data.student.name);
+                        previewHTML = previewHTML.replace(/\[Student ID\]/g, data.student.id_number);
+                        previewHTML = previewHTML.replace(/\[Class\]/g, data.student.class);
+                        previewHTML = previewHTML.replace(/\[Section\]/g, data.student.section);
+                        previewHTML = previewHTML.replace(/\[Father Name\]/g, data.student.father_name);
+                        previewHTML = previewHTML.replace(/\[Registration Number\]/g, data.student.reg_number);
+                        previewHTML = previewHTML.replace(/SCHOOL NAME/g, data.school.name);
+                        previewHTML = previewHTML.replace(/School Name/g, data.school.name);
+                        previewHTML = previewHTML.replace(/Session: [0-9-]+/g, `Session: ${data.student.session}`);
+                        
+                        // Remove editor-specific classes
+                        previewHTML = previewHTML.replace(/resize-handle/g, 'hidden').replace(/selected/g, '');
+                        
+                        const previewWindow = window.open('', '_blank', 'width=400,height=300');
+                        previewWindow.document.write(`
+                            <html>
+                            <head>
+                                <title>ID Card Preview - Live Data</title>
+                                <style>
+                                    body { margin: 20px; font-family: Arial; }
+                                    .preview-info { margin-bottom: 15px; padding: 10px; background: #f0f0f0; border-radius: 5px; }
+                                    .id-preview { border: 2px solid #ddd; width: 350px; height: 220px; position: relative; background: white; margin: 10px 0; }
+                                </style>
+                            </head>
+                            <body>
+                                <h3>ID Card Preview - Live Data</h3>
+                                <div class="preview-info">
+                                    <strong>Student:</strong> ${data.student.name} (${data.student.id_number})<br>
+                                    <strong>Class:</strong> ${data.student.class}-${data.student.section}<br>
+                                    <strong>School:</strong> ${data.school.name}
+                                </div>
+                                <div class="id-preview">
+                                    ${previewHTML}
+                                </div>
+                            </body>
+                            </html>
+                        `);
+                    } else {
+                        alert('Error loading preview data: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error loading preview data');
+                });
+        }
+
+        // Click outside to deselect
+        document.addEventListener('click', function(e) {
+            if (!e.target.closest('.draggable-element') && !e.target.closest('.right-panel')) {
+                if (selectedElement) {
+                    selectedElement.classList.remove('selected');
+                    selectedElement.querySelectorAll('.resize-handle').forEach(handle => handle.remove());
+                    selectedElement = null;
+                    document.getElementById('propertiesContent').innerHTML = `
+                        <p style="color: #666; text-align: center; margin-top: 50px;">
+                            Select an element to edit properties
+                        </p>
+                    `;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

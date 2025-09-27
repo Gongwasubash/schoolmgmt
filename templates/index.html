@@ -2,6 +2,323 @@
 
 {% block title %}Dashboard - School Management{% endblock %}
 
+{% block extra_css %}
+<style>
+.school-dashboard {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.top-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    color: white;
+}
+
+.header-left h1 {
+    margin: 0 0 10px 0;
+    font-size: 24px;
+}
+
+.header-subtitle {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.update-btn {
+    padding: 6px 12px;
+    background: rgba(255,255,255,0.2);
+    border: 1px solid rgba(255,255,255,0.3);
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.breadcrumb {
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.summary-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.stat-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.stat-icon svg {
+    width: 24px;
+    height: 24px;
+    color: white;
+}
+
+.students .stat-icon { background: #4CAF50; }
+.session .stat-icon { background: #2196F3; }
+.birthday .stat-icon { background: #FF9800; }
+.enquiry .stat-icon { background: #9C27B0; }
+.whatsapp .stat-icon { background: #25D366; }
+
+.stat-content {
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 5px;
+}
+
+.stat-value {
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+}
+
+.stat-sublabel {
+    font-size: 10px;
+    color: #999;
+    margin-top: 2px;
+}
+
+.main-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.collection-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.collection-card h3 {
+    font-size: 14px;
+    color: #666;
+    margin: 0 0 10px 0;
+}
+
+.collection-amount {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    margin-bottom: 5px;
+}
+
+.currency {
+    font-size: 14px;
+    color: #666;
+}
+
+.amount {
+    font-size: 20px;
+    font-weight: bold;
+    color: #333;
+}
+
+.collection-label {
+    font-size: 12px;
+    color: #999;
+}
+
+.action-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 15px;
+}
+
+.action-btn {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 15px;
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-decoration: none;
+    color: #333;
+}
+
+.action-btn:hover {
+    background: #f5f5f5;
+    border-color: #4CAF50;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.action-btn svg {
+    width: 20px;
+    height: 20px;
+    color: #4CAF50;
+}
+
+.student-chart-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.student-chart-card h3 {
+    margin: 0 0 20px 0;
+    font-size: 16px;
+    color: #333;
+}
+
+.bottom-charts {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 8px;
+    padding: 20px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.chart-card h3 {
+    margin: 0 0 20px 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.chart-placeholder {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 150px;
+}
+
+@media (max-width: 768px) {
+    .school-dashboard {
+        padding: 10px;
+    }
+    
+    .top-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+        padding: 15px;
+    }
+    
+    .header-left h1 {
+        font-size: 18px;
+    }
+    
+    .header-subtitle {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .summary-stats {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .stat-card {
+        padding: 15px;
+    }
+    
+    .main-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .collection-card {
+        grid-template-columns: 1fr !important;
+        gap: 10px !important;
+    }
+    
+    .collection-card > div {
+        border-right: none !important;
+        border-bottom: 1px solid #ddd;
+        padding: 10px !important;
+    }
+    
+    .collection-card > div:last-child {
+        border-bottom: none;
+    }
+    
+    .action-buttons {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+    
+    .action-btn {
+        padding: 12px;
+    }
+    
+    .bottom-charts {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+    
+    .chart-card {
+        padding: 15px;
+    }
+    
+    .chart-placeholder {
+        height: 120px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stat-card {
+        flex-direction: column;
+        text-align: center;
+        gap: 10px;
+    }
+    
+    .stat-icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .stat-value {
+        font-size: 20px;
+    }
+    
+    .action-btn {
+        justify-content: center;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="school-dashboard">
     <!-- Top Header -->
@@ -161,11 +478,11 @@
                     </svg>
                     Fee Receipt Book
                 </button>
-                <button class="action-btn">
+                <button class="action-btn" onclick="window.location.href='id-creation/'">
                     <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                        <path d="M2,3H22C23.05,3 24,3.95 24,5V19C24,20.05 23.05,21 22,21H2C0.95,21 0,20.05 0,19V5C0,3.95 0.95,3 2,3M14,6V7H22V6H14M14,8V9H21.5L22,9V8H14M14,10V11H21V10H14M8,13.91C6,13.91 2,15 2,17V18H14V17C14,15 10,13.91 8,13.91M8,6A3,3 0 0,0 5,9A3,3 0 0,0 8,12A3,3 0 0,0 11,9A3,3 0 0,0 8,6Z"/>
                     </svg>
-                    Fee Pending Report
+                    ID Creation
                 </button>
                 <button class="action-btn">
                     <svg viewBox="0 0 24 24" fill="currentColor">

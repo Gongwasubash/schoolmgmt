@@ -1,0 +1,1671 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Template Editor - Photoshop Style</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #2c2c2c; color: #e0e0e0; }
+        
+        .editor-container { display: flex; height: 100vh; background: #2c2c2c; }
+        
+        /* Left Sidebar */
+        .sidebar { width: 280px; background: #3c3c3c; border-right: 1px solid #555; display: flex; flex-direction: column; }
+        .sidebar-header { padding: 15px; border-bottom: 1px solid #555; background: #333; }
+        .sidebar-header h3 { color: #e0e0e0; font-size: 14px; font-weight: 500; }
+        .sidebar-content { flex: 1; overflow-y: auto; }
+        
+        .tab-buttons { display: flex; border-bottom: 1px solid #555; background: #333; }
+        .tab-btn { flex: 1; padding: 10px; background: none; border: none; cursor: pointer; font-size: 12px; color: #ccc; transition: all 0.2s; }
+        .tab-btn.active { background: #3c3c3c; color: #e0e0e0; border-bottom: 2px solid #0078d4; }
+        .tab-btn:hover { background: #404040; color: #e0e0e0; }
+        
+        .tab-content { display: none; padding: 15px; }
+        .tab-content.active { display: block; }
+        
+        /* Elements Panel */
+        .element-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 15px; }
+        .element-item { padding: 12px; border: 1px solid #555; border-radius: 4px; text-align: center; cursor: pointer; transition: all 0.2s; background: #404040; }
+        .element-item:hover { border-color: #0078d4; background: #4a4a4a; }
+        .element-icon { font-size: 18px; margin-bottom: 4px; }
+        
+        /* Properties Panel */
+        .property-group { margin-bottom: 15px; }
+        .property-label { font-weight: 500; margin-bottom: 6px; display: block; color: #ccc; font-size: 12px; }
+        .property-input { width: 100%; padding: 6px; border: 1px solid #555; border-radius: 3px; background: #404040; color: #e0e0e0; font-size: 12px; }
+        .property-input:focus { border-color: #0078d4; outline: none; }
+        .color-input { height: 32px; }
+        
+        /* Layers Panel */
+        .layer-item { padding: 8px; border: 1px solid #555; border-radius: 3px; margin-bottom: 3px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; background: #404040; font-size: 12px; }
+        .layer-item.selected { background: #0078d4; border-color: #0078d4; color: white; }
+        .layer-item:hover:not(.selected) { background: #4a4a4a; }
+        .layer-controls { display: flex; gap: 3px; }
+        .layer-btn { background: none; border: none; cursor: pointer; padding: 2px 4px; border-radius: 2px; color: inherit; }
+        .layer-btn:hover { background: rgba(255,255,255,0.1); }
+        
+        /* Main Canvas Area */
+        .canvas-area { flex: 1; display: flex; flex-direction: column; }
+        .toolbar { height: 50px; background: #333; border-bottom: 1px solid #555; display: flex; align-items: center; padding: 0 15px; gap: 10px; }
+        .tool-btn { padding: 6px 12px; border: 1px solid #555; background: #404040; border-radius: 3px; cursor: pointer; color: #e0e0e0; font-size: 12px; transition: all 0.2s; }
+        .tool-btn:hover { background: #4a4a4a; border-color: #666; }
+        .tool-btn.active { background: #0078d4; color: white; border-color: #0078d4; }
+        
+        .canvas-container { flex: 1; display: flex; justify-content: center; align-items: center; background: #2c2c2c; position: relative; }
+        .canvas { width: 350px; height: 220px; background: white; border: 1px solid #555; position: relative; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.5); }
+        
+        /* Draggable Elements */
+        .draggable { 
+            position: absolute; 
+            cursor: move; 
+            border: 1px solid transparent;
+            transition: all 0.1s ease;
+        }
+        .draggable.selected { 
+            border: 1px solid #0078d4;
+            box-shadow: 0 0 0 1px rgba(0,120,212,0.3);
+        }
+        .draggable:hover:not(.selected) { 
+            border: 1px dashed rgba(0,120,212,0.5);
+        }
+        
+        .resize-handle { 
+            position: absolute; 
+            width: 6px; 
+            height: 6px; 
+            background: #0078d4; 
+            border: 1px solid white;
+            border-radius: 1px;
+            opacity: 0;
+            transition: all 0.1s ease;
+        }
+        .draggable.selected .resize-handle { opacity: 1; }
+        .resize-handle:hover { background: #106ebe; transform: scale(1.2); }
+        .resize-handle.nw { top: -3px; left: -3px; cursor: nw-resize; }
+        .resize-handle.ne { top: -3px; right: -3px; cursor: ne-resize; }
+        .resize-handle.sw { bottom: -3px; left: -3px; cursor: sw-resize; }
+        .resize-handle.se { bottom: -3px; right: -3px; cursor: se-resize; }
+        .resize-handle.n { top: -3px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
+        .resize-handle.s { bottom: -3px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
+        .resize-handle.w { left: -3px; top: 50%; transform: translateY(-50%); cursor: w-resize; }
+        .resize-handle.e { right: -3px; top: 50%; transform: translateY(-50%); cursor: e-resize; }
+        
+        /* Right Properties Panel */
+        .properties-panel { width: 300px; background: #3c3c3c; border-left: 1px solid #555; padding: 15px; overflow-y: auto; }
+        .properties-panel h4 { color: #e0e0e0; font-size: 14px; margin-bottom: 15px; font-weight: 500; }
+        
+        .save-btn { width: 100%; padding: 10px; background: #0078d4; color: white; border: none; border-radius: 3px; cursor: pointer; font-size: 12px; margin-top: 15px; transition: all 0.2s; }
+        .save-btn:hover { background: #106ebe; }
+        
+        /* Scrollbars */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #2c2c2c; }
+        ::-webkit-scrollbar-thumb { background: #555; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #666; }
+        
+        /* Select styling */
+        select.property-input { background: #404040; color: #e0e0e0; }
+        select.property-input option { background: #404040; color: #e0e0e0; }
+        
+        /* Input range styling */
+        input[type="range"].property-input {
+            background: #404040;
+            -webkit-appearance: none;
+            height: 6px;
+            border-radius: 3px;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #0078d4;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="editor-container">
+        <!-- Left Sidebar -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3>ID Card Editor</h3>
+            </div>
+            
+            <div class="tab-buttons">
+                <button class="tab-btn active" onclick="switchTab('elements')">Elements</button>
+                <button class="tab-btn" onclick="switchTab('layers')">Layers</button>
+            </div>
+            
+            <div class="sidebar-content">
+                <!-- Elements Tab -->
+                <div id="elements-tab" class="tab-content active">
+                    <div class="element-grid">
+                        <div class="element-item" onclick="addElement('text')">
+                            <div class="element-icon">T</div>
+                            <div>Text</div>
+                        </div>
+                        <div class="element-item" onclick="addElement('photo')">
+                            <div class="element-icon">📷</div>
+                            <div>Photo</div>
+                        </div>
+                        <div class="element-item" onclick="addElement('logo')">
+                            <div class="element-icon">🏫</div>
+                            <div>Logo</div>
+                        </div>
+                        <div class="element-item" onclick="addElement('shape')">
+                            <div class="element-icon">⬜</div>
+                            <div>Shape</div>
+                        </div>
+                        <div class="element-item" onclick="document.getElementById('imageUpload').click()">
+                            <div class="element-icon">🖼️</div>
+                            <div>Upload</div>
+                        </div>
+                    </div>
+                    <input type="file" id="imageUpload" accept="image/*" style="display: none;" onchange="addUploadedImage(this)">
+                    
+                    <div class="property-group">
+                        <label class="property-label">Quick Add Student Fields</label>
+                        <div class="element-grid">
+                            <div class="element-item" onclick="addStudentField('name')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">👤</div>
+                                <div>Name</div>
+                            </div>
+                            <div class="element-item" onclick="addStudentField('roll')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">#</div>
+                                <div>Roll</div>
+                            </div>
+                            <div class="element-item" onclick="addStudentField('class')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">🎓</div>
+                                <div>Class</div>
+                            </div>
+                            <div class="element-item" onclick="addStudentField('address')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">🏠</div>
+                                <div>Address</div>
+                            </div>
+                            <div class="element-item" onclick="addStudentField('guardian')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">👨</div>
+                                <div>Guardian</div>
+                            </div>
+                            <div class="element-item" onclick="addStudentField('phone')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">📞</div>
+                                <div>Phone</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="property-group">
+                        <label class="property-label">Quick Add School Fields</label>
+                        <div class="element-grid">
+                            <div class="element-item" onclick="addSchoolField('school_name')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">🏫</div>
+                                <div>School</div>
+                            </div>
+                            <div class="element-item" onclick="addSchoolField('school_address')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">📍</div>
+                                <div>Address</div>
+                            </div>
+                            <div class="element-item" onclick="addSchoolField('school_email')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">📧</div>
+                                <div>Email</div>
+                            </div>
+                            <div class="element-item" onclick="addSchoolField('school_phone')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">☎️</div>
+                                <div>Phone</div>
+                            </div>
+                            <div class="element-item" onclick="addElement('logo')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">🏫</div>
+                                <div>Logo</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="property-group">
+                        <label class="property-label">Canvas Size</label>
+                        <select class="property-input" onchange="resizeCanvas(this.value)">
+                            <option value="204x323">ID Card Print (54x86mm)</option>
+                            <option value="350x220">ID Card Screen (350x220)</option>
+                            <option value="400x300">Small (400x300)</option>
+                            <option value="600x400">Medium (600x400)</option>
+                            <option value="800x600">Large (800x600)</option>
+                            <option value="custom">Custom Size</option>
+                        </select>
+                        <div id="customSize" style="display: none; margin-top: 5px;">
+                            <input type="number" class="property-input" id="canvasWidth" placeholder="Width" style="width: 48%; margin-right: 2%;">
+                            <input type="number" class="property-input" id="canvasHeight" placeholder="Height" style="width: 48%;">
+                            <button class="tool-btn" onclick="applyCustomSize()" style="width: 100%; margin-top: 5px;">Apply</button>
+                        </div>
+                    </div>
+                    
+                    <div class="property-group">
+                        <label class="property-label">Background</label>
+                        <input type="color" class="property-input color-input" id="bgColor" value="#667eea" onchange="updateBackground()">
+                    </div>
+                    
+                    <div class="property-group">
+                        <label class="property-label">Brush Settings</label>
+                        <input type="range" class="property-input" id="brushSize" min="1" max="50" value="5" onchange="brushSize = this.value">
+                        <input type="color" class="property-input color-input" id="brushColor" value="#000000" onchange="brushColor = this.value">
+                    </div>
+                    
+                    <div class="property-group">
+                        <label class="property-label">Quick Actions</label>
+                        <div class="element-grid">
+                            <div class="element-item" onclick="duplicateLayer()" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">📋</div>
+                                <div>Duplicate</div>
+                            </div>
+                            <div class="element-item" onclick="flipHorizontal()" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">↔️</div>
+                                <div>Flip H</div>
+                            </div>
+                            <div class="element-item" onclick="flipVertical()" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">↕️</div>
+                                <div>Flip V</div>
+                            </div>
+                            <div class="element-item" onclick="rotateElement(90)" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">🔄</div>
+                                <div>Rotate</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="property-group">
+                        <label class="property-label">Alignment</label>
+                        <div class="element-grid">
+                            <div class="element-item" onclick="alignElements('left')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">⬅️</div>
+                                <div>Left</div>
+                            </div>
+                            <div class="element-item" onclick="alignElements('center')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">↔️</div>
+                                <div>Center</div>
+                            </div>
+                            <div class="element-item" onclick="alignElements('right')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">➡️</div>
+                                <div>Right</div>
+                            </div>
+                            <div class="element-item" onclick="alignElements('top')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">⬆️</div>
+                                <div>Top</div>
+                            </div>
+                            <div class="element-item" onclick="alignElements('middle')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">↕️</div>
+                                <div>Middle</div>
+                            </div>
+                            <div class="element-item" onclick="alignElements('bottom')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">⬇️</div>
+                                <div>Bottom</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="property-group">
+                        <label class="property-label">Distribute</label>
+                        <div class="element-grid">
+                            <div class="element-item" onclick="distributeElements('horizontal')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">↔️</div>
+                                <div>H Space</div>
+                            </div>
+                            <div class="element-item" onclick="distributeElements('vertical')" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">↕️</div>
+                                <div>V Space</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="property-group">
+                        <label class="property-label">Group</label>
+                        <div class="element-grid">
+                            <div class="element-item" onclick="groupElements()" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">📋</div>
+                                <div>Group</div>
+                            </div>
+                            <div class="element-item" onclick="ungroupElements()" style="font-size: 10px; padding: 8px;">
+                                <div class="element-icon">📄</div>
+                                <div>Ungroup</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Layers Tab -->
+                <div id="layers-tab" class="tab-content">
+                    <div id="layers-list"></div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Canvas Area -->
+        <div class="canvas-area">
+            <div class="toolbar">
+                <button class="tool-btn active" onclick="setTool('select')">V</button>
+                <button class="tool-btn" onclick="setTool('move')">M</button>
+                <button class="tool-btn" onclick="setTool('text')">T</button>
+                <button class="tool-btn" onclick="setTool('brush')">B</button>
+                <button class="tool-btn" onclick="setTool('eraser')">E</button>
+                <button class="tool-btn" onclick="setTool('crop')">C</button>
+                <button class="tool-btn" onclick="setTool('zoom')">Z</button>
+                <div style="margin-left: auto;">
+                    <button class="tool-btn" onclick="undo()">↶</button>
+                    <button class="tool-btn" onclick="redo()">↷</button>
+                    <button class="tool-btn" onclick="zoomFit()">Fit</button>
+                    <button class="tool-btn" onclick="zoomActual()">100%</button>
+                </div>
+            </div>
+            
+            <div class="canvas-container">
+                <div class="canvas" id="canvas" onclick="canvasClick(event)">
+                    <!-- Elements will be added here dynamically -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Right Properties Panel -->
+        <div class="properties-panel">
+            <h4>Properties</h4>
+            <div id="element-properties">
+                <p>Select an element to edit its properties</p>
+            </div>
+            
+            <button class="save-btn" onclick="saveTemplate()">Save Template</button>
+        </div>
+    </div>
+    
+    <script>
+        // Add CSRF token to page
+        const csrfToken = '{{ csrf_token }}';
+        document.cookie = 'csrftoken=' + csrfToken + '; path=/';
+        
+        let selectedElement = null;
+        let selectedElements = [];
+        let currentTool = 'select';
+        let elementCounter = 0;
+        let groupCounter = 0;
+        let layers = [];
+        let isDragging = false;
+        let dragOffset = { x: 0, y: 0 };
+        let undoStack = [];
+        let redoStack = [];
+        let zoomLevel = 1;
+        let canvasOffset = { x: 0, y: 0 };
+        let isDrawing = false;
+        let brushSize = 5;
+        let brushColor = '#000000';
+        
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + '-tab').classList.add('active');
+        }
+        
+        function setTool(tool) {
+            currentTool = tool;
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+            
+            const canvas = document.getElementById('canvas');
+            switch(tool) {
+                case 'select': canvas.style.cursor = 'default'; break;
+                case 'move': canvas.style.cursor = 'move'; break;
+                case 'text': canvas.style.cursor = 'text'; break;
+                case 'brush': canvas.style.cursor = 'crosshair'; break;
+                case 'eraser': canvas.style.cursor = 'crosshair'; break;
+                case 'crop': canvas.style.cursor = 'crosshair'; break;
+                case 'zoom': canvas.style.cursor = 'zoom-in'; break;
+            }
+        }
+        
+        function addElement(type) {
+            const canvas = document.getElementById('canvas');
+            const element = document.createElement('div');
+            element.className = 'draggable';
+            element.id = 'element-' + (++elementCounter);
+            
+            let content = '';
+            let styles = 'left: 50px; top: 50px; ';
+            
+            switch(type) {
+                case 'text':
+                    content = 'Sample Text';
+                    styles += 'font-size: 16px; color: #333; padding: 5px; min-width: 100px;';
+                    break;
+                case 'photo':
+                    content = '<div style="width: 80px; height: 100px; background: #f0f0f0; border: 2px dashed #ccc; display: flex; align-items: center; justify-content: center; font-size: 12px;">PHOTO</div>';
+                    break;
+                case 'logo':
+                    content = '<div style="width: 40px; height: 40px; background: #007bff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">L</div>';
+                    break;
+                case 'shape':
+                    content = '<div style="width: 60px; height: 40px; background: #28a745; border-radius: 4px;"></div>';
+                    break;
+                case 'image':
+                    content = `<img src="${type.src}" style="max-width: 100%; height: auto; border-radius: 4px;" />`;
+                    break;
+            }
+            
+            element.style.cssText = styles;
+            element.innerHTML = content + getResizeHandles();
+            element.setAttribute('data-type', type);
+            
+            element.addEventListener('mousedown', startDrag);
+            element.addEventListener('click', selectElement);
+            
+            saveState();
+            canvas.appendChild(element);
+            
+            // Add to layers
+            layers.push({ id: element.id, type: type, name: type.charAt(0).toUpperCase() + type.slice(1) + ' ' + elementCounter });
+            updateLayersList();
+            
+            selectElement({ target: element, stopPropagation: () => {} });
+        }
+        
+        function addSchoolField(fieldType) {
+            const canvas = document.getElementById('canvas');
+            const element = document.createElement('div');
+            element.className = 'draggable';
+            element.id = 'element-' + (++elementCounter);
+            
+            let content = '';
+            let styles = 'left: 50px; top: 50px; font-size: 12px; color: white; padding: 3px; min-width: 120px;';
+            
+            switch(fieldType) {
+                case 'school_name':
+                    content = 'EVEREST ACADEMY';
+                    styles = 'left: 50px; top: 50px; font-size: 16px; color: white; padding: 3px; font-weight: bold;';
+                    break;
+                case 'school_address':
+                    content = 'Kathmandu, Nepal';
+                    styles = 'left: 50px; top: 50px; font-size: 10px; color: white; padding: 3px;';
+                    break;
+                case 'school_email':
+                    content = 'info@everestacademy.edu.np';
+                    styles = 'left: 50px; top: 50px; font-size: 9px; color: white; padding: 3px;';
+                    break;
+                case 'school_phone':
+                    content = '+977-1-4444444';
+                    styles = 'left: 50px; top: 50px; font-size: 9px; color: white; padding: 3px;';
+                    break;
+            }
+            
+            element.style.cssText = styles;
+            element.innerHTML = content + getResizeHandles();
+            element.setAttribute('data-type', 'text');
+            element.setAttribute('data-field', fieldType);
+            
+            element.addEventListener('mousedown', startDrag);
+            element.addEventListener('click', selectElement);
+            
+            canvas.appendChild(element);
+            
+            layers.push({ id: element.id, type: 'school-field', name: fieldType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) });
+            updateLayersList();
+            
+            selectElement({ target: element, stopPropagation: () => {} });
+        }
+        
+        function addStudentField(fieldType) {
+            const canvas = document.getElementById('canvas');
+            const element = document.createElement('div');
+            element.className = 'draggable';
+            element.id = 'element-' + (++elementCounter);
+            
+            let content = '';
+            let styles = 'left: 50px; top: 50px; font-size: 12px; color: white; padding: 3px; min-width: 120px;';
+            
+            switch(fieldType) {
+                case 'name':
+                    content = 'NAME: John Doe';
+                    break;
+                case 'roll':
+                    content = 'ROLL: 001';
+                    break;
+                case 'class':
+                    content = 'CLASS: 10th A';
+                    break;
+                case 'address':
+                    content = 'ADDRESS: Kathmandu';
+                    break;
+                case 'guardian':
+                    content = 'GUARDIAN: Robert Doe';
+                    break;
+                case 'phone':
+                    content = 'PHONE: 9876543210';
+                    break;
+            }
+            
+            element.style.cssText = styles;
+            element.innerHTML = content + getResizeHandles();
+            element.setAttribute('data-type', 'text');
+            element.setAttribute('data-field', fieldType);
+            
+            element.addEventListener('mousedown', startDrag);
+            element.addEventListener('click', selectElement);
+            
+            canvas.appendChild(element);
+            
+            // Add to layers
+            layers.push({ id: element.id, type: 'student-field', name: fieldType.charAt(0).toUpperCase() + fieldType.slice(1) + ' Field' });
+            updateLayersList();
+            
+            selectElement({ target: element, stopPropagation: () => {} });
+        }
+        
+        function getResizeHandles() {
+            return `
+                <div class="resize-handle nw"></div>
+                <div class="resize-handle n"></div>
+                <div class="resize-handle ne"></div>
+                <div class="resize-handle w"></div>
+                <div class="resize-handle e"></div>
+                <div class="resize-handle sw"></div>
+                <div class="resize-handle s"></div>
+                <div class="resize-handle se"></div>
+            `;
+        }
+        
+        function selectElement(e) {
+            e.stopPropagation();
+            
+            const element = e.target.closest('.draggable');
+            if (element) {
+                if (e.ctrlKey || e.metaKey) {
+                    if (element.classList.contains('selected')) {
+                        element.classList.remove('selected');
+                        selectedElements = selectedElements.filter(el => el !== element);
+                    } else {
+                        element.classList.add('selected');
+                        selectedElements.push(element);
+                    }
+                    selectedElement = selectedElements[selectedElements.length - 1] || null;
+                } else {
+                    document.querySelectorAll('.draggable').forEach(el => el.classList.remove('selected'));
+                    element.classList.add('selected');
+                    selectedElement = element;
+                    selectedElements = [element];
+                }
+                
+                if (selectedElement) {
+                    selectedElement.style.zIndex = '999';
+                    showElementProperties(selectedElement);
+                }
+            }
+        }
+        
+        function showElementProperties(element) {
+            const type = element.getAttribute('data-type');
+            const propertiesPanel = document.getElementById('element-properties');
+            
+            let html = `<h5>${type.charAt(0).toUpperCase() + type.slice(1)} Properties</h5>`;
+            
+            if (type === 'text') {
+                const textContent = element.textContent.replace(/\n/g, '').trim();
+                const fieldType = element.getAttribute('data-field');
+                
+                html += `
+                    <div class="property-group">
+                        <label class="property-label">Text</label>
+                        <input type="text" class="property-input" value="${textContent}" onchange="updateElementText(this.value)">
+                    </div>`;
+                
+                if (fieldType) {
+                    html += `
+                        <div class="property-group">
+                            <label class="property-label">Field Type</label>
+                            <select class="property-input" onchange="updateFieldType(this.value)">
+                                <optgroup label="Student Fields">
+                                    <option value="name" ${fieldType === 'name' ? 'selected' : ''}>Name</option>
+                                    <option value="roll" ${fieldType === 'roll' ? 'selected' : ''}>Roll Number</option>
+                                    <option value="class" ${fieldType === 'class' ? 'selected' : ''}>Class</option>
+                                    <option value="address" ${fieldType === 'address' ? 'selected' : ''}>Address</option>
+                                    <option value="guardian" ${fieldType === 'guardian' ? 'selected' : ''}>Guardian Name</option>
+                                    <option value="phone" ${fieldType === 'phone' ? 'selected' : ''}>Phone</option>
+                                </optgroup>
+                                <optgroup label="School Fields">
+                                    <option value="school_name" ${fieldType === 'school_name' ? 'selected' : ''}>School Name</option>
+                                    <option value="school_address" ${fieldType === 'school_address' ? 'selected' : ''}>School Address</option>
+                                    <option value="school_email" ${fieldType === 'school_email' ? 'selected' : ''}>School Email</option>
+                                    <option value="school_phone" ${fieldType === 'school_phone' ? 'selected' : ''}>School Phone</option>
+                                </optgroup>
+                            </select>
+                        </div>`;
+                }
+                
+                html += `
+                    <div class="property-group">
+                        <label class="property-label">Font Size</label>
+                        <input type="range" class="property-input" min="8" max="24" value="${parseInt(element.style.fontSize) || 12}" onchange="updateElementStyle('fontSize', this.value + 'px')">
+                    </div>
+                    <div class="property-group">
+                        <label class="property-label">Color</label>
+                        <input type="color" class="property-input color-input" value="${element.style.color || '#ffffff'}" onchange="updateElementStyle('color', this.value)">
+                    </div>
+                `;
+            }
+            
+            html += `
+                <div class="property-group">
+                    <label class="property-label">Position X</label>
+                    <input type="number" class="property-input" value="${parseInt(element.style.left)}" onchange="updateElementStyle('left', this.value + 'px')">
+                </div>
+                <div class="property-group">
+                    <label class="property-label">Position Y</label>
+                    <input type="number" class="property-input" value="${parseInt(element.style.top)}" onchange="updateElementStyle('top', this.value + 'px')">
+                </div>
+                <div class="property-group">
+                    <button class="tool-btn" onclick="deleteElement()" style="background: #dc3545; color: white; width: 100%; margin-bottom: 5px;">Delete</button>
+                    <button class="tool-btn" onclick="duplicateLayer()" style="width: 100%; margin-bottom: 5px;">Duplicate</button>
+                    <button class="tool-btn" onclick="bringToFront()" style="width: 48%; margin-right: 2%;">To Front</button>
+                    <button class="tool-btn" onclick="sendToBack()" style="width: 48%;">To Back</button>
+                    <button class="tool-btn" onclick="flipHorizontal()" style="width: 48%; margin-right: 2%;">Flip H</button>
+                    <button class="tool-btn" onclick="flipVertical()" style="width: 48%;">Flip V</button>
+                </div>
+            `;
+            
+            propertiesPanel.innerHTML = html;
+        }
+        
+        function updateElementText(text) {
+            if (selectedElement) {
+                selectedElement.innerHTML = text + getResizeHandles();
+            }
+        }
+        
+        function updateFieldType(fieldType) {
+            if (selectedElement) {
+                selectedElement.setAttribute('data-field', fieldType);
+                let newText = '';
+                switch(fieldType) {
+                    case 'name':
+                        newText = 'NAME: John Doe';
+                        break;
+                    case 'roll':
+                        newText = 'ROLL: 001';
+                        break;
+                    case 'class':
+                        newText = 'CLASS: 10th A';
+                        break;
+                    case 'address':
+                        newText = 'ADDRESS: Kathmandu';
+                        break;
+                    case 'guardian':
+                        newText = 'GUARDIAN: Robert Doe';
+                        break;
+                    case 'phone':
+                        newText = 'PHONE: 9876543210';
+                        break;
+                    case 'school_name':
+                        newText = 'EVEREST ACADEMY';
+                        break;
+                    case 'school_address':
+                        newText = 'Kathmandu, Nepal';
+                        break;
+                    case 'school_email':
+                        newText = 'info@everestacademy.edu.np';
+                        break;
+                    case 'school_phone':
+                        newText = '+977-1-4444444';
+                        break;
+                }
+                selectedElement.innerHTML = newText + getResizeHandles();
+            }
+        }
+        
+        function addUploadedImage(input) {
+            const file = input.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const canvas = document.getElementById('canvas');
+                    const element = document.createElement('div');
+                    element.className = 'draggable';
+                    element.id = 'element-' + (++elementCounter);
+                    
+                    const content = `<img src="${e.target.result}" style="max-width: 100%; height: auto; border-radius: 4px;" />`;
+                    const styles = 'left: 50px; top: 50px;';
+                    
+                    element.style.cssText = styles;
+                    element.innerHTML = content + getResizeHandles();
+                    element.setAttribute('data-type', 'image');
+                    
+                    element.addEventListener('mousedown', startDrag);
+                    element.addEventListener('click', selectElement);
+                    
+                    canvas.appendChild(element);
+                    
+                    layers.push({ id: element.id, type: 'image', name: 'Image ' + elementCounter });
+                    updateLayersList();
+                    
+                    selectElement({ target: element, stopPropagation: () => {} });
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function updateElementStyle(property, value) {
+            if (selectedElement) {
+                selectedElement.style[property] = value;
+            }
+        }
+        
+        function deleteElement() {
+            if (selectedElement) {
+                saveState();
+                const elementId = selectedElement.id;
+                selectedElement.remove();
+                layers = layers.filter(layer => layer.id !== elementId);
+                updateLayersList();
+                selectedElement = null;
+                document.getElementById('element-properties').innerHTML = '<p>Select an element to edit its properties</p>';
+            }
+        }
+        
+        function updateLayersList() {
+            const layersList = document.getElementById('layers-list');
+            layersList.innerHTML = '';
+            
+            // Sort layers by z-index (highest first)
+            const sortedLayers = layers.map(layer => {
+                const element = document.getElementById(layer.id);
+                const zIndex = element ? parseInt(element.style.zIndex) || 1 : 1;
+                return { ...layer, zIndex };
+            }).sort((a, b) => b.zIndex - a.zIndex);
+            
+            sortedLayers.forEach(layer => {
+                const layerItem = document.createElement('div');
+                layerItem.className = 'layer-item';
+                layerItem.innerHTML = `
+                    <span onclick="selectLayerElement('${layer.id}')">${layer.name}</span>
+                    <div class="layer-controls">
+                        <button class="layer-btn" onclick="event.stopPropagation(); bringLayerToFront('${layer.id}')" title="To Front">⬆️</button>
+                        <button class="layer-btn" onclick="event.stopPropagation(); sendLayerToBack('${layer.id}')" title="To Back">⬇️</button>
+                        <button class="layer-btn" onclick="event.stopPropagation(); moveLayerAbove('${layer.id}')" title="One Step Above">▲</button>
+                        <button class="layer-btn" onclick="event.stopPropagation(); moveLayerBehind('${layer.id}')" title="One Step Behind">▼</button>
+                        <button class="layer-btn" onclick="event.stopPropagation(); moveLayerUp('${layer.id}')">↑</button>
+                        <button class="layer-btn" onclick="event.stopPropagation(); moveLayerDown('${layer.id}')">↓</button>
+                        <button class="layer-btn" onclick="event.stopPropagation(); selectLayerElement('${layer.id}')">👁</button>
+                        <button class="layer-btn" onclick="event.stopPropagation(); deleteLayerElement('${layer.id}')">🗑</button>
+                    </div>
+                `;
+                layerItem.addEventListener('click', (e) => {
+                    if (!e.target.classList.contains('layer-btn')) {
+                        document.querySelectorAll('.layer-item').forEach(item => item.classList.remove('selected'));
+                        layerItem.classList.add('selected');
+                        selectLayerElement(layer.id);
+                    }
+                });
+                
+
+                
+                if (layer.type === 'group') {
+                    layerItem.innerHTML = `
+                        <span onclick="toggleGroup('${layer.id}')" style="cursor: pointer;">${layer.expanded ? '▼' : '▶'}</span>
+                        <span onclick="selectLayerElement('${layer.id}')">${layer.name}</span>
+                        <div class="layer-controls">
+                            <button class="layer-btn" onclick="event.stopPropagation(); deleteLayerElement('${layer.id}')">🗑</button>
+                        </div>
+                    `;
+                    
+                    layersList.appendChild(layerItem);
+                    
+                    if (layer.expanded && layer.children) {
+                        layer.children.forEach(childLayer => {
+                            const childItem = document.createElement('div');
+                            childItem.className = 'layer-item';
+                            childItem.style.paddingLeft = '20px';
+                            childItem.innerHTML = `
+                                <span onclick="selectLayerElement('${childLayer.id}')">${childLayer.name}</span>
+                                <div class="layer-controls">
+                                    <button class="layer-btn" onclick="event.stopPropagation(); selectLayerElement('${childLayer.id}')">👁</button>
+                                </div>
+                            `;
+                            layersList.appendChild(childItem);
+                        });
+                    }
+                } else {
+                    layersList.appendChild(layerItem);
+                }
+            });
+        }
+        
+        function selectLayerElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                document.querySelectorAll('.draggable').forEach(el => el.classList.remove('selected'));
+                
+                element.classList.add('selected');
+                element.style.zIndex = '999';
+                selectedElement = element;
+                showElementProperties(element);
+            } else {
+                // Handle group selection
+                const groupLayer = layers.find(l => l.id === elementId && l.type === 'group');
+                if (groupLayer) {
+                    selectedElement = { id: elementId, classList: { contains: () => false } };
+                }
+            }
+        }
+        
+        function deleteLayerElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.remove();
+                layers = layers.filter(layer => layer.id !== elementId);
+                updateLayersList();
+                if (selectedElement && selectedElement.id === elementId) {
+                    selectedElement = null;
+                    document.getElementById('element-properties').innerHTML = '<p>Select an element to edit its properties</p>';
+                }
+            }
+        }
+        
+        function bringLayerToFront(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const allElements = document.querySelectorAll('.draggable');
+                let maxZ = 1;
+                allElements.forEach(el => {
+                    const z = parseInt(el.style.zIndex) || 1;
+                    if (z > maxZ) maxZ = z;
+                });
+                element.style.zIndex = maxZ + 1;
+                updateLayersList();
+            }
+        }
+        
+        function sendLayerToBack(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const allElements = document.querySelectorAll('.draggable');
+                allElements.forEach(el => {
+                    const currentZ = parseInt(el.style.zIndex) || 1;
+                    if (currentZ === 1) {
+                        el.style.zIndex = '2';
+                    }
+                });
+                element.style.zIndex = '1';
+                updateLayersList();
+            }
+        }
+        
+        function alignElements(alignment) {
+            if (selectedElements.length < 2) {
+                alert('Select at least 2 elements to align (Ctrl+Click for multiple)');
+                return;
+            }
+            
+            switch(alignment) {
+                case 'left':
+                    const leftMost = Math.min(...selectedElements.map(el => parseInt(el.style.left)));
+                    selectedElements.forEach(el => el.style.left = leftMost + 'px');
+                    break;
+                case 'right':
+                    const rightMost = Math.max(...selectedElements.map(el => parseInt(el.style.left) + el.offsetWidth));
+                    selectedElements.forEach(el => el.style.left = (rightMost - el.offsetWidth) + 'px');
+                    break;
+                case 'center':
+                    const centerX = selectedElements.reduce((sum, el) => sum + parseInt(el.style.left) + el.offsetWidth/2, 0) / selectedElements.length;
+                    selectedElements.forEach(el => el.style.left = (centerX - el.offsetWidth/2) + 'px');
+                    break;
+                case 'top':
+                    const topMost = Math.min(...selectedElements.map(el => parseInt(el.style.top)));
+                    selectedElements.forEach(el => el.style.top = topMost + 'px');
+                    break;
+                case 'bottom':
+                    const bottomMost = Math.max(...selectedElements.map(el => parseInt(el.style.top) + el.offsetHeight));
+                    selectedElements.forEach(el => el.style.top = (bottomMost - el.offsetHeight) + 'px');
+                    break;
+                case 'middle':
+                    const centerY = selectedElements.reduce((sum, el) => sum + parseInt(el.style.top) + el.offsetHeight/2, 0) / selectedElements.length;
+                    selectedElements.forEach(el => el.style.top = (centerY - el.offsetHeight/2) + 'px');
+                    break;
+            }
+        }
+        
+        function distributeElements(direction) {
+            if (selectedElements.length < 3) {
+                alert('Select at least 3 elements to distribute (Ctrl+Click for multiple)');
+                return;
+            }
+            
+            if (direction === 'horizontal') {
+                const sorted = selectedElements.sort((a, b) => parseInt(a.style.left) - parseInt(b.style.left));
+                const leftMost = parseInt(sorted[0].style.left);
+                const rightMost = parseInt(sorted[sorted.length - 1].style.left) + sorted[sorted.length - 1].offsetWidth;
+                const totalSpace = rightMost - leftMost;
+                const spacing = totalSpace / (sorted.length - 1);
+                
+                sorted.forEach((el, index) => {
+                    if (index > 0 && index < sorted.length - 1) {
+                        el.style.left = (leftMost + spacing * index - el.offsetWidth/2) + 'px';
+                    }
+                });
+            } else {
+                const sorted = selectedElements.sort((a, b) => parseInt(a.style.top) - parseInt(b.style.top));
+                const topMost = parseInt(sorted[0].style.top);
+                const bottomMost = parseInt(sorted[sorted.length - 1].style.top) + sorted[sorted.length - 1].offsetHeight;
+                const totalSpace = bottomMost - topMost;
+                const spacing = totalSpace / (sorted.length - 1);
+                
+                sorted.forEach((el, index) => {
+                    if (index > 0 && index < sorted.length - 1) {
+                        el.style.top = (topMost + spacing * index - el.offsetHeight/2) + 'px';
+                    }
+                });
+            }
+        }
+        
+        function groupElements() {
+            if (selectedElements.length === 0) {
+                alert('Select elements to group (Ctrl+Click for multiple)');
+                return;
+            }
+            
+            saveState();
+            const groupId = 'group-' + (++groupCounter);
+            
+            // Create group layer with children
+            const groupLayer = {
+                id: groupId,
+                type: 'group',
+                name: '📁 Group ' + groupCounter,
+                visible: true,
+                opacity: 100,
+                expanded: true,
+                children: []
+            };
+            
+            // Move selected layers to group children
+            const groupedIds = [];
+            selectedElements.forEach(el => {
+                const layer = layers.find(l => l.id === el.id);
+                if (layer) {
+                    groupLayer.children.push(layer);
+                    groupedIds.push(el.id);
+                    el.setAttribute('data-group', groupId);
+                }
+            });
+            
+            // Remove individual layers and add group
+            layers = layers.filter(layer => !groupedIds.includes(layer.id));
+            layers.push(groupLayer);
+            
+            selectedElements = [];
+            selectedElement = null;
+            updateLayersList();
+        }
+        
+        function ungroupElements() {
+            const groupLayer = layers.find(l => l.type === 'group' && l.children && l.children.length > 0);
+            if (!groupLayer) {
+                alert('Select a group to ungroup');
+                return;
+            }
+            
+            saveState();
+            
+            // Move children back to main layers
+            groupLayer.children.forEach(childLayer => {
+                const element = document.getElementById(childLayer.id);
+                if (element) {
+                    element.removeAttribute('data-group');
+                }
+                layers.push(childLayer);
+            });
+            
+            // Remove group layer
+            layers = layers.filter(layer => layer.id !== groupLayer.id);
+            
+            selectedElement = null;
+            selectedElements = [];
+            updateLayersList();
+        }
+        
+        function toggleGroup(groupId) {
+            const groupLayer = layers.find(l => l.id === groupId);
+            if (groupLayer) {
+                groupLayer.expanded = !groupLayer.expanded;
+                updateLayersList();
+            }
+        }
+        
+        function reorderLayers(draggedId, targetId) {
+            if (draggedId === targetId) return;
+            
+            const draggedElement = document.getElementById(draggedId);
+            const targetElement = document.getElementById(targetId);
+            
+            if (draggedElement && targetElement) {
+                const draggedZ = parseInt(draggedElement.style.zIndex) || 1;
+                const targetZ = parseInt(targetElement.style.zIndex) || 1;
+                
+                // Swap z-index values
+                draggedElement.style.zIndex = targetZ;
+                targetElement.style.zIndex = draggedZ;
+                
+                updateLayersList();
+            }
+        }
+        
+        function moveLayerAbove(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const allElements = document.querySelectorAll('.draggable');
+                const currentZ = parseInt(element.style.zIndex) || 1;
+                
+                // Check if any element has the next z-index
+                let hasConflict = false;
+                allElements.forEach(el => {
+                    if (el !== element && (parseInt(el.style.zIndex) || 1) === currentZ + 1) {
+                        hasConflict = true;
+                    }
+                });
+                
+                if (hasConflict) {
+                    // Shift all higher elements up by 1
+                    allElements.forEach(el => {
+                        const z = parseInt(el.style.zIndex) || 1;
+                        if (z >= currentZ + 1) {
+                            el.style.zIndex = z + 1;
+                        }
+                    });
+                }
+                
+                element.style.zIndex = currentZ + 1;
+                updateLayersList();
+            }
+        }
+        
+        function moveLayerBehind(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const allElements = document.querySelectorAll('.draggable');
+                const currentZ = parseInt(element.style.zIndex) || 1;
+                const newZ = Math.max(1, currentZ - 1);
+                
+                if (newZ < currentZ) {
+                    // Check if any element has the target z-index
+                    let hasConflict = false;
+                    allElements.forEach(el => {
+                        if (el !== element && (parseInt(el.style.zIndex) || 1) === newZ) {
+                            hasConflict = true;
+                        }
+                    });
+                    
+                    if (hasConflict) {
+                        // Shift all lower elements down by 1
+                        allElements.forEach(el => {
+                            const z = parseInt(el.style.zIndex) || 1;
+                            if (z <= newZ && el !== element) {
+                                el.style.zIndex = Math.max(1, z - 1);
+                            }
+                        });
+                    }
+                }
+                
+                element.style.zIndex = newZ;
+                updateLayersList();
+            }
+        }
+        
+        function startDrag(e) {
+            if (e.target.classList.contains('resize-handle')) return;
+            
+            isDragging = true;
+            const rect = e.target.getBoundingClientRect();
+            const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+            
+            dragOffset.x = e.clientX - rect.left;
+            dragOffset.y = e.clientY - rect.top;
+            
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', stopDrag);
+        }
+        
+        function drag(e) {
+            if (!isDragging || !selectedElement) return;
+            
+            const canvasRect = document.getElementById('canvas').getBoundingClientRect();
+            const x = e.clientX - canvasRect.left - dragOffset.x;
+            const y = e.clientY - canvasRect.top - dragOffset.y;
+            
+            selectedElement.style.left = Math.max(0, Math.min(x, canvasRect.width - selectedElement.offsetWidth)) + 'px';
+            selectedElement.style.top = Math.max(0, Math.min(y, canvasRect.height - selectedElement.offsetHeight)) + 'px';
+        }
+        
+        function stopDrag() {
+            isDragging = false;
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', stopDrag);
+        }
+        
+        function canvasClick(e) {
+            if (e.target.id === 'canvas') {
+                // Deselect all elements
+                document.querySelectorAll('.draggable').forEach(el => {
+                    el.classList.remove('selected');
+                    el.style.zIndex = '1';
+                });
+                document.querySelectorAll('.layer-item').forEach(el => el.classList.remove('selected'));
+                selectedElement = null;
+                document.getElementById('element-properties').innerHTML = '<p>Select an element to edit its properties</p>';
+            }
+        }
+        
+        function updateBackground() {
+            const canvas = document.getElementById('canvas');
+            const color = document.getElementById('bgColor').value;
+            canvas.style.background = `linear-gradient(135deg, ${color} 0%, ${adjustColor(color, -20)} 100%)`;
+        }
+        
+        function adjustColor(color, amount) {
+            const num = parseInt(color.replace('#', ''), 16);
+            const amt = Math.round(2.55 * amount);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return '#' + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+        }
+        
+        function saveState() {
+            const canvas = document.getElementById('canvas');
+            undoStack.push({
+                html: canvas.innerHTML,
+                layers: JSON.parse(JSON.stringify(layers))
+            });
+            redoStack = [];
+            if (undoStack.length > 50) undoStack.shift();
+        }
+        
+        function undo() {
+            if (undoStack.length > 0) {
+                const canvas = document.getElementById('canvas');
+                redoStack.push({
+                    html: canvas.innerHTML,
+                    layers: JSON.parse(JSON.stringify(layers))
+                });
+                const state = undoStack.pop();
+                canvas.innerHTML = state.html;
+                layers = state.layers;
+                updateLayersList();
+                rebindEvents();
+                selectedElement = null;
+                selectedElements = [];
+            }
+        }
+        
+        function redo() {
+            if (redoStack.length > 0) {
+                const canvas = document.getElementById('canvas');
+                undoStack.push({
+                    html: canvas.innerHTML,
+                    layers: JSON.parse(JSON.stringify(layers))
+                });
+                const state = redoStack.pop();
+                canvas.innerHTML = state.html;
+                layers = state.layers;
+                updateLayersList();
+                rebindEvents();
+                selectedElement = null;
+                selectedElements = [];
+            }
+        }
+        
+        function rebindEvents() {
+            document.querySelectorAll('.draggable').forEach(element => {
+                element.addEventListener('mousedown', startDrag);
+                element.addEventListener('click', selectElement);
+            });
+        }
+        
+        function zoomFit() {
+            zoomLevel = 1;
+            const canvas = document.getElementById('canvas');
+            canvas.style.transform = `scale(${zoomLevel})`;
+        }
+        
+        function zoomActual() {
+            zoomLevel = 1;
+            const canvas = document.getElementById('canvas');
+            canvas.style.transform = `scale(${zoomLevel})`;
+        }
+        
+        function zoomIn() {
+            zoomLevel = Math.min(zoomLevel * 1.2, 5);
+            const canvas = document.getElementById('canvas');
+            canvas.style.transform = `scale(${zoomLevel})`;
+        }
+        
+        function zoomOut() {
+            zoomLevel = Math.max(zoomLevel / 1.2, 0.1);
+            const canvas = document.getElementById('canvas');
+            canvas.style.transform = `scale(${zoomLevel})`;
+        }
+        
+        function duplicateLayer() {
+            if (selectedElement) {
+                const clone = selectedElement.cloneNode(true);
+                clone.id = 'element-' + (++elementCounter);
+                clone.style.left = (parseInt(selectedElement.style.left) + 10) + 'px';
+                clone.style.top = (parseInt(selectedElement.style.top) + 10) + 'px';
+                
+                clone.addEventListener('mousedown', startDrag);
+                clone.addEventListener('click', selectElement);
+                
+                document.getElementById('canvas').appendChild(clone);
+                layers.push({ id: clone.id, type: selectedElement.getAttribute('data-type'), name: 'Copy of ' + selectedElement.getAttribute('data-type') });
+                updateLayersList();
+            }
+        }
+        
+        function flipHorizontal() {
+            if (selectedElement) {
+                const current = selectedElement.style.transform || '';
+                selectedElement.style.transform = current + ' scaleX(-1)';
+            }
+        }
+        
+        function flipVertical() {
+            if (selectedElement) {
+                const current = selectedElement.style.transform || '';
+                selectedElement.style.transform = current + ' scaleY(-1)';
+            }
+        }
+        
+        function rotateElement(degrees) {
+            if (selectedElement) {
+                const current = selectedElement.style.transform || '';
+                selectedElement.style.transform = current + ` rotate(${degrees}deg)`;
+            }
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case 'z': e.preventDefault(); undo(); break;
+                    case 'y': e.preventDefault(); redo(); break;
+                    case 'd': e.preventDefault(); duplicateLayer(); break;
+                    case '=': case '+': e.preventDefault(); zoomIn(); break;
+                    case '-': e.preventDefault(); zoomOut(); break;
+                    case '0': e.preventDefault(); zoomActual(); break;
+                }
+            }
+            switch(e.key) {
+                case 'v': case 'V': setTool('select'); break;
+                case 'm': case 'M': setTool('move'); break;
+                case 't': case 'T': setTool('text'); break;
+                case 'b': case 'B': setTool('brush'); break;
+                case 'e': case 'E': setTool('eraser'); break;
+                case 'c': case 'C': setTool('crop'); break;
+                case 'z': case 'Z': if (!e.ctrlKey && !e.metaKey) setTool('zoom'); break;
+                case 'Delete': case 'Backspace': if (selectedElement) deleteElement(); break;
+            }
+        });
+        
+        // Mouse wheel zoom
+        document.getElementById('canvas').addEventListener('wheel', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                e.preventDefault();
+                if (e.deltaY < 0) zoomIn();
+                else zoomOut();
+            }
+        });
+        
+        function resizeCanvas(size) {
+            const canvas = document.getElementById('canvas');
+            if (size === 'custom') {
+                document.getElementById('customSize').style.display = 'block';
+                return;
+            }
+            document.getElementById('customSize').style.display = 'none';
+            const [width, height] = size.split('x');
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
+        }
+        
+        function applyCustomSize() {
+            const canvas = document.getElementById('canvas');
+            const width = document.getElementById('canvasWidth').value;
+            const height = document.getElementById('canvasHeight').value;
+            if (width && height) {
+                canvas.style.width = width + 'px';
+                canvas.style.height = height + 'px';
+            }
+        }
+        
+        function moveLayerUp(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const allElements = Array.from(document.querySelectorAll('.draggable'));
+                const currentZ = parseInt(element.style.zIndex) || 1;
+                
+                const higherElements = allElements
+                    .map(el => ({ el, z: parseInt(el.style.zIndex) || 1 }))
+                    .filter(item => item.z > currentZ)
+                    .sort((a, b) => a.z - b.z);
+                
+                if (higherElements.length > 0) {
+                    const nextHigher = higherElements[0];
+                    element.style.zIndex = nextHigher.z;
+                    nextHigher.el.style.zIndex = currentZ;
+                }
+                updateLayersList();
+            }
+        }
+        
+        function moveLayerDown(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                const allElements = Array.from(document.querySelectorAll('.draggable'));
+                const currentZ = parseInt(element.style.zIndex) || 1;
+                
+                const lowerElements = allElements
+                    .map(el => ({ el, z: parseInt(el.style.zIndex) || 1 }))
+                    .filter(item => item.z < currentZ)
+                    .sort((a, b) => b.z - a.z);
+                
+                if (lowerElements.length > 0) {
+                    const nextLower = lowerElements[0];
+                    element.style.zIndex = nextLower.z;
+                    nextLower.el.style.zIndex = currentZ;
+                }
+                updateLayersList();
+            }
+        }
+        
+        function bringToFront() {
+            if (selectedElement) {
+                const allElements = document.querySelectorAll('.draggable');
+                let maxZ = 1;
+                allElements.forEach(el => {
+                    const z = parseInt(el.style.zIndex) || 1;
+                    if (z > maxZ) maxZ = z;
+                });
+                selectedElement.style.zIndex = maxZ + 1;
+                updateLayersList();
+            }
+        }
+        
+        function sendToBack() {
+            if (selectedElement) {
+                const allElements = document.querySelectorAll('.draggable');
+                allElements.forEach(el => {
+                    const currentZ = parseInt(el.style.zIndex) || 1;
+                    if (currentZ === 1) {
+                        el.style.zIndex = '2';
+                    }
+                });
+                selectedElement.style.zIndex = '1';
+                updateLayersList();
+            }
+        }
+        
+        function saveTemplate() {
+            const templateName = prompt('Enter template name:', 'My Template');
+            if (!templateName) return;
+            
+            // Collect all elements data
+            const elements = [];
+            const draggableElements = document.querySelectorAll('.draggable');
+            
+            draggableElements.forEach(element => {
+                const elementData = {
+                    id: element.id,
+                    type: element.getAttribute('data-type'),
+                    field: element.getAttribute('data-field'),
+                    content: element.textContent.replace(/\n/g, '').trim(),
+                    styles: {
+                        left: element.style.left,
+                        top: element.style.top,
+                        fontSize: element.style.fontSize,
+                        color: element.style.color,
+                        fontWeight: element.style.fontWeight
+                    }
+                };
+                elements.push(elementData);
+            });
+            
+            const templateData = {
+                name: templateName,
+                elements: elements,
+                background: document.getElementById('canvas').style.background,
+                canvas_size: {
+                    width: document.getElementById('canvas').style.width,
+                    height: document.getElementById('canvas').style.height
+                }
+            };
+            
+            // Save to server
+            fetch('/api/save-template/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(templateData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Template saved successfully!');
+                    window.location.href = '/id_creation/';
+                } else {
+                    alert('Error saving template: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error saving template');
+            });
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+        
+        // Load saved template if specified
+        function loadSavedTemplate(filename) {
+            fetch(`/media/id_templates/${filename}`)
+                .then(response => response.json())
+                .then(templateData => {
+                    // Clear existing elements
+                    document.getElementById('canvas').innerHTML = '';
+                    layers = [];
+                    elementCounter = 0;
+                    
+                    // Set canvas size
+                    if (templateData.canvas_size) {
+                        const canvas = document.getElementById('canvas');
+                        canvas.style.width = templateData.canvas_size.width || '350px';
+                        canvas.style.height = templateData.canvas_size.height || '220px';
+                    }
+                    
+                    // Set background
+                    if (templateData.background) {
+                        document.getElementById('canvas').style.background = templateData.background;
+                    }
+                    
+                    // Load elements
+                    if (templateData.elements) {
+                        templateData.elements.forEach(elementData => {
+                            const canvas = document.getElementById('canvas');
+                            const element = document.createElement('div');
+                            element.className = 'draggable';
+                            element.id = elementData.id || 'element-' + (++elementCounter);
+                            
+                            // Apply styles
+                            Object.keys(elementData.styles || {}).forEach(styleKey => {
+                                if (elementData.styles[styleKey]) {
+                                    element.style[styleKey] = elementData.styles[styleKey];
+                                }
+                            });
+                            
+                            // Set content and attributes
+                            element.innerHTML = elementData.content + getResizeHandles();
+                            element.setAttribute('data-type', elementData.type || 'text');
+                            if (elementData.field) {
+                                element.setAttribute('data-field', elementData.field);
+                            }
+                            
+                            // Add event listeners
+                            element.addEventListener('mousedown', startDrag);
+                            element.addEventListener('click', selectElement);
+                            
+                            canvas.appendChild(element);
+                            
+                            // Add to layers
+                            layers.push({ 
+                                id: element.id, 
+                                type: elementData.type || 'text', 
+                                name: elementData.field ? elementData.field.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase()) : (elementData.type || 'Text') + ' ' + elementCounter
+                            });
+                        });
+                    }
+                    
+                    updateLayersList();
+                })
+                .catch(error => {
+                    console.error('Error loading template:', error);
+                    alert('Error loading template');
+                    loadDefaultTemplate();
+                });
+        }
+        
+        // Load default template
+        function loadDefaultTemplate() {
+            updateBackground();
+            
+            // Add default school name
+            addElement('text');
+            const schoolName = document.querySelector('.draggable');
+            schoolName.innerHTML = 'EVEREST ACADEMY' + getResizeHandles();
+            schoolName.style.left = '20px';
+            schoolName.style.top = '20px';
+            schoolName.style.fontSize = '18px';
+            schoolName.style.fontWeight = 'bold';
+            schoolName.style.color = 'white';
+            
+            // Add photo placeholder
+            addElement('photo');
+            const photo = document.querySelectorAll('.draggable')[1];
+            photo.style.left = '20px';
+            photo.style.top = '60px';
+            
+            // Add student name
+            addElement('text');
+            const studentName = document.querySelectorAll('.draggable')[2];
+            studentName.innerHTML = 'NAME: John Doe' + getResizeHandles();
+            studentName.style.left = '120px';
+            studentName.style.top = '70px';
+            studentName.style.color = 'white';
+            studentName.style.fontSize = '14px';
+            
+            // Add roll number
+            addElement('text');
+            const rollNumber = document.querySelectorAll('.draggable')[3];
+            rollNumber.innerHTML = 'ROLL: 001' + getResizeHandles();
+            rollNumber.style.left = '120px';
+            rollNumber.style.top = '90px';
+            rollNumber.style.color = 'white';
+            rollNumber.style.fontSize = '12px';
+            
+            // Add class
+            addElement('text');
+            const studentClass = document.querySelectorAll('.draggable')[4];
+            studentClass.innerHTML = 'CLASS: 10th A' + getResizeHandles();
+            studentClass.style.left = '120px';
+            studentClass.style.top = '110px';
+            studentClass.style.color = 'white';
+            studentClass.style.fontSize = '12px';
+            
+            // Add address
+            addElement('text');
+            const address = document.querySelectorAll('.draggable')[5];
+            address.innerHTML = 'ADDRESS: Kathmandu' + getResizeHandles();
+            address.style.left = '120px';
+            address.style.top = '130px';
+            address.style.color = 'white';
+            address.style.fontSize = '11px';
+            
+            // Add guardian name
+            addElement('text');
+            const guardianName = document.querySelectorAll('.draggable')[6];
+            guardianName.innerHTML = 'GUARDIAN: Robert Doe' + getResizeHandles();
+            guardianName.style.left = '120px';
+            guardianName.style.top = '150px';
+            guardianName.style.color = 'white';
+            guardianName.style.fontSize = '11px';
+            
+            // Add phone
+            addElement('text');
+            const phone = document.querySelectorAll('.draggable')[7];
+            phone.innerHTML = 'PHONE: 9876543210' + getResizeHandles();
+            phone.style.left = '120px';
+            phone.style.top = '170px';
+            phone.style.color = 'white';
+            phone.style.fontSize = '11px';
+            
+            // Add school address
+            addElement('text');
+            const schoolAddress = document.querySelectorAll('.draggable')[8];
+            schoolAddress.innerHTML = 'Kathmandu, Nepal' + getResizeHandles();
+            schoolAddress.style.left = '20px';
+            schoolAddress.style.top = '40px';
+            schoolAddress.style.color = 'white';
+            schoolAddress.style.fontSize = '10px';
+            
+            // Add school email
+            addElement('text');
+            const schoolEmail = document.querySelectorAll('.draggable')[9];
+            schoolEmail.innerHTML = 'info@everestacademy.edu.np' + getResizeHandles();
+            schoolEmail.style.left = '20px';
+            schoolEmail.style.top = '190px';
+            schoolEmail.style.color = 'white';
+            schoolEmail.style.fontSize = '9px';
+            
+            // Add school phone
+            addElement('text');
+            const schoolPhone = document.querySelectorAll('.draggable')[10];
+            schoolPhone.innerHTML = '+977-1-4444444' + getResizeHandles();
+            schoolPhone.style.left = '200px';
+            schoolPhone.style.top = '190px';
+            schoolPhone.style.color = 'white';
+            schoolPhone.style.fontSize = '9px';
+            
+            // Add school logo
+            addElement('logo');
+            const schoolLogo = document.querySelectorAll('.draggable')[11];
+            schoolLogo.style.left = '280px';
+            schoolLogo.style.top = '20px';
+        }
+        
+        // Initialize with default elements
+        window.onload = function() {
+            // Check if we should load a saved template
+            const urlParams = new URLSearchParams(window.location.search);
+            const savedTemplate = urlParams.get('saved_template');
+            
+            if (savedTemplate) {
+                loadSavedTemplate(savedTemplate);
+            } else {
+                loadDefaultTemplate();
+            }
+        };
+    </script>
+</body>
+</html>

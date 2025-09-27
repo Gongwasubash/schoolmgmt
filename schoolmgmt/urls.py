@@ -99,6 +99,16 @@ urlpatterns = [
     path('collection-details/<str:period>/', views.collection_details, name='collection_details'),
     path('school-settings/', views.school_settings, name='school_settings'),
     path('school-settings-test/', views.school_settings_test, name='school_settings_test'),
+    path('id_creation/', views.id_creation, name='id_creation'),
+    path('id-creation/', views.id_creation, name='id_creation_alt'),
+    path('template_editor/', views.template_editor, name='template_editor'),
+    path('id-creation/id_template_designer.html', views.id_template_designer, name='id_template_designer'),
+    path('api/preview-id-template/', views.preview_id_template_api, name='preview_id_template_api'),
+    path('print-id-cards/', views.print_id_cards, name='print_id_cards'),
+    path('api/save-template/', views.save_template_api, name='save_template_api'),
+    path('api/delete-template/', views.delete_template_api, name='delete_template_api'),
+    path('generate-id/', views.generate_id, name='generate_id'),
+    path('generate-id-pdf/<int:student_id>/', views.generate_id_pdf, name='generate_id_pdf'),
     path('admin/', admin.site.urls),
 ]
 

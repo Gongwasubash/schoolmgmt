@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+import os
 from django.core.exceptions import ValidationError
 from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail
 from django.db import models
@@ -3636,3 +3637,230 @@ def school_settings(request):
             'logo': None
         })
         return render(request, 'school_settings.html', {'school': default_school})
+
+def id_creation(request):
+    students = Student.objects.all().order_by('name')
+    school = SchoolDetail.get_current_school()
+    
+    # Load saved templates
+    saved_templates = []
+    templates_dir = os.path.join('media', 'id_templates')
+    if os.path.exists(templates_dir):
+        for filename in os.listdir(templates_dir):
+            if filename.endswith('.json'):
+                try:
+                    with open(os.path.join(templates_dir, filename), 'r') as f:
+                        template_data = json.load(f)
+                        saved_templates.append({
+                            'filename': filename,
+                            'name': template_data.get('name', 'Untitled'),
+                            'created_at': template_data.get('created_at', ''),
+                            'background': template_data.get('background', '#667eea'),
+                            'element_count': len(template_data.get('elements', []))
+                        })
+                except:
+                    pass
+    
+    return render(request, 'id_creation.html', {
+        'students': students, 
+        'school': school,
+        'saved_templates': saved_templates
+    })
+
+def template_editor(request):
+    """Template Editor page"""
+    template_id = request.GET.get('template', '1')
+    return render(request, 'template_editor.html', {'template_id': template_id})
+
+def id_template_designer(request):
+    """ID Template Designer page"""
+    return render(request, 'id_template_designer.html')
+
+def preview_id_template_api(request):
+    """API to get sample student data for live preview"""
+    try:
+        # Get a sample student for preview
+        student = Student.objects.first()
+        school = SchoolDetail.get_current_school()
+        
+        if student:
+            student_data = {
+                'name': student.name,
+                'id_number': f'STU{student.id:03d}',
+                'class': student.student_class,
+                'section': student.section,
+                'father_name': student.father_name,
+                'reg_number': student.reg_number,
+                'session': student.session or '2025-26',
+                'photo_url': student.photo.url if student.photo else '/static/img/students/images (1).jpg'
+            }
+        else:
+            # Fallback data if no students exist
+            student_data = {
+                'name': 'JOHN DOE',
+                'id_number': 'STU001',
+                'class': '10th',
+                'section': 'A',
+                'father_name': 'ROBERT DOE',
+                'reg_number': 'REG2025001',
+                'session': '2025-26',
+                'photo_url': '/static/img/students/images (1).jpg'
+            }
+        
+        school_data = {
+            'name': school.school_name if school else 'EVEREST ACADEMY',
+            'address': school.address if school else 'KATHMANDU, NEPAL'
+        }
+        
+        return JsonResponse({
+            'success': True,
+            'student': student_data,
+            'school': school_data
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def print_id_cards(request):
+    """Print ID cards in horizontal A4 format"""
+    student_ids = request.GET.get('student_ids', '')
+    template = request.GET.get('template', '1')
+    
+    if student_ids:
+        try:
+            student_id_list = [int(id.strip()) for id in student_ids.split(',') if id.strip().isdigit()]
+            students = Student.objects.filter(id__in=student_id_list).order_by('name')
+        except ValueError:
+            students = Student.objects.all()[:10]
+    else:
+        students = Student.objects.all()[:10]
+    
+    school = SchoolDetail.get_current_school()
+    return render(request, 'print_id_cards.html', {'students': students, 'school': school, 'template': template})
+
+@csrf_exempt
+def save_template_api(request):
+    """API to save ID card template"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Save template data to a JSON file or database
+            template_data = {
+                'name': data.get('name', 'Untitled Template'),
+                'elements': data.get('elements', []),
+                'background': data.get('background', ''),
+                'canvas_size': data.get('canvas_size', {'width': '350px', 'height': '220px'}),
+                'created_at': datetime.now().isoformat()
+            }
+            
+            # Save to a templates directory
+            import os
+            templates_dir = os.path.join('media', 'id_templates')
+            os.makedirs(templates_dir, exist_ok=True)
+            
+            # Generate filename
+            template_filename = f"template_{datetime.now().strftime('%Y%m%d_%H%M%S')}.json"
+            template_path = os.path.join(templates_dir, template_filename)
+            
+            with open(template_path, 'w') as f:
+                json.dump(template_data, f, indent=2)
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Template saved successfully',
+                'template_id': template_filename
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def delete_template_api(request):
+    """API to delete ID card template"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            filename = data.get('filename')
+            
+            if not filename:
+                return JsonResponse({'success': False, 'error': 'Filename required'})
+            
+            template_path = os.path.join('media', 'id_templates', filename)
+            
+            if os.path.exists(template_path):
+                os.remove(template_path)
+                return JsonResponse({'success': True, 'message': 'Template deleted successfully'})
+            else:
+                return JsonResponse({'success': False, 'error': 'Template not found'})
+                
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def generate_id(request):
+    """Generate ID card with student data"""
+    student_id = request.GET.get('student_id')
+    student_ids = request.GET.get('student_ids')
+    template_type = request.GET.get('template_type', 'default')
+    template = request.GET.get('template', '1')
+    
+    # Handle bulk selection
+    if student_ids:
+        try:
+            student_id_list = [int(id.strip()) for id in student_ids.split(',') if id.strip().isdigit()]
+            students = Student.objects.filter(id__in=student_id_list).order_by('name')
+            student = students.first() if students else None
+        except ValueError:
+            student = None
+    elif student_id:
+        student = get_object_or_404(Student, id=student_id)
+        students = [student]
+    else:
+        student = None
+        students = []
+    
+    if not student:
+        return redirect('id_creation')
+    
+    school = SchoolDetail.get_current_school()
+    
+    # Load template data if saved template
+    template_data = None
+    if template_type == 'saved':
+        template_path = os.path.join('media', 'id_templates', template)
+        if os.path.exists(template_path):
+            with open(template_path, 'r') as f:
+                template_data = json.load(f)
+    
+    context = {
+        'student': student,
+        'students': students,
+        'school': school,
+        'template_type': template_type,
+        'template': template,
+        'template_data': template_data,
+        'is_bulk': len(students) > 1 if students else False
+    }
+    
+    return render(request, 'generate_id.html', context)
+
+def generate_id_pdf(request, student_id):
+    """Generate ID card optimized for PDF printing"""
+    student = get_object_or_404(Student, id=student_id)
+    school = SchoolDetail.get_current_school()
+    
+    context = {
+        'student': student,
+        'school': school,
+        'pdf_mode': True
+    }
+    
+    response = render(request, 'generate_id.html', context)
+    response['Content-Type'] = 'text/html'
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response

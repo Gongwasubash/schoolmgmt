@@ -1,6 +1,1305 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}ID Creation - School Management v2.0{% endblock %}
+{% block title %}ID Card Creation - School Management{% endblock %}
 
 {% block content %}
+<div class="id-creation-container">
+    <div class="page-header">
+        <h1>ID Card Creation</h1>
+        <p>Create and print student ID cards</p>
+        
+        <!-- Live Preview Section -->
+        <div id="previewSection" style="display: none; margin-top: 20px; padding: 20px; background: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <h3 style="text-align: center; margin-bottom: 15px;">Live Design Preview</h3>
+            <div style="display: flex; justify-content: center;">
+                <div id="previewCard" class="id-card" style="width: 55mm; height: 87mm; background: linear-gradient(180deg, #1e3c72 0%, #2a5298 30%, #667eea 100%); color: white; border-radius: 8px; overflow: hidden; font-size: 7px; display: flex; flex-direction: column;">
+                    <div style="background: rgba(255,255,255,0.15); padding: 2mm; display: flex; align-items: center; gap: 1.5mm;">
+                        <div style="width: 8mm; height: 8mm; background: rgba(255,255,255,0.3); border-radius: 1mm; display: flex; align-items: center; justify-content: center; font-size: 6px;">🏫</div>
+                        <div><div style="font-size: 3mm; font-weight: 700;">EVEREST ACADEMY</div><div style="font-size: 2mm; opacity: 0.9;">Kathmandu, Nepal</div></div>
+                    </div>
+                    <div style="text-align: center; padding: 1.5mm; background: rgba(255,255,255,0.1);">
+                        <div style="font-size: 2.5mm; font-weight: 700;">Student Identity Card</div>
+                    </div>
+                    <div style="padding: 2mm; flex: 1; display: flex; flex-direction: column;">
+                        <div style="text-align: center; margin-bottom: 2mm;">
+                            <div style="width: 15mm; height: 18mm; background: rgba(255,255,255,0.2); border: 0.5mm solid rgba(255,255,255,0.4); margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 8px;">PHOTO</div>
+                            <div style="margin: 1mm 0; font-size: 2.5mm; font-weight: 700;">SAMPLE STUDENT</div>
+                        </div>
+                        <div style="font-size: 1.8mm; line-height: 1.4;">
+                            <div style="display: flex; justify-content: space-between; margin: 0.5mm 0; padding: 0.5mm 0; border-bottom: 0.1mm solid rgba(255,255,255,0.2);"><span>Class:</span><span>10-A</span></div>
+                            <div style="display: flex; justify-content: space-between; margin: 0.5mm 0; padding: 0.5mm 0; border-bottom: 0.1mm solid rgba(255,255,255,0.2);"><span>Roll:</span><span>001</span></div>
+                            <div style="display: flex; justify-content: space-between; margin: 0.5mm 0; padding: 0.5mm 0; border-bottom: 0.1mm solid rgba(255,255,255,0.2);"><span>Father:</span><span>Sample Father</span></div>
+                            <div style="display: flex; justify-content: space-between; margin: 0.5mm 0; padding: 0.5mm 0;"><span>Session:</span><span>2025-26</span></div>
+                        </div>
+                        <div style="text-align: center; margin-top: auto; font-size: 1.5mm; opacity: 0.9;">Valid upto 2082/12/30</div>
+                    </div>
+                </div>
+            </div>
+            <div style="text-align: center; margin-top: 15px;">
+                <button onclick="hidePreview()" style="padding: 8px 16px; background: #dc3545; color: white; border: none; border-radius: 4px; cursor: pointer;">Hide Preview</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Bulk Actions -->
+    <div class="filter-section">
+        <div class="filter-controls">
+            <select id="classFilter" onchange="filterByClass()">
+                <option value="">All Classes</option>
+                {% regroup students by student_class as class_groups %}
+                {% for class_group in class_groups %}
+                <option value="{{ class_group.grouper }}">{{ class_group.grouper }}</option>
+                {% endfor %}
+            </select>
+            <select id="templateSelect" onchange="updatePreviewDesign()">
+                <option value="1">Design 1 - Classic Blue</option>
+                <option value="2">Design 2 - Modern Green</option>
+                <option value="3">Design 3 - Professional Purple</option>
+                <option value="4">Design 4 - Elegant Red</option>
+                <option value="5">Design 5 - Corporate Gray</option>
+                <option value="6">Design 6 - Vibrant Orange</option>
+                <option value="7">Design 7 - Ocean Teal</option>
+                <option value="8">Design 8 - Royal Gold</option>
+                <option value="9">Design 9 - Dark Navy</option>
+                <option value="10">Design 10 - Sunset Pink</option>
+                <option value="school1">🏫 School Layout 1 - Academic Classic</option>
+                <option value="school2">🎓 School Layout 2 - Modern Campus</option>
+                <option value="school3">📚 School Layout 3 - Institutional Pro</option>
+                <option value="s4">🎆 Layout 4 - Hexagon Tech</option>
+                <option value="s5">🌌 Layout 5 - Diagonal Split</option>
+                <option value="s6">🎭 Layout 6 - Badge Style</option>
+                <option value="s7">📱 Layout 7 - Mobile Card</option>
+                <option value="s8">🌈 Layout 8 - Spectrum Wave</option>
+                <option value="s9">🔥 Layout 9 - Fire Gradient</option>
+                <option value="s10">✨ Layout 10 - Crystal Modern</option>
+            </select>
+            <button id="bulkPrintBtn" onclick="bulkPrint()" disabled>📄 Bulk Print Selected</button>
+            <button id="previewBtn" onclick="previewDesign()">👁️ Preview Design</button>
+        </div>
+    </div>
+
+    <div class="table-container">
+            <table class="students-table">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll" onchange="toggleAll()"></th>
+                        <th>S.No</th>
+                        <th>Photo</th>
+                        <th>Student ID</th>
+                        <th>Name</th>
+                        <th>Class</th>
+                        <th>Section</th>
+                        <th>Roll Number</th>
+                        <th>Father's Name</th>
+                        <th>Mobile</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for student in students %}
+                    <tr class="student-row" data-class="{{ student.student_class }}">
+                        <td><input type="checkbox" class="student-checkbox" value="{{ student.id }}" onchange="updateBulkButton()"></td>
+                        <td>{{ forloop.counter }}</td>
+                        <td>
+                            {% if student.photo %}
+                                <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="student-photo">
+                            {% else %}
+                                {% if school.logo %}
+                                    <img src="{{ school.logo.url }}" alt="School Logo" class="student-photo school-logo">
+                                {% else %}
+                                    <img src="{% static 'img/Everest-Crest-Square.png' %}" alt="School Logo" class="student-photo school-logo">
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                        <td>STU{{ student.id|stringformat:"03d" }}</td>
+                        <td>{{ student.name }}</td>
+                        <td>{{ student.student_class }}</td>
+                        <td>{{ student.section }}</td>
+                        <td>{{ student.reg_number }}</td>
+                        <td>{{ student.father_name }}</td>
+                        <td>{{ student.mobile }}</td>
+                        <td>
+                            <button class="create-id-btn" onclick="createID({{ student.id }})">🆔 Generate ID Card</button>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" class="no-data">No students found</td>
+                    </tr>
+                    {% endfor %}
+            </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.id-creation-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    color: white;
+}
+
+.page-header h1 {
+    margin: 0 0 10px 0;
+    font-size: 28px;
+}
+
+.page-header p {
+    margin: 0;
+    opacity: 0.9;
+}
+
+.table-container {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.students-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+}
+
+.students-table th {
+    background: #f8f9fa;
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    color: #2d3748;
+    border-bottom: 2px solid #e2e8f0;
+}
+
+.students-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #e2e8f0;
+    color: #4a5568;
+}
+
+.students-table tbody tr:hover {
+    background-color: #f7fafc;
+}
+
+.create-id-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.create-id-btn:hover {
+    background: #45a049;
+}
+
+.student-photo {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e2e8f0;
+}
+
+.school-logo {
+    opacity: 0.7;
+    background: #f7fafc;
+}
+
+.section {
+    margin-bottom: 40px;
+}
+
+.section h2 {
+    margin-bottom: 20px;
+    color: #2d3748;
+    text-align: center;
+}
+
+/* ID Card Template Styles */
+.id-template-section {
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.id-template-section h2 {
+    margin-bottom: 20px;
+    color: #2d3748;
+}
+
+.template-selector {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.template-option {
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.template-option:hover {
+    transform: scale(1.05);
+}
+
+.template-option.active {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 3px #4CAF50;
+    border-radius: 12px;
+}
+
+.template-option.active .id-card-template {
+    border: 2px solid #4CAF50;
+}
+
+.template-name {
+    margin-top: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #2d3748;
+}
+
+.id-card-template {
+    width: 200px;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+/* Template 1 - Classic */
+.template-1 {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 10px;
+    color: white;
+}
+
+.school-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.template-logo {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    margin-right: 8px;
+}
+
+.school-info h3 {
+    margin: 0;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.school-info p {
+    margin: 1px 0 0 0;
+    font-size: 8px;
+    opacity: 0.9;
+}
+
+.student-section {
+    display: flex;
+    gap: 8px;
+}
+
+.photo-placeholder {
+    width: 35px;
+    height: 40px;
+    background: rgba(255,255,255,0.2);
+    border: 1px dashed rgba(255,255,255,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 6px;
+    border-radius: 2px;
+}
+
+.student-details p {
+    margin: 2px 0;
+    font-size: 8px;
+}
+
+/* Template 2 - Modern */
+.template-2 {
+    background: #fff;
+    border: 2px solid #e2e8f0;
+}
+
+.header-2 {
+    background: #4CAF50;
+    color: white;
+    padding: 8px;
+    text-align: center;
+}
+
+.header-2 h3 {
+    margin: 0;
+    font-size: 10px;
+}
+
+.content-2 {
+    padding: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+.photo-area-2 .photo-placeholder {
+    width: 35px;
+    height: 40px;
+    background: #f7fafc;
+    border: 1px dashed #cbd5e0;
+    color: #a0aec0;
+}
+
+.info-2 p {
+    margin: 2px 0;
+    font-size: 8px;
+    color: #2d3748;
+}
+
+/* Template 3 - Vertical */
+.template-3 {
+    background: linear-gradient(180deg, #f7fafc 0%, #edf2f7 100%);
+    padding: 8px;
+    text-align: center;
+}
+
+.vertical-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.logo-3 {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+}
+
+.vertical-layout h4 {
+    margin: 0;
+    font-size: 9px;
+    color: #2d3748;
+}
+
+.photo-3 {
+    width: 30px;
+    height: 35px;
+    background: #e2e8f0;
+    border: 1px dashed #a0aec0;
+    color: #718096;
+}
+
+.details-3 p {
+    margin: 1px 0;
+    font-size: 7px;
+    color: #4a5568;
+}
+
+/* Add Template Styles */
+.add-template-card {
+    width: 200px;
+    height: 120px;
+    border: 2px dashed #cbd5e0;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: #f7fafc;
+    color: #718096;
+    transition: all 0.2s;
+}
+
+.add-template:hover .add-template-card {
+    border-color: #4CAF50;
+    background: #f0fff4;
+    color: #4CAF50;
+}
+
+.add-icon {
+    font-size: 40px;
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+.add-template-card p {
+    margin: 0;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Modal Styles */
+.modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+}
+
+.modal-content {
+    background-color: white;
+    margin: 10% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 400px;
+    max-width: 90%;
+}
+
+.close {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close:hover {
+    color: #000;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+.save-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    width: 100%;
+}
+
+.save-btn:hover {
+    background: #45a049;
+}
+
+/* Custom Template Styles */
+.template-custom {
+    width: 200px;
+    height: 120px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.saved-template-preview {
+    border: 2px solid #dee2e6;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.template-preview-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    width: 100%;
+}
+
+.template-icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+    opacity: 0.8;
+}
+
+.template-info {
+    text-align: center;
+    width: 100%;
+}
+
+.delete-template-btn {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 18px;
+    height: 18px;
+    border: none;
+    background: rgba(220, 53, 69, 0.8);
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.saved-template-preview:hover .delete-template-btn {
+    display: flex;
+}
+
+.delete-template-btn:hover {
+    background: #dc3545;
+}
+
+.no-data {
+    text-align: center;
+    color: #718096;
+    font-style: italic;
+    padding: 40px;
+}
+
+.filter-section {
+    background: white;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.filter-controls {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+#classFilter {
+    padding: 8px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 4px;
+    font-size: 14px;
+}
+
+#bulkPrintBtn {
+    background: #2196f3;
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#bulkPrintBtn:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+}
+
+.student-checkbox {
+    transform: scale(1.2);
+}
+
+/* Generated ID Card Styles */
+.generated-id-card {
+    width: 350px;
+    height: 220px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    margin: 20px auto;
+}
+
+.template-1-full {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    padding: 20px;
+    color: white;
+}
+
+.template-2-full {
+    background: #fff;
+    border: 3px solid #e2e8f0;
+}
+
+.template-2-full .header-2 {
+    background: #4CAF50;
+    color: white;
+    padding: 15px;
+    text-align: center;
+}
+
+.template-2-full .content-2 {
+    padding: 15px;
+    display: flex;
+    gap: 15px;
+}
+
+.template-3-full {
+    background: linear-gradient(180deg, #f7fafc 0%, #edf2f7 100%);
+    padding: 15px;
+    text-align: center;
+}
+
+.student-id-photo {
+    width: 80px;
+    height: 90px;
+    border-radius: 8px;
+    object-fit: cover;
+    border: 2px solid rgba(255,255,255,0.3);
+}
+
+.template-2-full .student-id-photo {
+    border: 2px solid #e2e8f0;
+}
+
+.template-3-full .student-id-photo {
+    width: 70px;
+    height: 80px;
+    border: 2px solid #cbd5e0;
+}
+
+/* ID Modal Styles */
+.id-modal {
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.7);
+}
+
+.id-modal-content {
+    background-color: white;
+    margin: 5% auto;
+    border-radius: 12px;
+    width: 450px;
+    max-width: 90%;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+}
+
+.id-modal-header {
+    padding: 20px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.id-modal-header h3 {
+    margin: 0;
+    color: #2d3748;
+}
+
+.close-id-modal {
+    color: #aaa;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-id-modal:hover {
+    color: #000;
+}
+
+.id-modal-body {
+    padding: 20px;
+    text-align: center;
+}
+
+.id-modal-footer {
+    padding: 20px;
+    border-top: 1px solid #e2e8f0;
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.print-btn, .download-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.print-btn {
+    background: #4CAF50;
+    color: white;
+}
+
+.print-btn:hover {
+    background: #45a049;
+}
+
+.download-btn {
+    background: #2196F3;
+    color: white;
+}
+
+.download-btn:hover {
+    background: #1976D2;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+    }
+    
+    .students-table {
+        min-width: 800px;
+    }
+    
+    .students-table th,
+    .students-table td {
+        padding: 8px 6px;
+        font-size: 12px;
+    }
+    
+    .generated-id-card {
+        width: 300px;
+        height: 190px;
+    }
+    
+    .id-modal-content {
+        width: 350px;
+    }
+}
+</style>
+
+<script>
+let selectedTemplate = 1;
+
+function selectTemplate(templateNum) {
+    selectedTemplate = templateNum;
+    // Redirect to template editor page
+    window.location.href = '/template_editor/?template=' + templateNum;
+}
+
+function selectSavedTemplate(filename) {
+    // Redirect to template editor with saved template
+    window.location.href = '/template_editor/?saved_template=' + filename;
+}
+
+function deleteTemplate(filename, templateName) {
+    if (confirm(`Are you sure you want to delete template "${templateName}"?`)) {
+        fetch('/api/delete-template/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ filename: filename })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Error deleting template: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error deleting template');
+        });
+    }
+}
+
+function createStudentID(studentId) {
+    if (!selectedTemplate && !selectedTemplateFile) {
+        alert('Please select a template first');
+        return;
+    }
+    
+    const params = new URLSearchParams({
+        student_id: studentId,
+        template_type: selectedTemplateType || 'default',
+        template: selectedTemplateType === 'saved' ? selectedTemplateFile : (selectedTemplate || 1)
+    });
+    
+    window.open('/generate-id/?' + params.toString(), '_blank', 'width=1200,height=800');
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function createID(studentId) {
+    const template = document.getElementById('templateSelect').value;
+    const params = new URLSearchParams({ student_id: studentId, template: template });
+    const idWindow = window.open('/generate-id/?' + params.toString(), '_blank', 'width=1200,height=900,scrollbars=yes,resizable=yes');
+    if (idWindow) idWindow.focus();
+}
+
+function filterByClass() {
+    const selectedClass = document.getElementById('classFilter').value;
+    const rows = document.querySelectorAll('.student-row');
+    
+    rows.forEach(row => {
+        if (!selectedClass || row.dataset.class === selectedClass) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    document.getElementById('selectAll').checked = false;
+    updateBulkButton();
+}
+
+function toggleAll() {
+    const selectAll = document.getElementById('selectAll');
+    const checkboxes = document.querySelectorAll('.student-checkbox');
+    const visibleCheckboxes = Array.from(checkboxes).filter(cb => cb.closest('.student-row').style.display !== 'none');
+    
+    visibleCheckboxes.forEach(cb => cb.checked = selectAll.checked);
+    updateBulkButton();
+}
+
+function updateBulkButton() {
+    const checkboxes = document.querySelectorAll('.student-checkbox:checked');
+    const bulkBtn = document.getElementById('bulkPrintBtn');
+    bulkBtn.disabled = checkboxes.length === 0;
+    bulkBtn.innerHTML = `📄 Bulk Print Selected (${checkboxes.length})`;
+}
+
+function bulkPrint() {
+    const selected = Array.from(document.querySelectorAll('.student-checkbox:checked')).map(cb => cb.value);
+    if (selected.length === 0) return;
+    
+    const template = document.getElementById('templateSelect').value;
+    const params = new URLSearchParams({ student_ids: selected.join(','), template: template, design: template });
+    
+    // Show loader
+    const bulkBtn = document.getElementById('bulkPrintBtn');
+    const originalText = bulkBtn.textContent;
+    bulkBtn.innerHTML = '⏳ Loading...';
+    bulkBtn.disabled = true;
+    
+    // Redirect to generate-id page
+    setTimeout(() => {
+        window.location.href = '/generate-id/?' + params.toString();
+    }, 500);
+}
+
+function previewDesign() {
+    const firstStudent = document.querySelector('.student-row');
+    if (!firstStudent) {
+        alert('No students available for preview');
+        return;
+    }
+    
+    const previewSection = document.getElementById('previewSection');
+    previewSection.style.display = 'block';
+    updatePreviewDesign();
+}
+
+function hidePreview() {
+    document.getElementById('previewSection').style.display = 'none';
+}
+
+function updatePreviewDesign() {
+    const template = document.getElementById('templateSelect').value;
+    const previewCard = document.getElementById('previewCard');
+    const firstStudent = document.querySelector('.student-row');
+    
+    if (!firstStudent) return;
+    
+    // Get live student data
+    const studentData = {
+        name: firstStudent.cells[2].textContent.trim(),
+        id: firstStudent.cells[3].textContent.trim(),
+        class: firstStudent.cells[4].textContent.trim(),
+        section: firstStudent.cells[5].textContent.trim(),
+        roll: firstStudent.cells[6].textContent.trim(),
+        father: firstStudent.cells[7].textContent.trim(),
+        mobile: firstStudent.cells[8].textContent.trim(),
+        photo: firstStudent.querySelector('img') ? firstStudent.querySelector('img').src : ''
+    };
+    
+    const designs = {
+        '1': 'linear-gradient(180deg, #1e3c72 0%, #2a5298 30%, #667eea 100%)',
+        '2': 'linear-gradient(180deg, #134e5e 0%, #71b280 30%, #a8e6cf 100%)',
+        '3': 'linear-gradient(180deg, #4a148c 0%, #7b1fa2 30%, #ba68c8 100%)',
+        '4': 'linear-gradient(180deg, #b71c1c 0%, #d32f2f 30%, #f44336 100%)',
+        '5': 'linear-gradient(180deg, #263238 0%, #455a64 30%, #78909c 100%)',
+        '6': 'linear-gradient(180deg, #e65100 0%, #ff9800 30%, #ffb74d 100%)',
+        '7': 'linear-gradient(180deg, #006064 0%, #00838f 30%, #4dd0e1 100%)',
+        '8': 'linear-gradient(180deg, #ff6f00 0%, #ff8f00 30%, #ffb300 100%)',
+        '9': 'linear-gradient(180deg, #0d47a1 0%, #1565c0 30%, #1976d2 100%)',
+        '10': 'linear-gradient(180deg, #ad1457 0%, #c2185b 30%, #e91e63 100%)'
+    };
+    
+    if (template.startsWith('school') || template.startsWith('s')) {
+        applySchoolLayoutToPreview(template, studentData);
+    } else {
+        // Reset to default structure with live data
+        previewCard.innerHTML = `
+            <div style="background: rgba(255,255,255,0.15); padding: 2mm; display: flex; align-items: center; gap: 1.5mm;">
+                <div style="width: 8mm; height: 8mm; background: rgba(255,255,255,0.3); border-radius: 1mm; display: flex; align-items: center; justify-content: center; font-size: 6px;">🏫</div>
+                <div><div style="font-size: 3mm; font-weight: 700;">EVEREST ACADEMY</div><div style="font-size: 2mm; opacity: 0.9;">Kathmandu, Nepal</div></div>
+            </div>
+            <div style="text-align: center; padding: 1.5mm; background: rgba(255,255,255,0.1);">
+                <div style="font-size: 2.5mm; font-weight: 700;">Student Identity Card</div>
+            </div>
+            <div style="padding: 2mm; flex: 1; display: flex; flex-direction: column;">
+                <div style="text-align: center; margin-bottom: 2mm;">
+                    ${studentData.photo ? `<img src="${studentData.photo}" style="width: 15mm; height: 18mm; object-fit: cover; border: 0.5mm solid rgba(255,255,255,0.4); margin: 0 auto;">` : '<div style="width: 15mm; height: 18mm; background: rgba(255,255,255,0.2); border: 0.5mm solid rgba(255,255,255,0.4); margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 8px;">PHOTO</div>'}
+                    <div style="margin: 1mm 0; font-size: 2.5mm; font-weight: 700;">${studentData.name}</div>
+                </div>
+                <div style="font-size: 1.8mm; line-height: 1.4;">
+                    <div style="display: flex; justify-content: space-between; margin: 0.5mm 0; padding: 0.5mm 0; border-bottom: 0.1mm solid rgba(255,255,255,0.2);"><span>Class:</span><span>${studentData.class}-${studentData.section}</span></div>
+                    <div style="display: flex; justify-content: space-between; margin: 0.5mm 0; padding: 0.5mm 0; border-bottom: 0.1mm solid rgba(255,255,255,0.2);"><span>Roll:</span><span>${studentData.roll}</span></div>
+                    <div style="display: flex; justify-content: space-between; margin: 0.5mm 0; padding: 0.5mm 0; border-bottom: 0.1mm solid rgba(255,255,255,0.2);"><span>Father:</span><span>${studentData.father}</span></div>
+                    <div style="display: flex; justify-content: space-between; margin: 0.5mm 0; padding: 0.5mm 0;"><span>Mobile:</span><span>${studentData.mobile}</span></div>
+                </div>
+                <div style="text-align: center; margin-top: auto; font-size: 1.5mm; opacity: 0.9;">Valid upto 2082/12/30</div>
+            </div>
+        `;
+        previewCard.style.background = designs[template] || designs['1'];
+    }
+}
+
+function applySchoolLayoutToPreview(layoutType, studentData) {
+    const previewCard = document.getElementById('previewCard');
+    
+    if (layoutType === 'school1') {
+        previewCard.innerHTML = `
+            <div style="height: 100%; background: linear-gradient(180deg, #1a237e 0%, #3949ab 100%); color: white;">
+                <div style="background: rgba(255,255,255,0.95); color: #1a237e; padding: 1.5mm; display: flex; align-items: center; gap: 2mm;">
+                    <div style="width: 8mm; height: 8mm; background: #1a237e; border-radius: 1mm; display: flex; align-items: center; justify-content: center; color: white; font-size: 6px;">🏫</div>
+                    <div><div style="font-size: 2.5mm; font-weight: 700;">EVEREST ACADEMY</div><div style="font-size: 1.8mm;">Kathmandu, Nepal</div></div>
+                </div>
+                <div style="padding: 2mm; text-align: center;">
+                    ${studentData.photo ? `<img src="${studentData.photo}" style="width: 15mm; height: 18mm; object-fit: cover; border: 1mm solid white; border-radius: 1mm;">` : '<div style="width: 15mm; height: 18mm; background: rgba(255,255,255,0.2); border: 1mm solid white; border-radius: 1mm; display: flex; align-items: center; justify-content: center; font-size: 8px; margin: 0 auto;">PHOTO</div>'}
+                    <div style="margin: 2mm 0; font-size: 2.5mm; font-weight: 700;">${studentData.name}</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.1); margin: 0 2mm; padding: 2mm; border-radius: 2mm; font-size: 1.8mm;">
+                    <div>Class: ${studentData.class}-${studentData.section}</div><div>Roll: ${studentData.roll}</div><div>Father: ${studentData.father}</div><div>ID: ${studentData.id}</div>
+                </div>
+                <div style="text-align: center; padding: 1mm; font-size: 1.5mm; margin-top: auto;">Valid: 2082/12/30</div>
+            </div>
+        `;
+    } else if (layoutType === 'school2') {
+        previewCard.innerHTML = `
+            <div style="height: 100%; background: linear-gradient(45deg, #00bcd4 0%, #009688 100%); color: white;">
+                <div style="padding: 2mm; text-align: center;">
+                    <div style="font-size: 2.5mm; font-weight: 700; margin-bottom: 2mm;">EVEREST ACADEMY</div>
+                    ${studentData.photo ? `<img src="${studentData.photo}" style="width: 16mm; height: 20mm; object-fit: cover; border-radius: 50%; border: 2mm solid rgba(255,255,255,0.3);">` : '<div style="width: 16mm; height: 20mm; background: rgba(255,255,255,0.2); border-radius: 50%; border: 2mm solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 8px; margin: 0 auto;">PHOTO</div>'}
+                    <div style="margin: 2mm 0; font-size: 2.5mm; font-weight: 700;">${studentData.name}</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.15); margin: 2mm; padding: 2mm; border-radius: 2mm; font-size: 1.8mm;">
+                    <div>Class: ${studentData.class}-${studentData.section} | Roll: ${studentData.roll}</div><div>Father: ${studentData.father}</div><div>ID: ${studentData.id}</div>
+                </div>
+                <div style="text-align: center; font-size: 1.5mm;">Valid: 2082/12/30</div>
+            </div>
+        `;
+    } else if (layoutType === 'school3') {
+        previewCard.innerHTML = `
+            <div style="height: 100%; background: linear-gradient(135deg, #37474f 0%, #263238 100%); color: white; padding: 2mm;">
+                <div style="text-align: center; margin-bottom: 2mm;">
+                    <div style="font-size: 2.5mm; font-weight: 700;">EVEREST ACADEMY</div>
+                    <div style="font-size: 1.8mm; opacity: 0.8;">Kathmandu, Nepal</div>
+                </div>
+                <div style="text-align: center; margin-bottom: 2mm;">
+                    ${studentData.photo ? `<img src="${studentData.photo}" style="width: 18mm; height: 22mm; object-fit: cover; border: 1mm solid #ff5722; border-radius: 2mm;">` : '<div style="width: 18mm; height: 22mm; background: rgba(255,255,255,0.1); border: 1mm solid #ff5722; border-radius: 2mm; display: flex; align-items: center; justify-content: center; font-size: 8px; margin: 0 auto;">PHOTO</div>'}
+                    <div style="margin: 2mm 0; font-size: 2.5mm; font-weight: 700; color: #ff5722;">${studentData.name}</div>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 2mm; border-radius: 2mm; font-size: 1.8mm;">
+                    <div>Class: ${studentData.class}-${studentData.section}</div><div>Roll: ${studentData.roll}</div><div>Father: ${studentData.father}</div><div>Mobile: ${studentData.mobile}</div>
+                </div>
+                <div style="text-align: center; font-size: 1.5mm; margin-top: auto;">Valid: 2082/12/30</div>
+            </div>
+        `;
+    }
+}
+
+function generateIDCard(student) {
+    // Create ID card HTML based on selected template
+    let idCardHTML = '';
+    
+    switch(selectedTemplate) {
+        case 1:
+            idCardHTML = createTemplate1(student);
+            break;
+        case 2:
+            idCardHTML = createTemplate2(student);
+            break;
+        case 3:
+            idCardHTML = createTemplate3(student);
+            break;
+        default:
+            idCardHTML = createTemplate1(student);
+    }
+    
+    // Display the generated ID card
+    showGeneratedID(idCardHTML, student);
+}
+
+function createTemplate1(student) {
+    return `
+        <div class="generated-id-card template-1-full">
+            <div class="school-header">
+                <img src="${student.photo}" alt="School Logo" class="template-logo">
+                <div class="school-info">
+                    <h3>{{ school.school_name|default:"EVEREST ACADEMY" }}</h3>
+                    <p>{{ school.address|default:"Student Identity Card" }}</p>
+                </div>
+            </div>
+            <div class="student-section">
+                <div class="student-photo-area">
+                    <img src="${student.photo}" alt="${student.name}" class="student-id-photo">
+                </div>
+                <div class="student-details">
+                    <p><strong>Name:</strong> ${student.name}</p>
+                    <p><strong>Class:</strong> ${student.class} - ${student.section}</p>
+                    <p><strong>Roll No:</strong> ${student.rollNumber}</p>
+                    <p><strong>Father:</strong> ${student.fatherName}</p>
+                    <p><strong>ID:</strong> STU${student.id.toString().padStart(3, '0')}</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createTemplate2(student) {
+    return `
+        <div class="generated-id-card template-2-full">
+            <div class="header-2">
+                <h3>{{ school.school_name|default:"EVEREST ACADEMY" }}</h3>
+            </div>
+            <div class="content-2">
+                <div class="photo-area-2">
+                    <img src="${student.photo}" alt="${student.name}" class="student-id-photo">
+                </div>
+                <div class="info-2">
+                    <p><strong>${student.name}</strong></p>
+                    <p>${student.class} - ${student.section}</p>
+                    <p>Roll: ${student.rollNumber}</p>
+                    <p>Father: ${student.fatherName}</p>
+                    <p>ID: STU${student.id.toString().padStart(3, '0')}</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createTemplate3(student) {
+    return `
+        <div class="generated-id-card template-3-full">
+            <div class="vertical-layout">
+                <img src="${student.photo}" alt="School Logo" class="logo-3">
+                <h4>{{ school.school_name|default:"EVEREST ACADEMY" }}</h4>
+                <img src="${student.photo}" alt="${student.name}" class="student-id-photo photo-3">
+                <div class="details-3">
+                    <p><strong>${student.name}</strong></p>
+                    <p>${student.class} - ${student.section}</p>
+                    <p>Roll: ${student.rollNumber}</p>
+                    <p>Father: ${student.fatherName}</p>
+                    <p>ID: STU${student.id.toString().padStart(3, '0')}</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function showGeneratedID(idCardHTML, student) {
+    // Create modal to display generated ID
+    const modal = document.createElement('div');
+    modal.className = 'id-modal';
+    modal.innerHTML = `
+        <div class="id-modal-content">
+            <div class="id-modal-header">
+                <h3>Generated ID Card - ${student.name}</h3>
+                <span class="close-id-modal" onclick="closeIDModal()">&times;</span>
+            </div>
+            <div class="id-modal-body">
+                ${idCardHTML}
+            </div>
+            <div class="id-modal-footer">
+                <button class="print-btn" onclick="printID()">Print ID</button>
+                <button class="download-btn" onclick="downloadID()">Download</button>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(modal);
+    modal.style.display = 'block';
+}
+
+function closeIDModal() {
+    const modal = document.querySelector('.id-modal');
+    if (modal) {
+        modal.remove();
+    }
+}
+
+function printID() {
+    const idCard = document.querySelector('.generated-id-card');
+    const printWindow = window.open('', '_blank');
+    printWindow.document.write(`
+        <html>
+            <head>
+                <title>Print ID Card</title>
+                <style>
+                    body { margin: 0; padding: 20px; }
+                    .generated-id-card { margin: 0 auto; }
+                </style>
+            </head>
+            <body>
+                ${idCard.outerHTML}
+            </body>
+        </html>
+    `);
+    printWindow.document.close();
+    printWindow.print();
+}
+
+function downloadID() {
+    alert('Download functionality will be implemented with backend support');
+}
+
+function openTemplateDesigner() {
+    window.open('id_template_designer.html', '_blank', 'width=1400,height=900');
+}
+
+function showAddTemplateModal() {
+    document.getElementById('addTemplateModal').style.display = 'block';
+}
+
+function closeAddTemplateModal() {
+    document.getElementById('addTemplateModal').style.display = 'none';
+}
+
+let customTemplateCount = 3;
+
+// Handle form submission
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('templateForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const templateName = document.getElementById('templateName').value;
+        const bgColor = document.getElementById('bgColor').value;
+        const textColor = document.getElementById('textColor').value;
+        const layoutType = document.getElementById('layoutType').value;
+        
+        // Create new template
+        createNewTemplate(templateName, bgColor, textColor, layoutType);
+        
+        alert(`Template "${templateName}" created successfully!`);
+        
+        closeAddTemplateModal();
+        
+        // Reset form
+        document.getElementById('templateForm').reset();
+    });
+});
+
+function createNewTemplate(name, bgColor, textColor, layoutType) {
+    customTemplateCount++;
+    
+    const templateSelector = document.querySelector('.template-selector');
+    const addTemplateOption = document.querySelector('.add-template');
+    
+    // Create new template HTML
+    const newTemplateHTML = `
+        <div class="template-option" onclick="selectTemplate(${customTemplateCount})">
+            <div class="id-card-template template-custom" style="background: ${bgColor}; color: ${textColor};">
+                ${layoutType === 'horizontal' ? createHorizontalLayout(bgColor, textColor) : createVerticalLayout(bgColor, textColor)}
+            </div>
+            <p class="template-name">${name}</p>
+        </div>
+    `;
+    
+    // Insert before the add template option
+    addTemplateOption.insertAdjacentHTML('beforebegin', newTemplateHTML);
+}
+
+function createHorizontalLayout(bgColor, textColor) {
+    return `
+        <div style="padding: 10px; height: 100%; display: flex; flex-direction: column;">
+            <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                <div style="width: 20px; height: 20px; background: rgba(255,255,255,0.3); border-radius: 50%; margin-right: 8px;"></div>
+                <div>
+                    <h3 style="margin: 0; font-size: 10px;">{{ school.school_name|default:"School Name" }}</h3>
+                    <p style="margin: 1px 0 0 0; font-size: 8px; opacity: 0.9;">{{ school.address|default:"School Address" }}</p>
+                </div>
+            </div>
+            <div style="display: flex; gap: 8px; flex: 1;">
+                <div style="width: 35px; height: 40px; background: rgba(255,255,255,0.2); border: 1px dashed rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size: 6px; border-radius: 2px;">PHOTO</div>
+                <div style="flex: 1;">
+                    <p style="margin: 2px 0; font-size: 8px;"><strong>Name:</strong> Student Name</p>
+                    <p style="margin: 2px 0; font-size: 8px;"><strong>Class:</strong> Class & Section</p>
+                    <p style="margin: 2px 0; font-size: 8px;"><strong>Roll:</strong> 001</p>
+                </div>
+            </div>
+        </div>
+    `;
+}
+
+function createVerticalLayout(bgColor, textColor) {
+    return `
+        <div style="padding: 8px; text-align: center; height: 100%; display: flex; flex-direction: column; align-items: center; gap: 4px;">
+            <div style="width: 20px; height: 20px; background: rgba(255,255,255,0.3); border-radius: 50%;"></div>
+            <h4 style="margin: 0; font-size: 9px;">{{ school.school_name|default:"School Name" }}</h4>
+            <div style="width: 30px; height: 35px; background: rgba(255,255,255,0.2); border: 1px dashed rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size: 6px;">PHOTO</div>
+            <div>
+                <p style="margin: 1px 0; font-size: 7px;">Student Name</p>
+                <p style="margin: 1px 0; font-size: 7px;">Class & Section</p>
+                <p style="margin: 1px 0; font-size: 7px;">Roll: 001</p>
+            </div>
+        </div>
+    `;
+}
+
+// Close modal when clicking outside
+window.onclick = function(event) {
+    const modal = document.getElementById('addTemplateModal');
+    if (event.target == modal) {
+        closeAddTemplateModal();
+    }
+}
+</script>
 {% endblock %}

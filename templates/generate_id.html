@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate ID Card - {{ student.name }}</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .page {
+            width: 297mm;
+            height: 210mm;
+            display: grid;
+            grid-template-columns: repeat(5, 55mm);
+            grid-template-rows: repeat(2, 87mm);
+            gap: 5mm;
+            justify-content: center;
+            align-content: center;
+            padding: 10mm;
+            box-sizing: border-box;
+            page-break-after: always;
+        }
+        
+        .page:last-child {
+            page-break-after: avoid;
+        }
+        
+        .pagination {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+        }
+        
+        .pagination button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: 1px solid #ddd;
+            background: white;
+            cursor: pointer;
+            border-radius: 3px;
+        }
+        
+        .pagination button.active {
+            background: #007bff;
+            color: white;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .id-card {
+            width: 55mm;
+            height: 87mm;
+            background: linear-gradient(180deg, #1e3c72 0%, #2a5298 30%, #667eea 100%);
+            padding: 0;
+            color: white;
+            position: relative;
+            box-shadow: 0 2mm 5mm rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            overflow: hidden;
+            border: 0.5mm solid rgba(255,255,255,0.2);
+            display: flex;
+            flex-direction: column;
+            font-size: 7px;
+        }
+        
+        .card-header {
+            background: rgba(255,255,255,0.15);
+            padding: 2mm;
+            flex-shrink: 0;
+            border-bottom: 0.2mm solid rgba(255,255,255,0.2);
+            display: flex;
+            align-items: flex-start;
+            gap: 1.5mm;
+        }
+        
+        .school-logo {
+            width: 10mm;
+            height: 10mm;
+            border: 0.3mm solid rgba(255,255,255,0.3);
+            object-fit: cover;
+            flex-shrink: 0;
+        }
+        
+        .school-details {
+            flex: 1;
+        }
+        
+        .school-info h3 {
+            margin: 0 0 0.5mm 0;
+            font-size: 4.5mm;
+            font-weight: 700;
+            text-shadow: 0 0.2mm 0.5mm rgba(0,0,0,0.3);
+            line-height: 1.1;
+        }
+        
+        .school-info p {
+            margin: 0 0 0.3mm 0;
+            font-size: 2.2mm;
+            opacity: 0.9;
+            font-weight: 500;
+            line-height: 1.2;
+        }
+        
+        .school-contact {
+            font-size: 1.8mm;
+            opacity: 0.8;
+            margin-top: 0.5mm;
+        }
+        
+        .school-contact div {
+            margin: 1px 0;
+        }
+        
+        .card-type {
+            background: rgba(255,255,255,0.25);
+            padding: 3px 8px;
+            font-size: 8px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 5px;
+            display: inline-block;
+        }
+        
+        .card-body {
+            padding: 2mm;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .photo-section {
+            text-align: center;
+            margin-bottom: 5px;
+            margin-top: -5px;
+        }
+        
+        .photo-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .student-photo {
+            width: 18mm;
+            height: 22mm;
+            object-fit: cover;
+            border: 0.5mm solid rgba(255,255,255,0.4);
+            box-shadow: 0 1mm 2mm rgba(0,0,0,0.3);
+            display: block;
+            margin: 0 auto;
+        }
+        
+        .id-qr-section {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: -5px;
+        }
+        
+        .student-id {
+            background: rgba(255,255,255,0.25);
+            padding: 1mm 2mm;
+            font-size: 2.2mm;
+            font-weight: 700;
+            text-align: center;
+            display: inline-block;
+        }
+        
+        .qr-code {
+            text-align: center;
+        }
+        
+        .student-name {
+            font-size: 3.2mm;
+            font-weight: 700;
+            margin: 1.5mm 0 2mm 0;
+            text-shadow: 0 0.2mm 0.5mm rgba(0,0,0,0.3);
+            border-bottom: 0.2mm solid rgba(255,255,255,0.3);
+            padding-bottom: 1mm;
+            text-align: left;
+            width: 100%;
+        }
+        
+        .details-section {
+            width: 100%;
+            flex: 1;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.8mm 0;
+            border-bottom: 0.1mm solid rgba(255,255,255,0.2);
+        }
+        
+        .detail-label {
+            font-size: 2mm;
+            font-weight: 600;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 0.1mm;
+            width: 45%;
+        }
+        
+        .detail-value {
+            font-size: 2.1mm;
+            font-weight: 600;
+            text-align: right;
+            width: 55%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .footer-info {
+            padding: 1.5mm;
+            margin: auto 3mm 1.5mm 3mm;
+            text-align: center;
+        }
+        
+        .footer-row {
+            font-size: 2.5mm;
+            margin: 0.3mm 0;
+            opacity: 0.9;
+            line-height: 1.2;
+        }
+        
+        .decorative-element {
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 100px;
+            height: 100px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        
+        .decorative-element2 {
+            position: absolute;
+            bottom: -30px;
+            left: -30px;
+            width: 60px;
+            height: 60px;
+            background: rgba(255,255,255,0.03);
+            border-radius: 50%;
+            z-index: 0;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+        }
+        
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 0;
+            }
+            .header, .actions, .pagination { display: none; }
+            body {
+                width: 297mm;
+                height: 210mm;
+            }
+            .id-card { 
+                box-shadow: none;
+                border: 1px solid #000;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        {% if is_bulk %}
+            <h2>Bulk ID Cards - {{ students|length }} Students</h2>
+            <p>Selected Students | Size: 55mm x 87mm</p>
+        {% else %}
+            <h2>ID Card - {{ student.name }}</h2>
+            <p>Student ID: STU{{ student.id|stringformat:"03d" }} | Size: 55mm x 87mm</p>
+        {% endif %}
+        <div style="margin: 10px 0;">
+            <label for="designSelect" style="font-weight: 600; margin-right: 10px;">Choose Design:</label>
+            <select id="designSelect" onchange="changeDesign()" style="padding: 8px 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px;">
+                <option value="1">Design 1 - Classic Blue</option>
+                <option value="2">Design 2 - Modern Green</option>
+                <option value="3">Design 3 - Professional Purple</option>
+                <option value="4">Design 4 - Elegant Red</option>
+                <option value="5">Design 5 - Corporate Gray</option>
+                <option value="6">Design 6 - Vibrant Orange</option>
+                <option value="7">Design 7 - Ocean Teal</option>
+                <option value="8">Design 8 - Royal Gold</option>
+                <option value="9">Design 9 - Dark Navy</option>
+                <option value="10">Design 10 - Sunset Pink</option>
+                <option value="school1">🏫 School Layout 1 - Academic Classic</option>
+                <option value="school2">🎓 School Layout 2 - Modern Campus</option>
+                <option value="school3">📚 School Layout 3 - Institutional Pro</option>
+                <option value="s4">🎆 Layout 4 - Hexagon Tech</option>
+                <option value="s5">🌌 Layout 5 - Diagonal Split</option>
+                <option value="s6">🎭 Layout 6 - Badge Style</option>
+                <option value="s7">📱 Layout 7 - Mobile Card</option>
+                <option value="s8">🌈 Layout 8 - Spectrum Wave</option>
+                <option value="s9">🔥 Layout 9 - Fire Gradient</option>
+                <option value="s10">✨ Layout 10 - Crystal Modern</option>
+            </select>
+        </div>
+    </div>
+    
+
+    
+    {% if is_bulk %}
+        {% for student_item in students %}
+            {% if forloop.counter0|divisibleby:10 %}
+                {% if not forloop.first %}</div>{% endif %}
+                <div class="page" id="page{{ forloop.counter0|add:10|floatformat:0 }}">
+            {% endif %}
+            <div class="id-card" id="idCard{{ forloop.counter }}" data-student-id="{{ student_item.id }}">
+            <div class="decorative-element"></div>
+            <div class="decorative-element2"></div>
+            
+            <div class="card-header">
+                {% if school.logo %}
+                    <img src="{{ school.logo.url }}" alt="School Logo" class="school-logo">
+                {% else %}
+                    <div class="school-logo" style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">🏫</div>
+                {% endif %}
+                <div class="school-details">
+                    <div class="school-info">
+                        <h3>{{ school.school_name|default:"EVEREST ACADEMY" }}</h3>
+                        <p>{{ school.address|default:"Kathmandu, Nepal" }}</p>
+                        <div class="school-contact">
+                            <div>Ph. {{ school.phone|default:"+977-1-4444444" }} | Website {{ school.website|default:"www.everestacademy.edu.np" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; padding: 1.5mm; background: rgba(255,255,255,0.1); border-bottom: 0.2mm solid rgba(255,255,255,0.2);">
+                <div style="font-size: 2.5mm; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2mm;">Student Identity Card</div>
+            </div>
+            
+            <div class="card-body">
+                <div class="photo-section">
+                    <div class="photo-container">
+                        <div style="position: relative; display: inline-block;">
+                            {% if student_item.photo %}
+                                <img src="{{ student_item.photo.url }}" alt="{{ student_item.name }}" class="student-photo">
+                            {% else %}
+                                <div class="student-photo" style="background: linear-gradient(45deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1)); display: flex; align-items: center; justify-content: center; font-size: 16px; color: rgba(255,255,255,0.7);">📷 PHOTO</div>
+                            {% endif %}
+                            <div style="position: absolute; bottom: 1mm; right: 1mm; background: rgba(255,255,255,0.9); padding: 0.5mm; font-size: 1.2mm; color: #333; font-weight: 600; transform: rotate(-15deg);">Principal</div>
+                            <div style="position: absolute; bottom: 1mm; left: 1mm; width: 8mm; height: 8mm; background: rgba(255,255,255,0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.7; overflow: hidden;">
+                                {% if school.logo %}
+                                    <img src="{{ school.logo.url }}" alt="School Logo" style="width: 7mm; height: 7mm; object-fit: cover;">
+                                {% else %}
+                                    <div style="font-size: 3mm;">🏫</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="id-qr-section">
+                            <div class="student-id">STU{{ student_item.id|stringformat:"03d" }}</div>
+                            <div class="qr-code">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=STU{{ student_item.id|stringformat:"03d" }}" alt="QR Code" style="width: 15mm; height: 15mm; margin-top: 1mm; border: 0.3mm solid rgba(255,255,255,0.4);">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="student-name">{{ student_item.name|upper }}</div>
+                </div>
+                
+                <div class="details-section">
+                    <div class="detail-row">
+                        <span class="detail-label">Class & Section</span>
+                        <span class="detail-value">{{ student_item.student_class }} - {{ student_item.section }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Roll Number</span>
+                        <span class="detail-value">{{ student_item.reg_number }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Father's Name</span>
+                        <span class="detail-value">{{ student_item.father_name }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Date of Birth</span>
+                        <span class="detail-value">{{ student_item.date_of_birth|default:"01/01/2010" }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Session</span>
+                        <span class="detail-value">{{ student_item.session|default:"2025-26" }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Mobile</span>
+                        <span class="detail-value">{{ student_item.mobile }}</span>
+                    </div>
+                </div>
+                
+                <div class="footer-info">
+                    <div class="footer-row">Valid upto 2082/12/30</div>
+                </div>
+            </div>
+            </div>
+        {% endfor %}
+        </div>
+        
+        <div class="pagination" id="pagination">
+            <button onclick="prevPage()">← Previous</button>
+            <span id="pageInfo">Page 1 of {% widthratio students|length 10 1 %}</span>
+            <button onclick="nextPage()">Next →</button>
+        </div>
+    {% else %}
+    <div class="id-card" id="idCard">
+        {% if template_type == 'saved' and template_data %}
+            <!-- Render saved template -->
+            <div id="savedTemplate" style="width: 100%; height: 100%; position: relative;">
+                <!-- Template elements will be rendered here -->
+            </div>
+        {% else %}
+            <!-- Modern Stylish Template -->
+            <div class="decorative-element"></div>
+            <div class="decorative-element2"></div>
+            
+            <div class="card-header">
+                {% if school.logo %}
+                    <img src="{{ school.logo.url }}" alt="School Logo" class="school-logo">
+                {% else %}
+                    <div class="school-logo" style="background: linear-gradient(45deg, #ff6b6b, #4ecdc4); display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 20px;">🏫</div>
+                {% endif %}
+                <div class="school-details">
+                    <div class="school-info">
+                        <h3>{{ school.school_name|default:"EVEREST ACADEMY" }}</h3>
+                        <p>{{ school.address|default:"Kathmandu, Nepal" }}</p>
+                        <div class="school-contact">
+                            <div>Ph. {{ school.phone|default:"+977-1-4444444" }} | Website {{ school.website|default:"www.everestacademy.edu.np" }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="text-align: center; padding: 1.5mm; background: rgba(255,255,255,0.1); border-bottom: 0.2mm solid rgba(255,255,255,0.2);">
+                <div style="font-size: 2.5mm; font-weight: 700; text-transform: uppercase; letter-spacing: 0.2mm;">Student Identity Card</div>
+            </div>
+            
+            <div class="card-body">
+                <div class="photo-section">
+                    <div class="photo-container">
+                        <div style="position: relative; display: inline-block;">
+                            {% if student.photo %}
+                                <img src="{{ student.photo.url }}" alt="{{ student.name }}" class="student-photo">
+                            {% else %}
+                                <div class="student-photo" style="background: linear-gradient(45deg, rgba(255,255,255,0.2), rgba(255,255,255,0.1)); display: flex; align-items: center; justify-content: center; font-size: 16px; color: rgba(255,255,255,0.7);">📷 PHOTO</div>
+                            {% endif %}
+                            <div style="position: absolute; bottom: 1mm; right: 1mm; background: rgba(255,255,255,0.9); padding: 0.5mm; font-size: 1.2mm; color: #333; font-weight: 600; transform: rotate(-15deg);">Principal</div>
+                            <div style="position: absolute; bottom: 1mm; left: 1mm; width: 8mm; height: 8mm; background: rgba(255,255,255,0.8); border-radius: 50%; display: flex; align-items: center; justify-content: center; opacity: 0.7; overflow: hidden;">
+                                {% if school.logo %}
+                                    <img src="{{ school.logo.url }}" alt="School Logo" style="width: 7mm; height: 7mm; object-fit: cover;">
+                                {% else %}
+                                    <div style="font-size: 3mm;">🏫</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="id-qr-section">
+                            <div class="student-id">STU{{ student.id|stringformat:"03d" }}</div>
+                            <div class="qr-code">
+                                <img src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=STU{{ student.id|stringformat:"03d" }}" alt="QR Code" style="width: 15mm; height: 15mm; margin-top: 1mm; border: 0.3mm solid rgba(255,255,255,0.4);">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="student-name">{{ student.name|upper }}</div>
+                </div>
+                
+                <div class="details-section">
+                    <div class="detail-row">
+                        <span class="detail-label">Class & Section</span>
+                        <span class="detail-value">{{ student.student_class }} - {{ student.section }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Roll Number</span>
+                        <span class="detail-value">{{ student.reg_number }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Father's Name</span>
+                        <span class="detail-value">{{ student.father_name }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Date of Birth</span>
+                        <span class="detail-value">{{ student.date_of_birth|default:"01/01/2010" }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Session</span>
+                        <span class="detail-value">{{ student.session|default:"2025-26" }}</span>
+                    </div>
+                    
+                    <div class="detail-row">
+                        <span class="detail-label">Mobile</span>
+                        <span class="detail-value">{{ student.mobile }}</span>
+                    </div>
+                </div>
+                
+                <div class="footer-info">
+                    <div class="footer-row">Valid upto 2082/12/30</div>
+                </div>
+            </div>
+        {% endif %}
+        </div>
+    {% endif %}
+    
+    <div class="actions">
+        <button class="btn btn-primary" onclick="printID()">🖨️ Print ID Card</button>
+        <button class="btn btn-success" onclick="downloadPDF()">📄 Save as PDF</button>
+        {% if is_bulk %}
+            <button class="btn" onclick="printAllCards()" style="background: #28a745; color: white;">🖨️ Print All Cards</button>
+        {% endif %}
+    </div>
+    
+    <script>
+        // Load saved template if available
+        {% if template_type == 'saved' and template_data %}
+        const templateData = {{ template_data|safe }};
+        const studentData = {
+            name: '{{ student.name }}',
+            class: '{{ student.student_class }}',
+            section: '{{ student.section }}',
+            roll: '{{ student.reg_number }}',
+            father: '{{ student.father_name }}',
+            id: 'STU{{ student.id|stringformat:"03d" }}',
+            session: '{{ student.session|default:"2025-26" }}',
+            photo: '{% if student.photo %}{{ student.photo.url }}{% else %}/static/img/students/images (1).jpg{% endif %}'
+        };
+        
+        const schoolData = {
+            name: '{{ school.school_name|default:"EVEREST ACADEMY" }}',
+            address: '{{ school.address|default:"Kathmandu, Nepal" }}',
+            email: '{{ school.email|default:"info@everestacademy.edu.np" }}',
+            phone: '{{ school.phone|default:"+977-1-4444444" }}'
+        };
+        
+        function renderSavedTemplate() {
+            const container = document.getElementById('savedTemplate');
+            
+            // Set background
+            if (templateData.background) {
+                document.getElementById('idCard').style.background = templateData.background;
+            }
+            
+            // Set canvas size
+            if (templateData.canvas_size) {
+                const card = document.getElementById('idCard');
+                card.style.width = templateData.canvas_size.width || '350px';
+                card.style.height = templateData.canvas_size.height || '220px';
+            }
+            
+            // Render elements
+            templateData.elements.forEach(element => {
+                const div = document.createElement('div');
+                div.style.position = 'absolute';
+                
+                // Apply styles
+                Object.keys(element.styles || {}).forEach(key => {
+                    if (element.styles[key]) {
+                        div.style[key] = element.styles[key];
+                    }
+                });
+                
+                // Set content based on field type
+                let content = element.content;
+                if (element.field) {
+                    switch(element.field) {
+                        case 'name': content = `NAME: ${studentData.name}`; break;
+                        case 'roll': content = `ROLL: ${studentData.roll}`; break;
+                        case 'class': content = `CLASS: ${studentData.class} ${studentData.section}`; break;
+                        case 'address': content = `ADDRESS: Kathmandu`; break;
+                        case 'guardian': content = `GUARDIAN: ${studentData.father}`; break;
+                        case 'phone': content = `PHONE: 9876543210`; break;
+                        case 'school_name': content = schoolData.name; break;
+                        case 'school_address': content = schoolData.address; break;
+                        case 'school_email': content = schoolData.email; break;
+                        case 'school_phone': content = schoolData.phone; break;
+                    }
+                }
+                
+                // Handle photo elements
+                if (element.type === 'photo') {
+                    div.innerHTML = `<img src="${studentData.photo}" style="width: 100%; height: 100%; object-fit: cover; border-radius: 4px;" alt="Student Photo">`;
+                } else if (element.type === 'logo') {
+                    div.innerHTML = `<div style="width: 40px; height: 40px; background: #007bff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">L</div>`;
+                } else {
+                    div.textContent = content;
+                }
+                
+                container.appendChild(div);
+            });
+        }
+        
+        // Render template on load
+        renderSavedTemplate();
+        {% endif %}
+        
+        function changeDesign() {
+            const design = document.getElementById('designSelect').value;
+            
+            {% if is_bulk %}
+                // Apply design to all cards in bulk mode
+                const cards = document.querySelectorAll('.id-card');
+                cards.forEach(card => {
+                    if (design.startsWith('school') || design.startsWith('s')) {
+                        // Handle school layouts for bulk
+                        return;
+                    }
+                    
+                    const designs = {
+                        '1': 'linear-gradient(180deg, #1e3c72 0%, #2a5298 30%, #667eea 100%)',
+                        '2': 'linear-gradient(180deg, #134e5e 0%, #71b280 30%, #a8e6cf 100%)',
+                        '3': 'linear-gradient(180deg, #4a148c 0%, #7b1fa2 30%, #ba68c8 100%)',
+                        '4': 'linear-gradient(180deg, #b71c1c 0%, #d32f2f 30%, #f44336 100%)',
+                        '5': 'linear-gradient(180deg, #263238 0%, #455a64 30%, #78909c 100%)',
+                        '6': 'linear-gradient(180deg, #e65100 0%, #ff9800 30%, #ffb74d 100%)',
+                        '7': 'linear-gradient(180deg, #006064 0%, #00838f 30%, #4dd0e1 100%)',
+                        '8': 'linear-gradient(180deg, #ff6f00 0%, #ff8f00 30%, #ffb300 100%)',
+                        '9': 'linear-gradient(180deg, #0d47a1 0%, #1565c0 30%, #1976d2 100%)',
+                        '10': 'linear-gradient(180deg, #ad1457 0%, #c2185b 30%, #e91e63 100%)'
+                    };
+                    
+                    card.style.background = designs[design];
+                });
+            {% else %}
+                const card = document.getElementById('idCard');
+                
+                if (design.startsWith('school') || design.startsWith('s')) {
+                    applySchoolLayout(design);
+                    return;
+                }
+                
+
+                
+                const designs = {
+                    '1': 'linear-gradient(180deg, #1e3c72 0%, #2a5298 30%, #667eea 100%)',
+                    '2': 'linear-gradient(180deg, #134e5e 0%, #71b280 30%, #a8e6cf 100%)',
+                    '3': 'linear-gradient(180deg, #4a148c 0%, #7b1fa2 30%, #ba68c8 100%)',
+                    '4': 'linear-gradient(180deg, #b71c1c 0%, #d32f2f 30%, #f44336 100%)',
+                    '5': 'linear-gradient(180deg, #263238 0%, #455a64 30%, #78909c 100%)',
+                    '6': 'linear-gradient(180deg, #e65100 0%, #ff9800 30%, #ffb74d 100%)',
+                    '7': 'linear-gradient(180deg, #006064 0%, #00838f 30%, #4dd0e1 100%)',
+                    '8': 'linear-gradient(180deg, #ff6f00 0%, #ff8f00 30%, #ffb300 100%)',
+                    '9': 'linear-gradient(180deg, #0d47a1 0%, #1565c0 30%, #1976d2 100%)',
+                    '10': 'linear-gradient(180deg, #ad1457 0%, #c2185b 30%, #e91e63 100%)'
+                };
+                
+                card.style.background = designs[design];
+            {% endif %}
+        }
+        
+        function applySchoolLayout(layoutType) {
+            const card = document.getElementById('idCard');
+            
+            if (layoutType === 'school1') {
+                card.innerHTML = `
+                    <div style="height: 100%; background: linear-gradient(180deg, #1a237e 0%, #3949ab 100%); color: white; display: flex; flex-direction: column;">
+                        <div style="background: rgba(255,255,255,0.95); color: #1a237e; padding: 1.5mm; display: flex; align-items: center; gap: 2mm; border-bottom: 2px solid #1a237e;">
+                            {% if school.logo %}
+                                <img src="{{ school.logo.url }}" style="width: 10mm; height: 10mm; object-fit: cover; border-radius: 1mm;">
+                            {% else %}
+                                <div style="width: 10mm; height: 10mm; background: #1a237e; border-radius: 1mm; display: flex; align-items: center; justify-content: center; color: white; font-size: 7px; font-weight: 700;">🏫</div>
+                            {% endif %}
+                            <div style="flex: 1;">
+                                <div style="font-size: 3mm; font-weight: 800; text-transform: uppercase; white-space: nowrap;">EVEREST ACADEMY</div>
+                                <div style="font-size: 2.2mm; margin-top: 0.5mm;">Kathmandu, Nepal</div>
+                                <div style="font-size: 1.8mm; margin-top: 0.3mm; opacity: 0.8;">Ph. +977-1-444444 | Website www.everestacademy.edu.np</div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; align-items: center; justify-content: center; gap: 3mm; padding: 2mm; position: relative;">
+                            <div style="position: relative;">
+                                {% if student.photo %}
+                                    <img src="{{ student.photo.url }}" style="width: 15mm; height: 18mm; object-fit: cover; border: 1.5mm solid white; border-radius: 1mm;">
+                                {% else %}
+                                    <div style="width: 15mm; height: 18mm; background: rgba(255,255,255,0.2); border: 1.5mm solid white; border-radius: 1mm; display: flex; align-items: center; justify-content: center; font-size: 8px;">PHOTO</div>
+                                {% endif %}
+                                
+                                <!-- School Logo Seal -->
+                                <div style="position: absolute; top: -1mm; right: -1mm; width: 6mm; height: 6mm; background: rgba(255,255,255,0.9); border-radius: 50%; border: 1px solid #1a237e; display: flex; align-items: center; justify-content: center; z-index: 10;">
+                                    {% if school.logo %}
+                                        <img src="{{ school.logo.url }}" style="width: 4mm; height: 4mm; object-fit: cover; border-radius: 50%;">
+                                    {% else %}
+                                        <div style="font-size: 3mm; color: #1a237e;">🏫</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <!-- Principal Signature -->
+                                <div style="position: absolute; bottom: -1mm; left: -1mm; background: rgba(255,255,255,0.9); color: #1a237e; padding: 0.5mm 1mm; border-radius: 1mm; font-size: 1.2mm; font-weight: 600; transform: rotate(-15deg); border: 0.5px solid #1a237e;">Principal</div>
+                            </div>
+                            
+                            <div style="background: white; color: #1a237e; padding: 1mm 2mm; border-radius: 2mm; font-size: 2.4mm; font-weight: 700;">STU{{ student.id|stringformat:"03d" }}</div>
+                        </div>
+                        
+                        <div style="flex: 1; padding: 0 2mm 2mm 2mm;">
+                            <div style="background: rgba(255,255,255,0.1); padding: 2mm; border-radius: 2mm;">
+                                <div style="text-align: center; font-size: 3mm; font-weight: 700; margin-bottom: 2mm; text-transform: uppercase; border-bottom: 1px solid rgba(255,255,255,0.3); padding-bottom: 1mm;">{{ student.name|default:"Student Name" }}</div>
+                                <div style="font-size: 2.4mm; line-height: 1.5;">
+                                    <div style="display: flex; justify-content: space-between; margin: 1mm 0; padding: 0.5mm 0; border-bottom: 1px dotted rgba(255,255,255,0.3);"><span>Class & Section:</span><span style="font-weight: 600;">{{ student.student_class }}-{{ student.section }}</span></div>
+                                    <div style="display: flex; justify-content: space-between; margin: 1mm 0; padding: 0.5mm 0; border-bottom: 1px dotted rgba(255,255,255,0.3);"><span>Roll Number:</span><span style="font-weight: 600;">{{ student.reg_number }}</span></div>
+                                    <div style="display: flex; justify-content: space-between; margin: 1mm 0; padding: 0.5mm 0; border-bottom: 1px dotted rgba(255,255,255,0.3);"><span>Father's Name:</span><span style="font-weight: 600;">{{ student.father_name }}</span></div>
+                                    <div style="display: flex; justify-content: space-between; margin: 1mm 0; padding: 0.5mm 0; border-bottom: 1px dotted rgba(255,255,255,0.3);"><span>Date of Birth:</span><span style="font-weight: 600;">{{ student.date_of_birth|default:"01/01/2010" }}</span></div>
+                                    <div style="display: flex; justify-content: space-between; margin: 1mm 0; padding: 0.5mm 0;"><span>Session:</span><span style="font-weight: 600;">{{ student.session|default:"2025-26" }}</span></div>
+                                </div>
+                                
+
+                            </div>
+                        </div>
+                        
+                        <div style="background: rgba(255,255,255,0.9); color: #1a237e; text-align: center; padding: 1mm; font-size: 2mm; font-weight: 800;">Valid Until: 2082/12/30</div>
+                    </div>
+                `;
+            } else if (layoutType === 'school2') {
+                card.innerHTML = `
+                    <div style="height: 100%; background: linear-gradient(45deg, #00bcd4 0%, #009688 100%); position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: -20mm; right: -20mm; width: 40mm; height: 40mm; background: rgba(255,255,255,0.1); border-radius: 50%;"></div>
+                        <div style="position: relative; height: 100%; display: flex; flex-direction: column; color: white;">
+                            <div style="background: rgba(0,0,0,0.2); padding: 2mm; display: flex; align-items: center; gap: 2mm;">
+                                {% if school.logo %}
+                                    <img src="{{ school.logo.url }}" style="width: 10mm; height: 10mm; object-fit: cover; border-radius: 1mm;">
+                                {% else %}
+                                    <div style="width: 10mm; height: 10mm; background: rgba(255,255,255,0.3); border-radius: 1mm; display: flex; align-items: center; justify-content: center; font-size: 7px; font-weight: 700;">🏫</div>
+                                {% endif %}
+                                <div style="flex: 1;">
+                                    <div style="font-size: 3.2mm; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5mm;">EVEREST ACADEMY</div>
+                                    <div style="font-size: 2mm; opacity: 0.9; margin-top: 0.5mm;">Kathmandu, Nepal</div>
+                                    <div style="font-size: 1.6mm; opacity: 0.8; margin-top: 0.3mm;">Ph. +977-1-444444 | www.everestacademy.edu.np</div>
+                                </div>
+                            </div>
+                            <div style="flex: 1; padding: 2mm; display: flex; flex-direction: column;">
+                                <div style="text-align: center; margin-bottom: 2mm; position: relative; display: inline-block;">
+                                    {% if student.photo %}
+                                        <img src="{{ student.photo.url }}" style="width: 18mm; height: 22mm; object-fit: cover; border-radius: 50%; border: 3mm solid rgba(255,255,255,0.3);">
+                                    {% else %}
+                                        <div style="width: 18mm; height: 22mm; background: rgba(255,255,255,0.2); border-radius: 50%; border: 3mm solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 8px;">PHOTO</div>
+                                    {% endif %}
+                                    <div style="position: absolute; bottom: 2mm; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.9); color: #00838f; padding: 0.5mm 1.5mm; border-radius: 1mm; font-size: 1.4mm; font-weight: 600;">Principal</div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.15); border-radius: 3mm; padding: 2mm; flex: 1;">
+                                    <div style="text-align: center; margin-bottom: 2mm; background: rgba(255,255,255,0.1); padding: 1.5mm; border-radius: 2mm;">
+                                        <div style="font-size: 3mm; font-weight: 700; text-transform: uppercase;">{{ student.name|default:"Student Name" }}</div>
+                                        <div style="font-size: 2.2mm; margin-top: 0.5mm; opacity: 0.9;">{{ student.student_class|default:"Class" }}-{{ student.section|default:"A" }} | Roll: {{ student.reg_number|default:"001" }}</div>
+                                    </div>
+                                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5mm; font-size: 2.4mm;">
+                                        <div style="background: rgba(255,255,255,0.1); padding: 1mm; border-radius: 1mm; text-align: center;"><div style="font-size: 2.2mm; opacity: 0.8;">FATHER'S NAME</div><div style="font-weight: 600; margin-top: 0.5mm; font-size: 2.4mm;">{{ student.father_name|default:"Father Name" }}</div></div>
+                                        <div style="background: rgba(255,255,255,0.1); padding: 1mm; border-radius: 1mm; text-align: center;"><div style="font-size: 2.2mm; opacity: 0.8;">DATE OF BIRTH</div><div style="font-weight: 600; margin-top: 0.5mm; font-size: 2.4mm;">{{ student.date_of_birth|default:"01/01/2010" }}</div></div>
+                                        <div style="background: rgba(255,255,255,0.1); padding: 1mm; border-radius: 1mm; text-align: center;"><div style="font-size: 2.2mm; opacity: 0.8;">STUDENT ID</div><div style="font-weight: 600; margin-top: 0.5mm; font-size: 2.4mm;">STU{{ student.id|stringformat:"03d"|default:"001" }}</div></div>
+                                        <div style="background: rgba(255,255,255,0.1); padding: 1mm; border-radius: 1mm; text-align: center;"><div style="font-size: 2.2mm; opacity: 0.8;">CONTACT</div><div style="font-weight: 600; margin-top: 0.5mm; font-size: 2.4mm;">{{ student.mobile }}</div></div>
+                                    </div>
+                                </div>
+                                <div style="text-align: center; margin-top: 2mm; font-size: 2.2mm; font-weight: 800;">Valid Until 2082/12/30</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (layoutType === 'school3') {
+                card.innerHTML = `
+                    <div style="height: 100%; background: linear-gradient(135deg, #37474f 0%, #263238 100%); color: white;">
+
+                        <div style="padding: 4mm 2mm 2mm 2mm; height: calc(100% - 6mm);">
+                            <div style="display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm; padding-bottom: 1mm; border-bottom: 1px solid rgba(255,255,255,0.2);">
+                                {% if school.logo %}
+                                    <img src="{{ school.logo.url }}" style="width: 10mm; height: 10mm; object-fit: cover; border-radius: 1mm;">
+                                {% else %}
+                                    <div style="width: 10mm; height: 10mm; background: #ff5722; border-radius: 1mm; display: flex; align-items: center; justify-content: center; font-size: 8px; font-weight: 700;">🏫</div>
+                                {% endif %}
+                                <div style="flex: 1;">
+                                    <div style="font-size: 3.5mm; font-weight: 700; text-transform: uppercase;">{{ school.school_name|default:"EVEREST ACADEMY" }}</div>
+                                    <div style="font-size: 2.2mm; opacity: 0.8;">{{ school.address|default:"Kathmandu, Nepal" }}</div>
+                                    <div style="font-size: 2mm; opacity: 0.8; margin-top: 0.5mm;">Ph: {{ school.phone|default:"+977-1-444444" }} | Email: {{ school.email|default:"info@everestacademy.edu.np" }}</div>
+                                </div>
+                            </div>
+                            <div style="display: flex; flex-direction: column; height: calc(100% - 18mm);">
+                                <div style="display: flex; justify-content: center; margin-bottom: auto;">
+                                    <div style="width: 22mm; position: relative;">
+                                        <!-- School Seal on top -->
+                                        <div style="position: absolute; top: -3mm; left: 50%; transform: translateX(-50%); width: 8mm; height: 8mm; background: rgba(255,255,255,0.9); border-radius: 50%; border: 1px solid #ff5722; display: flex; align-items: center; justify-content: center; z-index: 10;">
+                                            {% if school.logo %}
+                                                <img src="{{ school.logo.url }}" style="width: 6mm; height: 6mm; object-fit: cover; border-radius: 50%;">
+                                            {% else %}
+                                                <div style="font-size: 3mm; color: #ff5722;">🏫</div>
+                                            {% endif %}
+                                        </div>
+                                        {% if student.photo %}
+                                            <img src="{{ student.photo.url }}" style="width: 100%; height: 18mm; object-fit: cover; border: 1mm solid #ff5722; border-radius: 1mm;">
+                                        {% else %}
+                                            <div style="width: 100%; height: 18mm; background: rgba(255,255,255,0.1); border: 1mm solid #ff5722; border-radius: 1mm; display: flex; align-items: center; justify-content: center; font-size: 10px;">PHOTO</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                <div style="background: rgba(255,255,255,0.05); padding: 2.5mm; border-radius: 2mm; border-left: 3px solid #ff5722; text-align: center; margin: 0 2mm 2mm 2mm;">
+                                    <div style="font-size: 2.8mm; font-weight: 700; text-transform: uppercase; margin-bottom: 1mm; color: #ff5722; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: center;">{{ student.name }}</div>
+                                    <div style="font-size: 2.5mm; opacity: 0.9; text-align: center; margin-bottom: 2mm;">Class {{ student.student_class }} - Section {{ student.section }}</div>
+                                    <div style="font-size: 2.2mm; line-height: 1.4; text-align: left;">
+                                        <div style="margin-bottom: 0.5mm;"><span style="color: #ff5722; font-weight: 600;">Roll:</span> {{ student.reg_number }}</div>
+                                        <div style="margin-bottom: 0.5mm;"><span style="color: #ff5722; font-weight: 600;">Father:</span> {{ student.father_name }}</div>
+                                        <div style="margin-bottom: 0.5mm;"><span style="color: #ff5722; font-weight: 600;">DOB:</span> {{ student.date_of_birth|default:"01/01/2010" }}</div>
+                                        <div style="margin-bottom: 0.5mm;"><span style="color: #ff5722; font-weight: 600;">Session:</span> {{ student.session|default:"2024-25" }}</div>
+                                        <div style="margin-bottom: 0.5mm;"><span style="color: #ff5722; font-weight: 600;">Mobile:</span> {{ student.mobile }}</div>
+                                        <div><span style="color: #ff5722; font-weight: 600;">Valid Upto:</span> 2082/12/30</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else if (layoutType === 's4') {
+                card.innerHTML = `
+                    <div style="height: 100%; background: linear-gradient(60deg, #667eea 0%, #764ba2 100%); position: relative; color: white;">
+                        <div style="position: absolute; top: 5mm; left: 50%; transform: translateX(-50%); width: 15mm; height: 15mm; background: rgba(255,255,255,0.1); clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);"></div>
+                        <div style="text-align: center; padding: 2mm; margin-top: 8mm;">
+                            <div style="font-size: 2.5mm; font-weight: 700;">{{ school.school_name|default:"EVEREST ACADEMY" }}</div>
+                        </div>
+                        <div style="display: flex; padding: 2mm; gap: 2mm;">
+                            {% if student.photo %}
+                                <img src="{{ student.photo.url }}" style="width: 20mm; height: 25mm; object-fit: cover; clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);">
+                            {% else %}
+                                <div style="width: 20mm; height: 25mm; background: rgba(255,255,255,0.2); clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); display: flex; align-items: center; justify-content: center; font-size: 8px;">PHOTO</div>
+                            {% endif %}
+                            <div style="flex: 1; padding-left: 2mm;">
+                                <div style="font-size: 2.5mm; font-weight: 700; margin-bottom: 2mm;">{{ student.name }}</div>
+                                <div style="font-size: 1.5mm; line-height: 1.6;">
+                                    <div>Class: {{ student.student_class }}-{{ student.section }}</div>
+                                    <div>Roll: {{ student.reg_number }}</div>
+                                    <div>Father: {{ student.father_name }}</div>
+                                    <div>DOB: {{ student.date_of_birth|default:"01/01/2010" }}</div>
+                                    <div>ID: STU{{ student.id|stringformat:"03d" }}</div>
+                                </div>
+                            </div>
+                        </div>
+                        <div style="position: absolute; bottom: 2mm; left: 2mm; right: 2mm; text-align: center; font-size: 1.2mm;">Valid: 2082/12/30</div>
+                    </div>
+                `;
+            } else if (layoutType === 's5') {
+                card.innerHTML = `
+                    <div style="height: 100%; background: linear-gradient(45deg, #ff6b6b 0%, #4ecdc4 100%); position: relative; overflow: hidden;">
+                        <div style="position: absolute; top: 0; left: 0; width: 100%; height: 50%; background: rgba(0,0,0,0.2); transform: skewY(-5deg); transform-origin: top left;"></div>
+                        <div style="position: relative; z-index: 2; height: 100%; color: white; padding: 2mm;">
+                            <div style="text-align: center; margin-bottom: 2mm;">
+                                <div style="font-size: 2.2mm; font-weight: 700;">{{ school.school_name|default:"EVEREST ACADEMY" }}</div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm;">
+                                {% if student.photo %}
+                                    <img src="{{ student.photo.url }}" style="width: 18mm; height: 22mm; object-fit: cover; border-radius: 2mm; transform: rotate(-5deg);">
+                                {% else %}
+                                    <div style="width: 18mm; height: 22mm; background: rgba(255,255,255,0.2); border-radius: 2mm; transform: rotate(-5deg); display: flex; align-items: center; justify-content: center; font-size: 8px;">PHOTO</div>
+                                {% endif %}
+                                <div style="flex: 1;">
+                                    <div style="font-size: 2.8mm; font-weight: 700; margin-bottom: 1mm; transform: rotate(2deg);">{{ student.name }}</div>
+                                    <div style="background: rgba(255,255,255,0.2); padding: 1mm; border-radius: 1mm; transform: rotate(-1deg);">
+                                        <div style="font-size: 1.5mm;">{{ student.student_class }}-{{ student.section }} | {{ student.reg_number }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); padding: 1.5mm; border-radius: 2mm; transform: rotate(1deg); font-size: 1.4mm;">
+                                <div>Father: {{ student.father_name }}</div>
+                                <div>DOB: {{ student.date_of_birth|default:"01/01/2010" }}</div>
+                                <div>ID: STU{{ student.id|stringformat:"03d" }} | Session: {{ student.session|default:"2025-26" }}</div>
+                            </div>
+                            <div style="position: absolute; bottom: 2mm; right: 2mm; font-size: 1.2mm; transform: rotate(-2deg);">Valid: 2082/12/30</div>
+                        </div>
+                    </div>
+                `;
+            } else if (layoutType === 's6') {
+                card.innerHTML = `
+                    <div style="height: 100%; background: radial-gradient(circle at 30% 20%, #ffd89b 0%, #19547b 100%); position: relative; color: white;">
+                        <div style="position: absolute; top: -10mm; left: 50%; transform: translateX(-50%); width: 30mm; height: 30mm; background: rgba(255,255,255,0.1); border-radius: 50%; border: 3mm solid rgba(255,255,255,0.2);"></div>
+                        <div style="text-align: center; padding-top: 8mm;">
+                            <div style="background: rgba(255,255,255,0.9); color: #19547b; padding: 1mm 3mm; border-radius: 10mm; display: inline-block; font-size: 2mm; font-weight: 700;">{{ school.school_name|default:"EVEREST ACADEMY" }}</div>
+                        </div>
+                        <div style="text-align: center; margin: 3mm 0;">
+                            {% if student.photo %}
+                                <img src="{{ student.photo.url }}" style="width: 20mm; height: 20mm; object-fit: cover; border-radius: 50%; border: 3mm solid rgba(255,255,255,0.3);">
+                            {% else %}
+                                <div style="width: 20mm; height: 20mm; background: rgba(255,255,255,0.2); border-radius: 50%; border: 3mm solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 8px; margin: 0 auto;">PHOTO</div>
+                            {% endif %}
+                        </div>
+                        <div style="text-align: center; margin-bottom: 2mm;">
+                            <div style="font-size: 2.5mm; font-weight: 700; margin-bottom: 1mm;">{{ student.name }}</div>
+                            <div style="background: rgba(255,255,255,0.2); padding: 0.5mm 2mm; border-radius: 5mm; display: inline-block; font-size: 1.8mm;">STU{{ student.id|stringformat:"03d" }}</div>
+                        </div>
+                        <div style="background: rgba(255,255,255,0.1); margin: 2mm; padding: 2mm; border-radius: 3mm; font-size: 1.4mm; text-align: center;">
+                            <div>Class {{ student.student_class }}-{{ student.section }} | Roll {{ student.reg_number }}</div>
+                            <div>Father: {{ student.father_name }}</div>
+                            <div>DOB: {{ student.date_of_birth|default:"01/01/2010" }} | {{ student.session|default:"2025-26" }}</div>
+                        </div>
+                        <div style="position: absolute; bottom: 1mm; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.8); color: #19547b; padding: 0.5mm 2mm; border-radius: 5mm; font-size: 1.2mm; font-weight: 600;">Valid: 2082/12/30</div>
+                    </div>
+                `;
+            } else if (layoutType === 's7') {
+                card.innerHTML = `
+                    <div style="height: 100%; background: linear-gradient(180deg, #2c3e50 0%, #34495e 100%); color: white; border-radius: 3mm; overflow: hidden;">
+                        <div style="background: rgba(255,255,255,0.1); padding: 1.5mm; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.2);">
+                            <div style="font-size: 2.2mm; font-weight: 700;">{{ school.school_name|default:"EVEREST ACADEMY" }}</div>
+                            <div style="font-size: 1.2mm; opacity: 0.8;">STUDENT ID CARD</div>
+                        </div>
+                        <div style="padding: 2mm;">
+                            <div style="display: flex; gap: 2mm; margin-bottom: 2mm; background: rgba(255,255,255,0.05); padding: 1.5mm; border-radius: 2mm;">
+                                {% if student.photo %}
+                                    <img src="{{ student.photo.url }}" style="width: 15mm; height: 18mm; object-fit: cover; border-radius: 2mm;">
+                                {% else %}
+                                    <div style="width: 15mm; height: 18mm; background: rgba(255,255,255,0.1); border-radius: 2mm; display: flex; align-items: center; justify-content: center; font-size: 8px;">PHOTO</div>
+                                {% endif %}
+                                <div style="flex: 1;">
+                                    <div style="font-size: 2.2mm; font-weight: 700; margin-bottom: 1mm;">{{ student.name }}</div>
+                                    <div style="font-size: 1.4mm; opacity: 0.9;">{{ student.student_class }}-{{ student.section }}</div>
+                                    <div style="background: #3498db; color: white; padding: 0.5mm 1mm; border-radius: 1mm; font-size: 1.3mm; margin-top: 1mm; display: inline-block;">STU{{ student.id|stringformat:"03d" }}</div>
+                                </div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); padding: 1.5mm; border-radius: 2mm; font-size: 1.3mm; line-height: 1.5;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5mm;"><span>Roll:</span><span>{{ student.reg_number }}</span></div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5mm;"><span>Father:</span><span>{{ student.father_name }}</span></div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 0.5mm;"><span>DOB:</span><span>{{ student.date_of_birth|default:"01/01/2010" }}</span></div>
+                                <div style="display: flex; justify-content: space-between;"><span>Session:</span><span>{{ student.session|default:"2025-26" }}</span></div>
+                            </div>
+                        </div>
+                        <div style="position: absolute; bottom: 1mm; left: 2mm; right: 2mm; text-align: center; font-size: 1.1mm; opacity: 0.7;">Valid Until: 2082/12/30</div>
+                    </div>
+                `;
+            } else if (layoutType === 's8') {
+                card.innerHTML = `
+                    <div style="height: 100%; background: linear-gradient(90deg, #ff0080, #ff8c00, #40e0d0, #ee82ee, #98fb98); position: relative; color: white;">
+                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.3);"></div>
+                        <div style="position: relative; z-index: 2; height: 100%; padding: 2mm;">
+                            <div style="text-align: center; margin-bottom: 2mm;">
+                                <div style="background: rgba(255,255,255,0.9); color: #333; padding: 1mm 2mm; border-radius: 2mm; font-size: 2.2mm; font-weight: 700; display: inline-block;">{{ school.school_name|default:"EVEREST ACADEMY" }}</div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.1); border-radius: 3mm; padding: 2mm; backdrop-filter: blur(10px);">
+                                <div style="display: flex; gap: 2mm; margin-bottom: 2mm;">
+                                    {% if student.photo %}
+                                        <img src="{{ student.photo.url }}" style="width: 18mm; height: 22mm; object-fit: cover; border-radius: 2mm; border: 2mm solid rgba(255,255,255,0.5);">
+                                    {% else %}
+                                        <div style="width: 18mm; height: 22mm; background: rgba(255,255,255,0.2); border-radius: 2mm; border: 2mm solid rgba(255,255,255,0.5); display: flex; align-items: center; justify-content: center; font-size: 8px;">PHOTO</div>
+                                    {% endif %}
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 2.5mm; font-weight: 700; margin-bottom: 1mm; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">{{ student.name }}</div>
+                                        <div style="background: rgba(255,255,255,0.2); padding: 1mm; border-radius: 1mm; font-size: 1.5mm;">{{ student.student_class }}-{{ student.section }}</div>
+                                    </div>
+                                </div>
+                                <div style="font-size: 1.4mm; line-height: 1.4;">
+                                    <div>Roll: {{ student.reg_number }} | ID: STU{{ student.id|stringformat:"03d" }}</div>
+                                    <div>Father: {{ student.father_name }}</div>
+                                    <div>DOB: {{ student.date_of_birth|default:"01/01/2010" }} | {{ student.session|default:"2025-26" }}</div>
+                                </div>
+                            </div>
+                            <div style="position: absolute; bottom: 2mm; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.8); color: #333; padding: 0.5mm 2mm; border-radius: 2mm; font-size: 1.2mm; font-weight: 600;">Valid: 2082/12/30</div>
+                        </div>
+                    </div>
+                `;
+            } else if (layoutType === 's9') {
+                card.innerHTML = `
+                    <div style="height: 100%; background: linear-gradient(135deg, #ff4757 0%, #ff3838 50%, #ff6b6b 100%); position: relative; color: white; overflow: hidden;">
+                        <div style="position: absolute; top: -20mm; right: -20mm; width: 40mm; height: 40mm; background: radial-gradient(circle, rgba(255,255,255,0.1), transparent); border-radius: 50%;"></div>
+                        <div style="position: absolute; bottom: -15mm; left: -15mm; width: 30mm; height: 30mm; background: radial-gradient(circle, rgba(255,255,255,0.05), transparent); border-radius: 50%;"></div>
+                        <div style="position: relative; z-index: 2; height: 100%; padding: 2mm;">
+                            <div style="text-align: center; margin-bottom: 2mm;">
+                                <div style="font-size: 2.5mm; font-weight: 700; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">{{ school.school_name|default:"EVEREST ACADEMY" }}</div>
+                                <div style="font-size: 1.3mm; opacity: 0.9;">STUDENT IDENTITY</div>
+                            </div>
+                            <div style="text-align: center; margin-bottom: 2mm;">
+                                {% if student.photo %}
+                                    <img src="{{ student.photo.url }}" style="width: 20mm; height: 25mm; object-fit: cover; border-radius: 3mm; border: 2mm solid rgba(255,255,255,0.3); box-shadow: 0 4mm 8mm rgba(0,0,0,0.3);">
+                                {% else %}
+                                    <div style="width: 20mm; height: 25mm; background: rgba(255,255,255,0.2); border-radius: 3mm; border: 2mm solid rgba(255,255,255,0.3); display: flex; align-items: center; justify-content: center; font-size: 10px; margin: 0 auto;">PHOTO</div>
+                                {% endif %}
+                            </div>
+                            <div style="text-align: center; margin-bottom: 2mm;">
+                                <div style="font-size: 2.8mm; font-weight: 700; margin-bottom: 1mm; text-shadow: 1px 1px 2px rgba(0,0,0,0.3);">{{ student.name }}</div>
+                                <div style="background: rgba(255,255,255,0.2); padding: 0.5mm 2mm; border-radius: 2mm; display: inline-block; font-size: 1.8mm; font-weight: 600;">STU{{ student.id|stringformat:"03d" }}</div>
+                            </div>
+                            <div style="background: rgba(0,0,0,0.2); padding: 2mm; border-radius: 2mm; font-size: 1.4mm; line-height: 1.5;">
+                                <div style="text-align: center; margin-bottom: 1mm;">Class {{ student.student_class }}-{{ student.section }} | Roll {{ student.reg_number }}</div>
+                                <div>Father: {{ student.father_name }}</div>
+                                <div>DOB: {{ student.date_of_birth|default:"01/01/2010" }}</div>
+                                <div>Session: {{ student.session|default:"2025-26" }}</div>
+                            </div>
+                            <div style="position: absolute; bottom: 1mm; left: 50%; transform: translateX(-50%); font-size: 1.2mm; opacity: 0.8;">Valid: 2082/12/30</div>
+                        </div>
+                    </div>
+                `;
+            } else if (layoutType === 's10') {
+                card.innerHTML = `
+                    <div style="height: 100%; background: linear-gradient(45deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #f5576c 75%, #4facfe 100%); position: relative; color: white; overflow: hidden;">
+                        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.1); backdrop-filter: blur(20px);"></div>
+                        <div style="position: relative; z-index: 2; height: 100%; padding: 2mm;">
+                            <div style="background: rgba(255,255,255,0.2); padding: 1.5mm; border-radius: 2mm; text-align: center; margin-bottom: 2mm; backdrop-filter: blur(10px);">
+                                <div style="font-size: 2.3mm; font-weight: 700;">{{ school.school_name|default:"EVEREST ACADEMY" }}</div>
+                                <div style="font-size: 1.2mm; opacity: 0.9;">{{ school.address|default:"Kathmandu, Nepal" }}</div>
+                            </div>
+                            <div style="display: flex; gap: 2mm; margin-bottom: 2mm;">
+                                {% if student.photo %}
+                                    <img src="{{ student.photo.url }}" style="width: 18mm; height: 22mm; object-fit: cover; border-radius: 2mm; border: 1mm solid rgba(255,255,255,0.4); box-shadow: 0 2mm 8mm rgba(0,0,0,0.2);">
+                                {% else %}
+                                    <div style="width: 18mm; height: 22mm; background: rgba(255,255,255,0.2); border-radius: 2mm; border: 1mm solid rgba(255,255,255,0.4); display: flex; align-items: center; justify-content: center; font-size: 8px;">PHOTO</div>
+                                {% endif %}
+                                <div style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+                                    <div style="background: rgba(255,255,255,0.2); padding: 1.5mm; border-radius: 2mm; backdrop-filter: blur(5px);">
+                                        <div style="font-size: 2.5mm; font-weight: 700; margin-bottom: 1mm;">{{ student.name }}</div>
+                                        <div style="font-size: 1.6mm; opacity: 0.9;">{{ student.student_class }}-{{ student.section }}</div>
+                                        <div style="background: rgba(255,255,255,0.3); padding: 0.5mm 1mm; border-radius: 1mm; font-size: 1.4mm; margin-top: 1mm; display: inline-block;">STU{{ student.id|stringformat:"03d" }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.15); padding: 1.5mm; border-radius: 2mm; backdrop-filter: blur(5px); font-size: 1.3mm; line-height: 1.4;">
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1mm;">
+                                    <div>Roll: {{ student.reg_number }}</div>
+                                    <div>Session: {{ student.session|default:"2025-26" }}</div>
+                                    <div style="grid-column: 1 / -1;">Father: {{ student.father_name }}</div>
+                                    <div style="grid-column: 1 / -1;">DOB: {{ student.date_of_birth|default:"01/01/2010" }}</div>
+                                </div>
+                            </div>
+                            <div style="position: absolute; bottom: 1mm; left: 50%; transform: translateX(-50%); background: rgba(255,255,255,0.3); padding: 0.5mm 2mm; border-radius: 2mm; font-size: 1.2mm; backdrop-filter: blur(5px);">Valid: 2082/12/30</div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function printID() {
+            const printWindow = window.open('', '_blank');
+            const cardHTML = document.getElementById('idCard').outerHTML;
+            const styles = Array.from(document.styleSheets)
+                .map(styleSheet => {
+                    try {
+                        return Array.from(styleSheet.cssRules)
+                            .map(rule => rule.cssText)
+                            .join('');
+                    } catch (e) {
+                        return '';
+                    }
+                })
+                .join('');
+            
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Print ID Card - {{ student.name }}</title>
+                        <style>
+                            @page { 
+                                size: 55mm 87mm; 
+                                margin: 2mm; 
+                            }
+                            body { 
+                                margin: 0; 
+                                padding: 0; 
+                                background: white;
+                                font-family: Arial, sans-serif;
+                                display: flex;
+                                justify-content: center;
+                                align-items: center;
+                            }
+                            .id-card { 
+                                width: 55mm;
+                                height: 87mm;
+                                box-shadow: none;
+                                border: 1px solid #ddd;
+                                page-break-inside: avoid;
+                            }
+                            ${styles}
+                        </style>
+                    </head>
+                    <body>
+                        ${cardHTML}
+                        <script>
+                            window.onload = function() {
+                                setTimeout(function() {
+                                    window.print();
+                                    // Show instructions for PDF saving
+                                    setTimeout(function() {
+                                        if (!window.matchMedia('print').matches) {
+                                            alert('To save as PDF:\n1. In the print dialog, select "Save as PDF" or "Microsoft Print to PDF"\n2. Choose your desired location\n3. Click Save');
+                                        }
+                                    }, 1000);
+                                }, 500);
+                            };
+                        <\/script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+        
+        function downloadPDF() {
+            const printWindow = window.open('', '_blank', 'width=800,height=600');
+            const cardHTML = document.getElementById('idCard').outerHTML;
+            const styles = Array.from(document.styleSheets)
+                .map(styleSheet => {
+                    try {
+                        return Array.from(styleSheet.cssRules)
+                            .map(rule => rule.cssText)
+                            .join('');
+                    } catch (e) {
+                        return '';
+                    }
+                })
+                .join('');
+            
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>ID_Card_STU{{ student.id|stringformat:"03d" }}_{{ student.name|slugify }}</title>
+                        <style>
+                            @page { 
+                                size: 55mm 87mm; 
+                                margin: 0; 
+                            }
+                            @media print {
+                                * { margin: 0 !important; padding: 0 !important; }
+                                html, body { 
+                                    width: 55mm !important;
+                                    height: 87mm !important;
+                                    margin: 0 !important;
+                                    padding: 0 !important;
+                                    overflow: hidden !important;
+                                }
+                                .header, .actions, .no-print, .pdf-instructions { display: none !important; }
+                                .id-card { 
+                                    width: 55mm !important;
+                                    height: 87mm !important;
+                                    margin: 0 !important;
+                                    padding: 0 !important;
+                                    box-shadow: none !important;
+                                    border: none !important;
+                                }
+                            }
+                            body { 
+                                margin: 0; 
+                                padding: 20px; 
+                                background: #f5f5f5; 
+                                font-family: Arial, sans-serif;
+                                display: flex;
+                                flex-direction: column;
+                                align-items: center;
+                            }
+                            .header, .actions { display: none !important; }
+                            .pdf-instructions {
+                                background: #e3f2fd;
+                                border: 1px solid #2196f3;
+                                border-radius: 8px;
+                                padding: 15px;
+                                margin-bottom: 20px;
+                                max-width: 400px;
+                                text-align: center;
+                            }
+                            .pdf-instructions h3 {
+                                color: #1976d2;
+                                margin: 0 0 10px 0;
+                            }
+                            .pdf-instructions p {
+                                margin: 5px 0;
+                                font-size: 14px;
+                                color: #333;
+                            }
+                            .pdf-btn {
+                                background: #4caf50;
+                                color: white;
+                                border: none;
+                                padding: 12px 24px;
+                                border-radius: 6px;
+                                cursor: pointer;
+                                font-size: 16px;
+                                margin: 10px 5px;
+                                transition: background 0.3s;
+                            }
+                            .pdf-btn:hover {
+                                background: #45a049;
+                            }
+                            .pdf-btn.secondary {
+                                background: #2196f3;
+                            }
+                            .pdf-btn.secondary:hover {
+                                background: #1976d2;
+                            }
+                            ${styles}
+                        </style>
+                    </head>
+                    <body>
+                        <div class="pdf-instructions no-print">
+                            <h3>📄 Generate PDF</h3>
+                            <p><strong>{{ student.name }}</strong> - ID Card</p>
+                            <p>Click the button below to open print dialog, then select "Save as PDF"</p>
+                            <button class="pdf-btn" onclick="window.print()">🖨️ Print / Save as PDF</button>
+                            <button class="pdf-btn secondary" onclick="window.close()">❌ Close</button>
+                        </div>
+                        ${cardHTML}
+                        <script>
+                            window.focus();
+                            document.addEventListener('keydown', function(e) {
+                                if (e.ctrlKey && e.key === 'p') {
+                                    e.preventDefault();
+                                    window.print();
+                                }
+                            });
+                        <\/script>
+                    </body>
+                </html>
+            `);
+            printWindow.document.close();
+        }
+        
+        // Set default design on page load
+        window.onload = function() {
+            // Auto-select design from URL parameter
+            const urlParams = new URLSearchParams(window.location.search);
+            const designParam = urlParams.get('design');
+            if (designParam) {
+                document.getElementById('designSelect').value = designParam;
+            }
+            
+            changeDesign();
+            
+            // Show loader if bulk mode
+            {% if is_bulk %}
+                showBulkLoader();
+            {% endif %}
+        };
+        
+        {% if is_bulk %}
+        let currentStudentIndex = 0;
+        const students = [
+            {% for student_item in students %}
+            {
+                id: {{ student_item.id }},
+                name: '{{ student_item.name }}',
+                class: '{{ student_item.student_class }}',
+                section: '{{ student_item.section }}',
+                roll: '{{ student_item.reg_number }}',
+                father: '{{ student_item.father_name }}',
+                mobile: '{{ student_item.mobile }}',
+                photo: '{% if student_item.photo %}{{ student_item.photo.url }}{% else %}/static/img/students/images (1).jpg{% endif %}'
+            }{% if not forloop.last %},{% endif %}
+            {% endfor %}
+        ];
+        
+        function showBulkLoader() {
+            const loader = document.createElement('div');
+            loader.id = 'bulkLoader';
+            loader.innerHTML = `
+                <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; color: white;">
+                    <div style="text-align: center;">
+                        <div style="font-size: 24px; margin-bottom: 20px;">⏳ Loading {{ students|length }} Student Cards...</div>
+                        <div style="font-size: 16px;">Please wait while we prepare the ID cards</div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(loader);
+            
+            setTimeout(() => {
+                document.body.removeChild(loader);
+            }, 2000);
+        }
+        
+        function switchStudent() {
+            currentStudentIndex = (currentStudentIndex + 1) % students.length;
+            location.reload();
+        }
+        
+        let currentPage = 1;
+        const totalPages = Math.ceil(students.length / 10);
+        
+        function showPage(pageNum) {
+            const pages = document.querySelectorAll('.page');
+            pages.forEach((page, index) => {
+                page.style.display = (index + 1 === pageNum) ? 'grid' : 'none';
+            });
+            
+            currentPage = pageNum;
+            document.getElementById('pageInfo').textContent = `Page ${pageNum} of ${totalPages}`;
+            
+            // Update pagination buttons
+            const prevBtn = document.querySelector('.pagination button:first-child');
+            const nextBtn = document.querySelector('.pagination button:last-child');
+            prevBtn.disabled = pageNum === 1;
+            nextBtn.disabled = pageNum === totalPages;
+        }
+        
+        function prevPage() {
+            if (currentPage > 1) showPage(currentPage - 1);
+        }
+        
+        function nextPage() {
+            if (currentPage < totalPages) showPage(currentPage + 1);
+        }
+        
+        function printAllCards() {
+            // Show all pages for printing
+            const pages = document.querySelectorAll('.page');
+            pages.forEach(page => page.style.display = 'grid');
+            window.print();
+            // Return to current page view
+            setTimeout(() => showPage(currentPage), 100);
+        }
+        
+        // Initialize pagination
+        window.addEventListener('load', () => {
+            if (totalPages > 0) showPage(1);
+        });
+        {% endif %}
+    </script>
+</body>
+</html>
