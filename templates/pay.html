@@ -112,7 +112,7 @@
                     </div>
                     <div class="field">
                         <label>Payment Amount</label>
-                        <input type="number" id="paymentAmount" value="0" onchange="updateBalance()">
+                        <input type="number" id="paymentAmount" value="0" onchange="updateBalance()" oninput="updateBalance()">
                     </div>
                     <div class="field">
                         <label>Net Fee</label>
@@ -143,8 +143,8 @@
                 <label><input type="checkbox"> SMS</label>
                 <label><input type="checkbox"> WhatsApp</label>
             </div>
-            <button class="submit" onclick="submitPayment()">Submit Payment</button>
-            <button class="print-bill" onclick="printBill()">Print Bill</button>
+            <button class="submit" onclick="submitPayment()" disabled>Submit Payment</button>
+            <button class="print-bill" onclick="printBill()" disabled>Print Bill</button>
         </div>
     </div>
 </div>
@@ -657,8 +657,14 @@ textarea {
     margin-right: 0.5rem;
 }
 
-.submit:hover {
+.submit:hover:not(:disabled) {
     background: #1d4ed8;
+}
+
+.submit:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 .print-bill {
@@ -672,8 +678,14 @@ textarea {
     transition: background 0.2s;
 }
 
-.print-bill:hover {
+.print-bill:hover:not(:disabled) {
     background: #047857;
+}
+
+.print-bill:disabled {
+    background: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.5;
 }
 
 @media (max-width: 640px) {
@@ -1003,9 +1015,36 @@ function updateBalance() {
     
     document.getElementById('receivedAmount').textContent = 'Rs.' + paymentAmount;
     document.getElementById('balanceAmount').textContent = 'Rs.' + totalBalance;
+    
+    // Enable/disable buttons based on payment amount
+    const submitBtn = document.querySelector('.submit');
+    const printBtn = document.querySelector('.print-bill');
+    
+    if (paymentAmount < 100) {
+        submitBtn.disabled = true;
+        submitBtn.style.opacity = '0.5';
+        submitBtn.style.cursor = 'not-allowed';
+        printBtn.disabled = true;
+        printBtn.style.opacity = '0.5';
+        printBtn.style.cursor = 'not-allowed';
+    } else {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = '1';
+        submitBtn.style.cursor = 'pointer';
+        printBtn.disabled = false;
+        printBtn.style.opacity = '1';
+        printBtn.style.cursor = 'pointer';
+    }
 }
 
 function submitPayment() {
+    const paymentAmount = parseFloat(document.getElementById('paymentAmount').value) || 0;
+    
+    if (paymentAmount < 100) {
+        alert('Payment amount must be at least Rs. 100');
+        return;
+    }
+    
     const submitBtn = document.querySelector('.submit');
     submitBtn.disabled = true;
     submitBtn.textContent = 'Processing...';
@@ -1120,6 +1159,13 @@ function submitPayment() {
 }
 
 function printBill() {
+    const paymentAmount = parseFloat(document.getElementById('paymentAmount').value) || 0;
+    
+    if (paymentAmount < 100) {
+        alert('Payment amount must be at least Rs. 100');
+        return;
+    }
+    
     if (!window.lastPaymentData) {
         alert('Please submit payment first');
         return;

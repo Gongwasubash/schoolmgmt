@@ -96,6 +96,7 @@ urlpatterns = [
     path('api/student-expenses/<int:student_id>/', views.get_student_expenses_api, name='get_student_expenses_api'),
     path('api/class-expenses/<str:class_name>/', views.get_class_expenses_api, name='get_class_expenses_api'),
     path('api/todays-all-expenses/', views.get_todays_all_expenses_api, name='get_todays_all_expenses_api'),
+    path('collection-details/<str:period>/', views.collection_details, name='collection_details'),
     path('school-settings/', views.school_settings, name='school_settings'),
     path('school-settings-test/', views.school_settings_test, name='school_settings_test'),
     path('admin/', admin.site.urls),

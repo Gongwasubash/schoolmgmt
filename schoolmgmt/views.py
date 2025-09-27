@@ -59,6 +59,20 @@ def home(request):
     today = date.today()
     todays_birthdays = Student.objects.filter(dob__month=today.month, dob__day=today.day).count()
     
+    # Get today's collection
+    todays_collection = FeePayment.objects.filter(payment_date=today).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    # Get weekly collection (last 7 days)
+    from datetime import timedelta
+    week_start = today - timedelta(days=6)
+    weekly_collection = FeePayment.objects.filter(payment_date__range=[week_start, today]).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    # Get monthly collection (current month)
+    monthly_collection = FeePayment.objects.filter(payment_date__year=today.year, payment_date__month=today.month).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    # Get yearly collection (current year)
+    yearly_collection = FeePayment.objects.filter(payment_date__year=today.year).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
     # Get class-wise data
     class_data = Student.objects.values('student_class').annotate(count=Count('student_class')).order_by('student_class')
     
@@ -73,6 +87,10 @@ def home(request):
         'boys_count': boys_count,
         'girls_count': girls_count,
         'todays_birthdays': todays_birthdays,
+        'todays_collection': todays_collection,
+        'weekly_collection': weekly_collection,
+        'monthly_collection': monthly_collection,
+        'yearly_collection': yearly_collection,
         'class_data': class_data,
         'religion_data': religion_data,
         'nepali_info': nepali_info,
@@ -3511,6 +3529,81 @@ def school_settings_test(request):
         return render(request, 'school_settings_test.html', {'school': school})
     except Exception as e:
         return HttpResponse(f'Error: {str(e)}')
+
+
+
+def collection_details(request, period='today'):
+    """Collection details page showing payments for specified period"""
+    from datetime import timedelta
+    
+    today = date.today()
+    
+    # Define date ranges based on period
+    if period == 'today':
+        start_date = today
+        end_date = today
+        period_title = "Today's"
+        date_range = today.strftime('%B %d, %Y')
+    elif period == 'weekly':
+        start_date = today - timedelta(days=6)
+        end_date = today
+        period_title = "Weekly"
+        date_range = f"{start_date.strftime('%b %d')} - {end_date.strftime('%b %d, %Y')}"
+    elif period == 'monthly':
+        start_date = today.replace(day=1)
+        end_date = today
+        period_title = "Monthly"
+        date_range = f"{today.strftime('%B %Y')}"
+    elif period == 'yearly':
+        start_date = today.replace(month=1, day=1)
+        end_date = today
+        period_title = "Yearly"
+        date_range = f"{today.year}"
+    else:
+        # Default to today if invalid period
+        start_date = today
+        end_date = today
+        period_title = "Today's"
+        date_range = today.strftime('%B %d, %Y')
+    
+    # Get payments for the period
+    payments = FeePayment.objects.filter(
+        payment_date__range=[start_date, end_date]
+    ).select_related('student').order_by('-payment_date', '-id')
+    
+    # Process fee types for display
+    for payment in payments:
+        payment.fee_types_list = []
+        if payment.fee_types:
+            try:
+                fee_types = json.loads(payment.fee_types)
+                payment.fee_types_list = fee_types
+            except json.JSONDecodeError:
+                pass
+    
+    # Calculate totals
+    total_amount = payments.aggregate(total=Sum('payment_amount'))['total'] or 0
+    total_payments = payments.count()
+    
+    # Payment method summary
+    payment_methods = payments.values('payment_method').annotate(
+        count=Count('id'),
+        total=Sum('payment_amount')
+    ).order_by('-total')
+    
+    context = {
+        'payments': payments,
+        'period_title': period_title,
+        'date_range': date_range,
+        'total_amount': total_amount,
+        'total_payments': total_payments,
+        'payment_methods': payment_methods,
+        'period': period,
+        'start_date': start_date,
+        'end_date': end_date,
+    }
+    
+    return render(request, 'collection_details.html', context)
 
 def school_settings(request):
     try:
