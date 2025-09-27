@@ -483,6 +483,19 @@
     border-bottom: 1px solid #dee2e6;
 }
 
+.form-table th {
+    background: #f8f9fa;
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.form-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #dee2e6;
+}
+
 .filter-row th {
     background: #ffffff;
     padding: 8px;
@@ -607,6 +620,27 @@
     .dashboard-header h1 {
         font-size: 1.5rem;
     }
+    
+    .checkbox-group {
+        flex-direction: column !important;
+        gap: 2px !important;
+        max-height: 100px;
+        overflow-y: auto;
+    }
+    
+    .checkbox-label {
+        font-size: 10px !important;
+        padding: 1px 3px !important;
+    }
+    
+    .advanced-table {
+        font-size: 12px;
+    }
+    
+    .advanced-table input, .advanced-table select {
+        font-size: 11px;
+        padding: 4px;
+    }
 }
 </style>
 {% endblock %}
@@ -646,136 +680,92 @@
         </div>
     </div>
 
-    <div class="actions-grid" id="actionsGrid">
-        <div class="action-card" data-category="subject">
-            <h3>Add New Subject</h3>
-            <form id="subjectForm">
-                <div class="form-group">
-                    <label>Subject Name</label>
-                    <input type="text" name="name" required>
-                </div>
-                <div class="form-group">
-                    <label>Subject Code</label>
-                    <input type="text" name="code" required>
-                </div>
-                <div class="form-group">
-                    <label>Class</label>
-                    <select name="class_name" required>
-                        <option value="">Select Class</option>
-                        {% for class_name in available_classes %}
-                        <option value="{{ class_name }}">{{ class_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Max Marks</label>
-                    <input type="number" name="max_marks" value="100" required>
-                </div>
-                <div class="form-group">
-                    <label>Pass Marks</label>
-                    <input type="number" name="pass_marks" value="35" required>
-                </div>
-                <button type="submit" class="btn btn-success">Add Subject</button>
-            </form>
-        </div>
-
-        <div class="action-card exam-card" data-category="exam">
-            <h3>Create New Exam</h3>
-            <form id="examForm">
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Exam Name</label>
-                        <input type="text" name="name" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Exam Type</label>
-                        <select name="exam_type" required>
-                            <option value="">Select Type</option>
-                            <option value="First Term">First Term</option>
-                            <option value="Mid Term">Mid Term</option>
-                            <option value="Final Term">Final Term</option>
-                            <option value="Unit Test">Unit Test</option>
-                            <option value="Annual">Annual</option>
-                        </select>
-                    </div>
-                </div>
-                <div class="form-row">
-                    <div class="form-group">
-                        <label>Exam Date</label>
-                        <input type="date" name="exam_date" required>
-                    </div>
-                    <div class="form-group">
-                        <label>Session</label>
-                        <input type="text" name="session" value="2024-25" required>
-                    </div>
-                </div>
-                <div class="form-group">
-                    <label>Classes</label>
-                    <div class="checkbox-group">
-                        {% for class_name in available_classes %}
-                        <label class="checkbox-label">
-                            <input type="checkbox" name="class_names" value="{{ class_name }}">
-                            <span class="checkmark"></span>
-                            {{ class_name }}
-                        </label>
-                        {% endfor %}
-                    </div>
-                </div>
-                <button type="submit" class="btn">Create Exam</button>
-            </form>
-        </div>
-    </div>
-
-    <div class="marks-entry-section" data-category="marks">
-        <h3>Enter Student Marks</h3>
-        <div class="section-controls">
-            <button class="btn btn-sm" onclick="toggleSection('marks-entry')">Toggle</button>
-            <button class="btn btn-sm" onclick="clearMarksForm()">Clear Form</button>
-        </div>
-        <form id="marksForm">
-            <div class="marks-form">
-                <div class="form-group">
-                    <label>Class</label>
-                    <select name="class_filter" id="classFilter">
-                        <option value="">All Classes</option>
-                        {% for class_name in available_classes %}
-                        <option value="{{ class_name }}">{{ class_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Student</label>
-                    <select name="student_id" id="studentSelect" required>
-                        <option value="">Select Student</option>
-                        <!-- Will be populated via JavaScript -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Exam</label>
-                    <select name="exam_id" id="examSelect" required>
-                        <option value="">Select Exam</option>
-                        <!-- Will be populated via JavaScript -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Subject</label>
-                    <select name="subject_id" id="subjectSelect" required>
-                        <option value="">Select Subject</option>
-                        <!-- Will be populated via JavaScript -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Marks Obtained</label>
-                    <input type="number" name="marks_obtained" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label>Remarks</label>
-                    <input type="text" name="remarks">
-                </div>
+    <div class="action-card add-subject-section" data-category="subject" style="width: 100%; margin-bottom: 2rem;">
+        <h3>Add New Subject</h3>
+        <form id="subjectForm">
+            <div style="overflow-x: auto;">
+                <table class="form-table" style="width: 100%; min-width: 800px; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 150px;">Subject Name</th>
+                            <th style="min-width: 120px;">Subject Code</th>
+                            <th style="min-width: 120px;">Class</th>
+                            <th style="min-width: 100px;">Max Marks</th>
+                            <th style="min-width: 100px;">Pass Marks</th>
+                            <th style="min-width: 120px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="text" name="name" required style="width: 100%; border: 1px solid #ddd; padding: 8px; min-width: 140px;"></td>
+                            <td><input type="text" name="code" required style="width: 100%; border: 1px solid #ddd; padding: 8px; min-width: 110px;"></td>
+                            <td>
+                                <select name="class_name" required style="width: 100%; border: 1px solid #ddd; padding: 8px; min-width: 110px;">
+                                    <option value="">Select Class</option>
+                                    {% for class_name in available_classes %}
+                                    <option value="{{ class_name }}">{{ class_name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td><input type="number" name="max_marks" value="100" required style="width: 100%; border: 1px solid #ddd; padding: 8px; min-width: 90px;"></td>
+                            <td><input type="number" name="pass_marks" value="35" required style="width: 100%; border: 1px solid #ddd; padding: 8px; min-width: 90px;"></td>
+                            <td><button type="submit" class="btn btn-success" style="white-space: nowrap;">Add Subject</button></td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
-            <button type="submit" class="btn">Enter Marks</button>
         </form>
     </div>
+
+    <div class="action-card exam-card create-exam-section" data-category="exam" style="width: 100%; margin-bottom: 2rem;">
+        <h3>Create New Exam</h3>
+        <form id="examForm">
+            <div style="overflow-x: auto;">
+                <table class="form-table" style="width: 100%; min-width: 900px; border-collapse: collapse; background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                    <thead>
+                        <tr>
+                            <th style="min-width: 150px;">Exam Name</th>
+                            <th style="min-width: 120px;">Exam Type</th>
+                            <th style="min-width: 120px;">Exam Date</th>
+                            <th style="min-width: 100px;">Session</th>
+                            <th style="min-width: 300px;">Classes</th>
+                            <th style="min-width: 120px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><input type="text" name="name" required style="width: 100%; border: 1px solid #ddd; padding: 8px; min-width: 140px;"></td>
+                            <td>
+                                <select name="exam_type" required style="width: 100%; border: 1px solid #ddd; padding: 8px; min-width: 110px;">
+                                    <option value="">Select Type</option>
+                                    <option value="First Term">First Term</option>
+                                    <option value="Mid Term">Mid Term</option>
+                                    <option value="Final Term">Final Term</option>
+                                    <option value="Unit Test">Unit Test</option>
+                                    <option value="Annual">Annual</option>
+                                </select>
+                            </td>
+                            <td><input type="date" name="exam_date" required style="width: 100%; border: 1px solid #ddd; padding: 8px; min-width: 110px;"></td>
+                            <td><input type="text" name="session" value="2024-25" required style="width: 100%; border: 1px solid #ddd; padding: 8px; min-width: 90px;"></td>
+                            <td>
+                                <div class="checkbox-group" style="display: flex; flex-wrap: wrap; gap: 5px; min-width: 290px;">
+                                    {% for class_name in available_classes %}
+                                    <label class="checkbox-label" style="font-size: 12px; padding: 2px 5px; margin: 0;">
+                                        <input type="checkbox" name="class_names" value="{{ class_name }}">
+                                        {{ class_name }}
+                                    </label>
+                                    {% endfor %}
+                                </div>
+                            </td>
+                            <td><button type="submit" class="btn" style="white-space: nowrap;">Create Exam</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </form>
+    </div>
+
+
 
 
 
@@ -823,25 +813,9 @@
     <div class="recent-section" data-category="subject">
         <h3>Subjects</h3>
         <div class="section-controls">
-            <select id="bulkEditClassSelect" onchange="enableBulkEdit()">
-                <option value="">Select Class to Edit All</option>
-                <option value="All Subjects">All Subjects</option>
-                {% for class_name in available_classes %}
-                <option value="{{ class_name }}">{{ class_name }}</option>
-                {% endfor %}
-            </select>
-            <button class="btn btn-sm" id="bulkEditBtn" onclick="bulkEditSubjects()" style="display: none;">Edit Selected Class</button>
-            <button class="btn btn-sm" onclick="addBulkSubjects()">Bulk Add</button>
-            <button class="btn btn-sm" onclick="exportSubjects()">Export CSV</button>
-            <button class="btn btn-sm" onclick="exportSubjectsJSON()">Export JSON</button>
-            <input type="file" id="importFile" accept=".csv,.json" style="display: none;" onchange="importSubjects(this)">
-            <button class="btn btn-sm" onclick="document.getElementById('importFile').click()">Import</button>
-            <button class="btn btn-sm btn-danger" id="bulkDeleteBtn" onclick="toggleBulkDelete()" style="display: none;">Bulk Delete</button>
-            <button class="btn btn-sm" onclick="showBulkDeleteOptions()">Delete Options</button>
         </div>
         <div class="students-container">
             <div class="table-controls">
-                <input type="text" id="subjectSearch" placeholder="Search subjects..." class="search-input">
                 <select id="entriesPerPage" onchange="changeEntriesPerPage()">
                     <option value="10">10 entries</option>
                     <option value="25">25 entries</option>
@@ -861,7 +835,7 @@
                         <th onclick="sortSubjectTable(3)">Class <span class="sort-icon">↕</span></th>
                         <th onclick="sortSubjectTable(4)">Max Marks <span class="sort-icon">↕</span></th>
                         <th onclick="sortSubjectTable(5)">Pass Marks <span class="sort-icon">↕</span></th>
-                        <th>Actions</th>
+                        <th>Actions <button class="btn btn-sm btn-success" onclick="saveAllChanges()" style="margin-left: 10px; font-size: 10px; padding: 2px 6px;">Save All</button></th>
                     </tr>
                     <tr class="filter-row">
                         <th></th>
@@ -886,13 +860,27 @@
                         <td>
                             <input type="checkbox" class="subject-checkbox" value="{{ subject.id }}" style="display: none;">
                         </td>
-                        <td>{{ subject.name }}</td>
-                        <td>{{ subject.code }}</td>
-                        <td class="class-name-cell" data-original="{{ subject.class_name }}">{{ subject.class_name }}</td>
-                        <td>{{ subject.max_marks }}</td>
-                        <td>{{ subject.pass_marks }}</td>
                         <td>
-                            <button class="btn btn-sm" onclick="editSubject({{ subject.id }}, '{{ subject.name }}', '{{ subject.code }}', '{{ subject.class_name }}', {{ subject.max_marks }}, {{ subject.pass_marks }})">Edit</button>
+                            <input type="text" class="inline-edit" data-field="name" data-subject-id="{{ subject.id }}" data-original="{{ subject.name }}" value="{{ subject.name }}" oninput="trackChange({{ subject.id }})" style="border: none; background: transparent; width: 100%; font-size: 14px; padding: 2px;" onfocus="this.style.background='#f8f9fa'; this.style.border='1px solid #007bff'" onblur="this.style.background='transparent'; this.style.border='none'">
+                        </td>
+                        <td>
+                            <input type="text" class="inline-edit" data-field="code" data-subject-id="{{ subject.id }}" data-original="{{ subject.code }}" value="{{ subject.code }}" oninput="trackChange({{ subject.id }})" style="border: none; background: transparent; width: 100%; font-size: 14px; padding: 2px;" onfocus="this.style.background='#f8f9fa'; this.style.border='1px solid #007bff'" onblur="this.style.background='transparent'; this.style.border='none'">
+                        </td>
+                        <td class="class-name-cell" data-original="{{ subject.class_name }}">
+                            <select class="class-dropdown" data-field="class_name" data-subject-id="{{ subject.id }}" data-original="{{ subject.class_name }}" onchange="trackChange({{ subject.id }})" style="padding: 4px 8px; border: 1px solid #ddd; border-radius: 4px; font-size: 12px; width: 100%; background: white; cursor: pointer;">
+                                {% for class_name in available_classes %}
+                                <option value="{{ class_name }}" {% if class_name == subject.class_name %}selected{% endif %} data-original="{{ class_name }}">{{ class_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td>
+                            <input type="number" class="inline-edit" data-field="max_marks" data-subject-id="{{ subject.id }}" data-original="{{ subject.max_marks }}" value="{{ subject.max_marks }}" oninput="trackChange({{ subject.id }})" style="border: none; background: transparent; width: 100%; font-size: 14px; padding: 2px;" onfocus="this.style.background='#f8f9fa'; this.style.border='1px solid #007bff'" onblur="this.style.background='transparent'; this.style.border='none'">
+                        </td>
+                        <td>
+                            <input type="number" class="inline-edit" data-field="pass_marks" data-subject-id="{{ subject.id }}" data-original="{{ subject.pass_marks }}" value="{{ subject.pass_marks }}" oninput="trackChange({{ subject.id }})" style="border: none; background: transparent; width: 100%; font-size: 14px; padding: 2px;" onfocus="this.style.background='#f8f9fa'; this.style.border='1px solid #007bff'" onblur="this.style.background='transparent'; this.style.border='none'">
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-success" onclick="saveSubject({{ subject.id }})" style="margin-right: 5px; display: none;" id="saveBtn-{{ subject.id }}">Save</button>
                             <button class="btn btn-sm btn-danger" onclick="deleteSubject({{ subject.id }}, '{{ subject.name }}')">Delete</button>
                         </td>
                     </tr>
@@ -1129,25 +1117,95 @@ window.addEventListener('load', function() {
 
 
 
-function editSubject(id, name, code, className, maxMarks, passMarks) {
-    const form = document.getElementById('subjectForm');
-    form.querySelector('input[name="name"]').value = name;
-    form.querySelector('input[name="code"]').value = code;
-    form.querySelector('select[name="class_name"]').value = className;
-    form.querySelector('input[name="max_marks"]').value = maxMarks;
-    form.querySelector('input[name="pass_marks"]').value = passMarks;
+function trackChange(subjectId) {
+    const row = document.querySelector(`tr[data-subject-id="${subjectId}"]`);
+    const inputs = row.querySelectorAll('input, select');
+    let hasChanges = false;
     
-    form.dataset.editId = id;
-    form.querySelector('button[type="submit"]').textContent = 'Update Subject';
+    inputs.forEach(input => {
+        const original = input.dataset.original;
+        const current = input.value;
+        if (original !== current) {
+            hasChanges = true;
+        }
+    });
     
-    form.scrollIntoView({ behavior: 'smooth' });
+    const saveBtn = document.getElementById(`saveBtn-${subjectId}`);
+    if (hasChanges) {
+        saveBtn.style.display = 'inline-block';
+        row.style.backgroundColor = '#fff3cd';
+    } else {
+        saveBtn.style.display = 'none';
+        row.style.backgroundColor = '';
+    }
 }
+
+function saveSubject(subjectId) {
+    const row = document.querySelector(`tr[data-subject-id="${subjectId}"]`);
+    const inputs = row.querySelectorAll('input, select');
+    const data = { subject_id: subjectId };
+    
+    inputs.forEach(input => {
+        const field = input.dataset.field;
+        if (field) {
+            data[field] = input.value;
+        }
+    });
+    
+    fetch('{% url "edit_subject" %}', {
+        method: 'POST',
+        body: JSON.stringify(data),
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(result => {
+        if (result.success) {
+            // Update original values
+            inputs.forEach(input => {
+                input.dataset.original = input.value;
+            });
+            
+            // Hide save button and show success
+            document.getElementById(`saveBtn-${subjectId}`).style.display = 'none';
+            row.style.backgroundColor = '#d4edda';
+            setTimeout(() => {
+                row.style.backgroundColor = '';
+            }, 1000);
+        } else {
+            alert('Error saving: ' + result.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving subject');
+    });
+}
+
+function saveAllChanges() {
+    const visibleSaveBtns = document.querySelectorAll('[id^="saveBtn-"]:not([style*="display: none"])');
+    
+    if (visibleSaveBtns.length === 0) {
+        alert('No changes to save');
+        return;
+    }
+    
+    if (confirm(`Save changes for ${visibleSaveBtns.length} subjects?`)) {
+        visibleSaveBtns.forEach(btn => {
+            const subjectId = btn.id.replace('saveBtn-', '');
+            saveSubject(subjectId);
+        });
+    }
+}
+
 let subjectSortDirection = {};
 let subjectCurrentPage = 1;
 let subjectEntriesPerPage = 10;
 
 function sortSubjectTable(columnIndex) {
-    const table = document.querySelector('.advanced-table');
+    const table = document.querySelector('.recent-section .advanced-table');
     const tbody = table.querySelector('tbody');
     const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => row.cells.length > 1);
     
@@ -1155,8 +1213,21 @@ function sortSubjectTable(columnIndex) {
     subjectSortDirection[columnIndex] = isAscending ? 'asc' : 'desc';
     
     rows.sort((a, b) => {
-        const aValue = a.cells[columnIndex].textContent.trim();
-        const bValue = b.cells[columnIndex].textContent.trim();
+        let aValue, bValue;
+        const aCell = a.cells[columnIndex];
+        const bCell = b.cells[columnIndex];
+        
+        // Handle different cell types
+        if (aCell.querySelector('input[type="text"], input[type="number"]')) {
+            aValue = aCell.querySelector('input').value.trim();
+            bValue = bCell.querySelector('input').value.trim();
+        } else if (aCell.querySelector('select')) {
+            aValue = aCell.querySelector('select').value.trim();
+            bValue = bCell.querySelector('select').value.trim();
+        } else {
+            aValue = aCell.textContent.trim();
+            bValue = bCell.textContent.trim();
+        }
         
         if (columnIndex === 4 || columnIndex === 5) {
             return isAscending ? parseInt(aValue) - parseInt(bValue) : parseInt(bValue) - parseInt(aValue);
@@ -1168,19 +1239,32 @@ function sortSubjectTable(columnIndex) {
     tbody.innerHTML = '';
     rows.forEach(row => tbody.appendChild(row));
     
-    document.querySelectorAll('.advanced-table .sort-icon').forEach(icon => icon.textContent = '↕');
-    const thElements = document.querySelectorAll('.advanced-table th');
+    document.querySelectorAll('.recent-section .advanced-table .sort-icon').forEach(icon => icon.textContent = '↕');
+    const thElements = document.querySelectorAll('.recent-section .advanced-table th');
     if (thElements[columnIndex] && thElements[columnIndex].querySelector('.sort-icon')) {
         thElements[columnIndex].querySelector('.sort-icon').textContent = isAscending ? '↑' : '↓';
     }
 }
 
 function filterColumn(columnIndex, filterValue) {
-    const rows = document.querySelectorAll('.advanced-table tbody tr');
+    const rows = document.querySelectorAll('.recent-section .advanced-table tbody tr');
     rows.forEach(row => {
-        const cellValue = row.cells[columnIndex].textContent.toLowerCase();
-        const match = cellValue.includes(filterValue.toLowerCase());
-        row.style.display = match ? '' : 'none';
+        if (row.cells.length > 1) {
+            let cellValue = '';
+            const cell = row.cells[columnIndex];
+            
+            // Handle different cell types
+            if (cell.querySelector('input[type="text"], input[type="number"]')) {
+                cellValue = cell.querySelector('input').value.toLowerCase();
+            } else if (cell.querySelector('select')) {
+                cellValue = cell.querySelector('select').value.toLowerCase();
+            } else {
+                cellValue = cell.textContent.toLowerCase();
+            }
+            
+            const match = cellValue.includes(filterValue.toLowerCase());
+            row.style.display = match ? '' : 'none';
+        }
     });
 }
 
@@ -1190,7 +1274,7 @@ function changeEntriesPerPage() {
 }
 
 function paginateSubjectTable() {
-    const rows = document.querySelectorAll('.advanced-table tbody tr');
+    const rows = document.querySelectorAll('.recent-section .advanced-table tbody tr');
     const totalRows = rows.length;
     const totalPages = Math.ceil(totalRows / subjectEntriesPerPage);
     
@@ -1213,7 +1297,7 @@ function previousSubjectPage() {
 }
 
 function nextSubjectPage() {
-    const totalRows = document.querySelectorAll('.advanced-table tbody tr').length;
+    const totalRows = document.querySelectorAll('.recent-section .advanced-table tbody tr').length;
     const totalPages = Math.ceil(totalRows / subjectEntriesPerPage);
     if (subjectCurrentPage < totalPages) {
         subjectCurrentPage++;
@@ -1228,13 +1312,23 @@ function goToSubjectPage(page) {
 
 document.getElementById('subjectSearch').addEventListener('keyup', function() {
     const searchTerm = this.value.toLowerCase();
-    const rows = document.querySelectorAll('.advanced-table tbody tr');
+    const rows = document.querySelectorAll('.recent-section .advanced-table tbody tr');
     
     rows.forEach(row => {
-        const found = Array.from(row.cells).some(cell => 
-            cell.textContent.toLowerCase().includes(searchTerm)
-        );
-        row.style.display = found ? '' : 'none';
+        if (row.cells.length > 1) {
+            const found = Array.from(row.cells).some(cell => {
+                let cellValue = '';
+                if (cell.querySelector('input[type="text"], input[type="number"]')) {
+                    cellValue = cell.querySelector('input').value.toLowerCase();
+                } else if (cell.querySelector('select')) {
+                    cellValue = cell.querySelector('select').value.toLowerCase();
+                } else {
+                    cellValue = cell.textContent.toLowerCase();
+                }
+                return cellValue.includes(searchTerm);
+            });
+            row.style.display = found ? '' : 'none';
+        }
     });
 });
 
@@ -1300,7 +1394,7 @@ function addBulkSubjects() {
 }
 
 function exportSubjects() {
-    const subjects = Array.from(document.querySelectorAll('.advanced-table tbody tr')).filter(row => row.cells.length > 1).map(row => {
+    const subjects = Array.from(document.querySelectorAll('.recent-section .advanced-table tbody tr')).filter(row => row.cells.length > 1).map(row => {
         return {
             name: row.cells[1].textContent,
             code: row.cells[2].textContent,
@@ -1322,7 +1416,7 @@ function exportSubjects() {
 }
 
 function exportSubjectsJSON() {
-    const subjects = Array.from(document.querySelectorAll('.advanced-table tbody tr')).filter(row => row.cells.length > 1).map(row => {
+    const subjects = Array.from(document.querySelectorAll('.recent-section .advanced-table tbody tr')).filter(row => row.cells.length > 1).map(row => {
         return {
             name: row.cells[1].textContent,
             code: row.cells[2].textContent,
@@ -1601,7 +1695,7 @@ function enableBulkEdit() {
     if (selectedClass) {
         bulkEditBtn.style.display = 'inline-block';
         // Highlight subjects of selected class or all subjects
-        const rows = document.querySelectorAll('.advanced-table tbody tr');
+        const rows = document.querySelectorAll('.recent-section .advanced-table tbody tr');
         rows.forEach(row => {
             if (selectedClass === 'All Subjects' || row.cells[2].textContent === selectedClass) {
                 row.style.backgroundColor = '#fff3cd';
@@ -1612,7 +1706,7 @@ function enableBulkEdit() {
     } else {
         bulkEditBtn.style.display = 'none';
         // Remove highlighting
-        const rows = document.querySelectorAll('.advanced-table tbody tr');
+        const rows = document.querySelectorAll('.recent-section .advanced-table tbody tr');
         rows.forEach(row => {
             row.style.backgroundColor = '';
         });
