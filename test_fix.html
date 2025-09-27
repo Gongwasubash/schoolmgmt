@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test ID Card Layout Fix</title>
+    <style>
+        .test-card {
+            width: 200px;
+            height: 120px;
+            margin: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            display: inline-block;
+        }
+    </style>
+</head>
+<body>
+    <h1>ID Card Layout Test</h1>
+    <p>This is a test to verify that the school layout filtering works correctly.</p>
+    
+    <div>
+        <label>Select Layout:</label>
+        <select id="layoutSelect" onchange="testLayout()">
+            <option value="1">Design 1 - Classic Blue</option>
+            <option value="school1">School Layout 1</option>
+            <option value="school2">School Layout 2</option>
+            <option value="school3">School Layout 3</option>
+        </select>
+    </div>
+    
+    <div id="testCard" class="test-card">
+        <div>Test Card Content</div>
+        <div class="student-name">JOHN DOE</div>
+        <div class="detail-value">10-A</div>
+        <div class="detail-value">001</div>
+        <div class="detail-value">ROBERT DOE</div>
+        <div class="detail-value">2025-26</div>
+        <div class="detail-value">9876543210</div>
+    </div>
+    
+    <script>
+        function testLayout() {
+            const layout = document.getElementById('layoutSelect').value;
+            const card = document.getElementById('testCard');
+            
+            // Store original data if not already stored
+            if (!card.dataset.studentData) {
+                const studentName = card.querySelector('.student-name') ? card.querySelector('.student-name').textContent : 'JOHN DOE';
+                const detailValues = card.querySelectorAll('.detail-value');
+                const studentClass = detailValues[0] ? detailValues[0].textContent : '10-A';
+                const studentRoll = detailValues[1] ? detailValues[1].textContent : '001';
+                const studentFather = detailValues[2] ? detailValues[2].textContent : 'ROBERT DOE';
+                const studentSession = detailValues[3] ? detailValues[3].textContent : '2025-26';
+                const studentMobile = detailValues[4] ? detailValues[4].textContent : '9876543210';
+                
+                card.dataset.studentData = JSON.stringify({
+                    name: studentName,
+                    photo: '',
+                    class: studentClass,
+                    roll: studentRoll,
+                    father: studentFather,
+                    session: studentSession,
+                    mobile: studentMobile,
+                    id: 'STU001'
+                });
+            }
+            
+            const studentData = JSON.parse(card.dataset.studentData);
+            
+            if (layout === 'school1') {
+                card.innerHTML = `
+                    <div style="background: linear-gradient(180deg, #1a237e 0%, #3949ab 100%); color: white; padding: 5px; height: 100px;">
+                        <div style="font-size: 12px; font-weight: bold;">EVEREST ACADEMY</div>
+                        <div style="font-size: 10px; margin: 5px 0;">${studentData.name}</div>
+                        <div style="font-size: 8px;">Class: ${studentData.class}</div>
+                        <div style="font-size: 8px;">Roll: ${studentData.roll}</div>
+                        <div style="font-size: 8px;">Father: ${studentData.father}</div>
+                    </div>
+                `;
+            } else if (layout === 'school2') {
+                card.innerHTML = `
+                    <div style="background: linear-gradient(45deg, #00bcd4 0%, #009688 100%); color: white; padding: 5px; height: 100px;">
+                        <div style="font-size: 12px; font-weight: bold;">EVEREST ACADEMY</div>
+                        <div style="font-size: 10px; margin: 5px 0;">${studentData.name}</div>
+                        <div style="font-size: 8px;">Class: ${studentData.class} | Roll: ${studentData.roll}</div>
+                        <div style="font-size: 8px;">Father: ${studentData.father}</div>
+                        <div style="font-size: 8px;">Mobile: ${studentData.mobile}</div>
+                    </div>
+                `;
+            } else if (layout === 'school3') {
+                card.innerHTML = `
+                    <div style="background: linear-gradient(135deg, #37474f 0%, #263238 100%); color: white; padding: 5px; height: 100px;">
+                        <div style="font-size: 12px; font-weight: bold;">EVEREST ACADEMY</div>
+                        <div style="font-size: 10px; margin: 5px 0; color: #ff5722;">${studentData.name}</div>
+                        <div style="font-size: 8px;">Class: ${studentData.class}</div>
+                        <div style="font-size: 8px;">Roll: ${studentData.roll}</div>
+                        <div style="font-size: 8px;">Father: ${studentData.father}</div>
+                    </div>
+                `;
+            } else {
+                // Reset to original
+                card.innerHTML = `
+                    <div>Test Card Content - Design ${layout}</div>
+                    <div class="student-name">${studentData.name}</div>
+                    <div class="detail-value">${studentData.class}</div>
+                    <div class="detail-value">${studentData.roll}</div>
+                    <div class="detail-value">${studentData.father}</div>
+                    <div class="detail-value">${studentData.session}</div>
+                    <div class="detail-value">${studentData.mobile}</div>
+                `;
+                card.style.background = layout === '1' ? 'linear-gradient(180deg, #1e3c72 0%, #667eea 100%)' : '#f0f0f0';
+            }
+        }
+    </script>
+</body>
+</html>
