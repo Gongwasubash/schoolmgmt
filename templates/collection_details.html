@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+
+{% block title %}{{ period_title }} Collection Details - School Management{% endblock %}
+
+{% block content %}
+<div class="collection-details-container">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-left">
+            <h1>{{ period_title }} Collection Details</h1>
+            <p>{{ date_range }}</p>
+        </div>
+        <div class="header-stats">
+            <div class="stat-box">
+                <span class="stat-number">Rs. {{ total_amount|floatformat:0 }}</span>
+                <span class="stat-label">Total Amount</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number">{{ total_payments }}</span>
+                <span class="stat-label">Total Payments</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payments Table -->
+    <div class="table-container">
+        <table class="payments-table">
+            <thead>
+                <tr>
+                    <th>Receipt No</th>
+                    <th>Date</th>
+                    <th>Student Name</th>
+                    <th>Class</th>
+                    <th>Amount</th>
+                    <th>Payment Method</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for payment in payments %}
+                <tr>
+                    <td>RCP{{ payment.id|stringformat:"04d" }}</td>
+                    <td>{{ payment.payment_date|date:"M d, Y" }}</td>
+                    <td>{{ payment.student.name }}</td>
+                    <td>{{ payment.student.student_class }}-{{ payment.student.section }}</td>
+                    <td class="amount">Rs. {{ payment.payment_amount|floatformat:0 }}</td>
+                    <td>{{ payment.payment_method }}</td>
+                    <td>
+                        <a href="{% url 'fee_receipt' payment.id %}" class="btn-view" target="_blank">View</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="no-data">No payments found for this period</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<style>
+.collection-details-container {
+    padding: 20px;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-header {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 30px;
+    margin-bottom: 30px;
+    padding: 25px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 15px;
+    color: white;
+    box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.header-left {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.header-left h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.header-left p {
+    margin: 0;
+    font-size: 16px;
+    opacity: 0.9;
+    font-weight: 400;
+}
+
+.header-stats {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+}
+
+.stat-box {
+    background: rgba(255,255,255,0.2);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    min-width: 140px;
+    border: 1px solid rgba(255,255,255,0.1);
+    transition: all 0.3s ease;
+}
+
+.stat-box:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-2px);
+}
+
+.stat-number {
+    display: block;
+    font-size: 28px;
+    font-weight: 800;
+    margin-bottom: 5px;
+}
+
+.stat-label {
+    font-size: 13px;
+    opacity: 0.85;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.table-container {
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    margin-bottom: 20px;
+}
+
+.payments-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.payments-table th {
+    background: #f8f9fa;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+.payments-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+.payments-table tr:hover {
+    background: #f8f9ff;
+}
+
+.amount {
+    font-weight: 600;
+    color: #28a745;
+}
+
+.btn-view {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    background: #667eea;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.btn-view:hover {
+    background: #5a6fd8;
+}
+
+.no-data {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+    font-style: italic;
+}
+
+@media (max-width: 768px) {
+    .page-header {
+        grid-template-columns: 1fr;
+        text-align: center;
+        gap: 25px;
+        padding: 20px;
+    }
+    
+    .header-left h1 {
+        font-size: 28px;
+    }
+    
+    .header-stats {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+    
+    .stat-box {
+        min-width: auto;
+        padding: 15px;
+    }
+}
+</style>
+{% endblock %}

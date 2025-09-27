@@ -80,14 +80,47 @@
     <!-- Main Content Grid -->
     <div class="main-grid">
         <div class="left-column">
-            <!-- Today's Collection -->
-            <div class="collection-card">
-                <h3>Today's Collection</h3>
-                <div class="collection-amount">
-                    <span class="currency">Rs.</span>
-                    <span class="amount">0</span>
+            <!-- Collection Card -->
+            <div class="collection-card" style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; cursor: pointer;">
+                <!-- Today's Collection -->
+                <div onclick="window.location.href='{% url 'collection_details' 'today' %}'" style="padding: 15px; border-right: 1px solid #ddd;">
+                    <h3>Today's Collection</h3>
+                    <div class="collection-amount">
+                        <span class="currency">Rs.</span>
+                        <span class="amount">{{ todays_collection|default:"0" }}</span>
+                    </div>
+                    <div class="collection-label">Total Collection</div>
                 </div>
-                <div class="collection-label">Total Collection</div>
+                
+                <!-- Weekly Collection -->
+                <div onclick="window.location.href='{% url 'collection_details' 'weekly' %}'" style="padding: 15px; border-right: 1px solid #ddd;">
+                    <h3>Weekly Collection</h3>
+                    <div class="collection-amount">
+                        <span class="currency">Rs.</span>
+                        <span class="amount">{{ weekly_collection|default:"0" }}</span>
+                    </div>
+                    <div class="collection-label">Total Collection</div>
+                </div>
+                
+                <!-- Monthly Collection -->
+                <div onclick="window.location.href='{% url 'collection_details' 'monthly' %}'" style="padding: 15px; border-right: 1px solid #ddd;">
+                    <h3>Monthly Collection</h3>
+                    <div class="collection-amount">
+                        <span class="currency">Rs.</span>
+                        <span class="amount">{{ monthly_collection|default:"0" }}</span>
+                    </div>
+                    <div class="collection-label">Total Collection</div>
+                </div>
+                
+                <!-- Yearly Collection -->
+                <div onclick="window.location.href='{% url 'collection_details' 'yearly' %}'" style="padding: 15px;">
+                    <h3>Yearly Collection</h3>
+                    <div class="collection-amount">
+                        <span class="currency">Rs.</span>
+                        <span class="amount">{{ yearly_collection|default:"0" }}</span>
+                    </div>
+                    <div class="collection-label">Total Collection</div>
+                </div>
             </div>
 
             <!-- Action Buttons -->
