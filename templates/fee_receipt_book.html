@@ -755,6 +755,12 @@
                             <button class="btn-primary" onclick="feeBook.printReceipt({{ student.id }})">
                                 <i class="fas fa-print"></i> Print
                             </button>
+                            <button class="btn-outline" onclick="feeBook.sendWhatsApp({{ student.id }}, '{{ student.mobile }}', '{{ student.name }}')" style="background: #25D366; color: white; border-color: #25D366;">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </button>
+                            <button class="btn-outline" onclick="feeBook.sendEmail({{ student.id }}, '{{ student.email }}', '{{ student.name }}')" style="background: #007bff; color: white; border-color: #007bff;">
+                                <i class="fas fa-envelope"></i> Email
+                            </button>
                         </div>
                     </td>
                 </tr>
@@ -873,6 +879,55 @@ class FeeReceiptBook {
         window.open(`/credit-slip/${studentId}/?${params}`, '_blank');
     }
 
+    sendWhatsApp(studentId, mobile, studentName) {
+        if (!mobile) {
+            alert('No mobile number available for this student.');
+            return;
+        }
+        
+        // Get student row to extract fee details
+        const studentRow = document.querySelector(`tr[data-student-id="${studentId}"]`);
+        const totalFee = studentRow.querySelector('.fee-amount').textContent;
+        const paidAmount = studentRow.querySelectorAll('.fee-amount')[1].textContent;
+        const feeBreakdown = studentRow.querySelector('.fee-details').textContent;
+        
+        const message = `Dear Parent,\n\nGreetings from our school!\n\n📋 Fee Statement for ${studentName}:\n\n💰 Total Outstanding: ${totalFee}\n✅ Amount Paid: ${paidAmount}\n\n📊 Fee Details:\n${feeBreakdown}\n\nKindly visit the school office at your earliest convenience to complete the payment.\n\nFor any queries, please feel free to contact us.\n\nThank you for your cooperation.\n\nBest regards,\nSchool Administration`;
+        const whatsappUrl = `https://web.whatsapp.com/send?phone=${mobile.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(message)}`;
+        window.open(whatsappUrl, '_blank');
+    }
+
+    async sendEmail(studentId, email, studentName) {
+        if (!email) {
+            alert('No email address available for this student.');
+            return;
+        }
+        
+        try {
+            const response = await fetch('/send-fee-email/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+                },
+                body: JSON.stringify({
+                    student_id: studentId,
+                    email: email,
+                    student_name: studentName
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (result.success) {
+                alert('Email sent successfully!');
+            } else {
+                alert('Failed to send email: ' + result.error);
+            }
+        } catch (error) {
+            alert('Error sending email: ' + error.message);
+        }
+    }
+
     exportData() {
         window.location.href = '/download-csv/';
     }
@@ -962,6 +1017,8 @@ class FeeReceiptBook {
                         <button class="btn-outline" onclick="feeBook.navigate('student-payments', ${student.id})"><i class="fas fa-eye"></i> View</button>
                         <button class="btn-success" onclick="feeBook.navigate('pay-student', ${student.id})"><i class="fas fa-plus"></i> Pay</button>
                         <button class="btn-primary" onclick="feeBook.printReceipt(${student.id})"><i class="fas fa-print"></i> Print</button>
+                        <button class="btn-outline" onclick="feeBook.sendWhatsApp(${student.id}, '${student.mobile || ''}', '${student.name}')" style="background: #25D366; color: white; border-color: #25D366;"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+                        <button class="btn-outline" onclick="feeBook.sendEmail(${student.id}, '${student.email || ''}', '${student.name}')" style="background: #007bff; color: white; border-color: #007bff;"><i class="fas fa-envelope"></i> Email</button>
                     </div>
                 </td>
             </tr>

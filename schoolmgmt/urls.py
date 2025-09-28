@@ -102,6 +102,9 @@ urlpatterns = [
     path('id-creation/', views.id_creation, name='id_creation'),
     path('generate-id/', views.generate_id, name='generate_id'),
     path('print-id-cards/', views.print_id_cards, name='print_id_cards'),
+    path('whatsapp-balance/', views.whatsapp_balance, name='whatsapp_balance'),
+    path('send-fee-email/', views.send_fee_email, name='send_fee_email'),
+    path('fee-payment-report-dashboard/', views.fee_payment_report_dashboard, name='fee_payment_report_dashboard'),
     path('admin/', admin.site.urls),
 ]
 
