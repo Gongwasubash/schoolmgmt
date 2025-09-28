@@ -83,6 +83,7 @@ class Student(models.Model):
     address2 = models.CharField(max_length=200, blank=True)
     city = models.CharField(max_length=50)
     mobile = models.CharField(max_length=10)
+    email = models.EmailField(default='subashgongwanepal@gmail.com')
     gender = models.CharField(max_length=4, choices=GENDER_CHOICES)
     religion = models.CharField(max_length=20, choices=RELIGION_CHOICES)
     dob = models.DateField()

@@ -3,6 +3,8 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.conf import settings
 from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail
 from django.db import models
 from django.db.models import F, Q
@@ -1117,6 +1119,7 @@ def fee_receipt_book(request):
         student.class_name = student.student_class
         student.roll_number = student.reg_number
         student.daily_expenses_total = float(daily_expenses)
+        student.email = student.email  # Ensure email is available
         
         # Calculate monthly fee amount (monthly_fee + tuition_fee)
         try:
@@ -1663,6 +1666,8 @@ def fee_receipt_book_api(request):
                 'class_name': student.student_class,
                 'section': student.section,
                 'roll_number': student.reg_number,
+                'mobile': student.mobile,
+                'email': student.email,
                 'total_fee': float(student_total_fee),
                 'paid_amount': float(student_paid),
                 'pending_amount': float(student_pending),
@@ -3725,3 +3730,130 @@ def print_id_cards(request):
         'school': school,
         'template': template
     })
+
+def whatsapp_balance(request):
+    """WhatsApp balance details page"""
+    return render(request, 'whatsapp_balance.html')
+
+def fee_payment_report_dashboard(request):
+    """Fee Payment Report Dashboard"""
+    from django.db.models import Sum, Count
+    from datetime import datetime
+    
+    # Calculate statistics
+    total_collected = FeePayment.objects.aggregate(total=Sum('payment_amount'))['total'] or 0
+    total_students = Student.objects.count()
+    total_payments = FeePayment.objects.count()
+    
+    # Calculate pending fees
+    total_pending = 0
+    for student in Student.objects.all():
+        try:
+            fee_structure = FeeStructure.objects.get(class_name=student.student_class)
+            student_total_fee = (
+                fee_structure.admission_fee +
+                fee_structure.monthly_fee * 12 +
+                fee_structure.tuition_fee * 12 +
+                fee_structure.examination_fee +
+                fee_structure.library_fee +
+                fee_structure.sports_fee +
+                fee_structure.laboratory_fee +
+                fee_structure.computer_fee +
+                fee_structure.transportation_fee * 12
+            )
+        except FeeStructure.DoesNotExist:
+            student_total_fee = 60000
+        
+        student_paid = FeePayment.objects.filter(student=student).aggregate(total=Sum('payment_amount'))['total'] or 0
+        student_pending = max(0, student_total_fee - student_paid)
+        total_pending += student_pending
+    
+    # Get recent payments
+    recent_payments = FeePayment.objects.select_related('student').order_by('-payment_date')[:10]
+    
+    context = {
+        'total_collected': total_collected,
+        'total_pending': total_pending,
+        'total_students': total_students,
+        'total_payments': total_payments,
+        'recent_payments': recent_payments,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    return render(request, 'fee_payment_report.html', context)
+
+@csrf_exempt
+def send_fee_email(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            student_id = data['student_id']
+            email = data['email']
+            student_name = data['student_name']
+            
+            student = get_object_or_404(Student, id=student_id)
+            
+            # Get fee details
+            try:
+                fee_structure = FeeStructure.objects.get(class_name=student.student_class)
+                total_fee = (
+                    fee_structure.admission_fee +
+                    fee_structure.monthly_fee * 12 +
+                    fee_structure.tuition_fee * 12 +
+                    fee_structure.examination_fee +
+                    fee_structure.library_fee +
+                    fee_structure.sports_fee +
+                    fee_structure.laboratory_fee +
+                    fee_structure.computer_fee +
+                    fee_structure.transportation_fee * 12
+                )
+            except FeeStructure.DoesNotExist:
+                total_fee = 60000
+            
+            # Calculate paid amount
+            payments = FeePayment.objects.filter(student=student)
+            paid_amount = sum(float(payment.payment_amount) for payment in payments)
+            
+            # Add daily expenses
+            daily_expenses = StudentDailyExpense.objects.filter(student=student).aggregate(
+                total_expenses=Sum('amount')
+            )['total_expenses'] or 0
+            
+            total_fee += float(daily_expenses)
+            pending_amount = max(0, total_fee - paid_amount)
+            
+            # Create email content
+            subject = f'Fee Statement - {student_name}'
+            message = f'''Dear Parent,
+
+Greetings from our school!
+
+Fee Statement for {student_name}:
+
+Total Outstanding: Rs{pending_amount:,.0f}
+Amount Paid: Rs{paid_amount:,.0f}
+
+Kindly visit the school office at your earliest convenience to complete the payment.
+
+For any queries, please feel free to contact us.
+
+Thank you for your cooperation.
+
+Best regards,
+School Administration'''
+            
+            # Send email
+            send_mail(
+                subject,
+                message,
+                'noreply@school.com',  # From email
+                [email],  # To email
+                fail_silently=False,
+            )
+            
+            return JsonResponse({'success': True, 'message': 'Email sent successfully'})
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
