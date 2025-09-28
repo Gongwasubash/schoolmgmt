@@ -161,11 +161,10 @@
                     </svg>
                     Fee Receipt Book
                 </button>
-                <button class="action-btn">
-                    <svg viewBox="0 0 24 24" fill="currentColor">
-                        <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
+                <button class="action-btn" onclick="showLoaderAndNavigate('{% url 'id_creation' %}')">                    <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M4,4H20A2,2 0 0,1 22,6V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4M4,6V18H20V6H4M6,8H8V10H6V8M10,8H18V10H10V8M6,12H8V14H6V12M10,12H18V14H10V12M6,16H8V18H6V16M10,16H18V18H10V16Z"/>
                     </svg>
-                    Fee Pending Report
+                    ID Creation
                 </button>
                 <button class="action-btn">
                     <svg viewBox="0 0 24 24" fill="currentColor">
@@ -217,6 +216,21 @@
 {% endblock %}
 
 {% block extra_js %}
+<!-- Loader -->
+<div id="pageLoader" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 9999; justify-content: center; align-items: center;">
+    <div style="background: white; padding: 30px; border-radius: 10px; text-align: center;">
+        <div style="border: 4px solid #f3f3f3; border-top: 4px solid #3498db; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 15px;"></div>
+        <p>Loading students data...</p>
+    </div>
+</div>
+
+<style>
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+</style>
+
 <!-- School Settings Popup -->
 <div id="schoolSettingsModal" class="modal" style="display: none;">
     <div class="modal-content">
@@ -257,6 +271,13 @@
 </div>
 
 <script>
+    function showLoaderAndNavigate(url) {
+        document.getElementById('pageLoader').style.display = 'flex';
+        setTimeout(() => {
+            window.location.href = url;
+        }, 500);
+    }
+    
     function openSchoolSettingsPopup() {
         document.getElementById('schoolSettingsModal').style.display = 'flex';
     }

@@ -173,10 +173,14 @@ def students(request):
     sessions = Session.objects.all().order_by('-start_date')
     current_session = Session.get_current_session()
     
+    # Get available classes from Student model and database
+    classes = list(Student.objects.values_list('student_class', flat=True).distinct().order_by('student_class'))
+    
     context = {
         'is_edit': False,
         'sessions': sessions,
-        'current_session': current_session
+        'current_session': current_session,
+        'classes': classes
     }
     return render(request, 'students.html', context)
 
@@ -547,7 +551,16 @@ def edit_student(request, student_id):
         except Exception as e:
             messages.error(request, f'Error updating student: {str(e)}')
     
-    return render(request, 'students.html', {'student': student, 'is_edit': True})
+    # Get available classes for the form
+    classes = list(Student.objects.values_list('student_class', flat=True).distinct().order_by('student_class'))
+    sessions = Session.objects.all().order_by('-start_date')
+    
+    return render(request, 'students.html', {
+        'student': student, 
+        'is_edit': True,
+        'classes': classes,
+        'sessions': sessions
+    })
 
 def download_template(request):
     response = HttpResponse(content_type='text/csv')
@@ -3636,3 +3649,79 @@ def school_settings(request):
             'logo': None
         })
         return render(request, 'school_settings.html', {'school': default_school})
+
+def id_creation(request):
+    """ID Creation page for generating student ID cards"""
+    students = Student.objects.all().order_by('name')
+    
+    # Get unique classes from students
+    classes = Student.objects.values_list('student_class', flat=True).distinct().order_by('student_class')
+    
+    # Add random photo URL to each student
+    for student in students:
+        student.random_photo_url = student.get_random_photo_url()
+    
+    return render(request, 'id_creation.html', {
+        'students': students,
+        'classes': classes
+    })
+
+def generate_id(request):
+    student_id = request.GET.get('student_id')
+    student_ids = request.GET.get('student_ids')
+    template = request.GET.get('template', '1')
+    design = request.GET.get('design', template)
+    
+    try:
+        school = SchoolDetail.get_current_school()
+    except:
+        school = None
+    
+    if student_ids:
+        # Bulk mode
+        student_id_list = student_ids.split(',')
+        students = Student.objects.filter(id__in=student_id_list)
+        return render(request, 'generate_id.html', {
+            'students': students,
+            'is_bulk': True,
+            'school': school,
+            'template': template,
+            'design': design
+        })
+    elif student_id:
+        # Single student mode
+        try:
+            student = Student.objects.get(id=student_id)
+            return render(request, 'generate_id.html', {
+                'student': student,
+                'is_bulk': False,
+                'school': school,
+                'template': template,
+                'design': design
+            })
+        except Student.DoesNotExist:
+            return render(request, '404.html', status=404)
+    
+    return render(request, '404.html', status=404)
+
+def print_id_cards(request):
+    """Print ID cards with complete student database details"""
+    student_ids = request.GET.get('student_ids', '')
+    template = request.GET.get('template', '1')
+    
+    try:
+        school = SchoolDetail.get_current_school()
+    except:
+        school = None
+    
+    if student_ids:
+        student_id_list = [int(id.strip()) for id in student_ids.split(',') if id.strip()]
+        students = Student.objects.filter(id__in=student_id_list).order_by('name')
+    else:
+        students = Student.objects.none()
+    
+    return render(request, 'print_id_cards.html', {
+        'students': students,
+        'school': school,
+        'template': template
+    })

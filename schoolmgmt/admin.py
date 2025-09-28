@@ -73,4 +73,4 @@ class MarksheetAdmin(admin.ModelAdmin):
 @admin.register(SchoolDetail)
 class SchoolDetailAdmin(admin.ModelAdmin):
     list_display = ['school_name', 'phone', 'email', 'updated_at']
-    fields = ['school_name', 'logo', 'address', 'phone', 'email']
+    fields = ['school_name', 'logo', 'principal_signature', 'address', 'phone', 'email']

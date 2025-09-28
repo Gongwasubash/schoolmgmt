@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate ID Cards</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        @page { size: A4 landscape; margin: 10mm; }
+        body { font-family: 'Poppins', sans-serif; margin: 0; padding: 0; }
+        .container { max-width: 100%; margin: 0 auto; padding: 20px; }
+        .controls { margin-bottom: 20px; text-align: center; }
+        .controls select, .controls button { margin: 5px; padding: 12px 20px; border: none; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.3s ease; }
+        .controls select { background: #f8f9fa; border: 2px solid #e9ecef; color: #495057; }
+        .controls select:focus { outline: none; border-color: #007bff; box-shadow: 0 0 0 3px rgba(0,123,255,0.25); }
+        .controls button { background: #007bff; color: white; font-weight: 500; }
+        .controls button:hover { background: #0056b3; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .id-grid { display: flex; justify-content: center; align-items: center; min-height: 80vh; margin: 20px 0; overflow-x: auto; }
+        .id-card { width: 86mm; height: 54mm; background: linear-gradient(135deg, #1e3c72 0%, #ffffff 100%); color: #333; overflow: hidden; position: relative; box-sizing: border-box; box-shadow: 0 8px 24px rgba(0,0,0,0.12); border-radius: 6mm; flex-shrink: 0; }
+        .card-header { position: relative; padding: 2mm 3mm 1mm 3mm; background: rgba(30,60,114,0.05); }
+        .school-logo { width: 10mm; height: 10mm; position: absolute; top: 1.5mm; left: 2mm; background: white; display: flex; align-items: center; justify-content: center; border-radius: 2mm; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .school-logo img { width: 85%; height: 85%; object-fit: contain; }
+        .school-name { text-align: center; font-size: 9px; font-weight: 700; margin: 0; letter-spacing: 0.3px; color: #1e3c72; text-transform: uppercase; }
+        .school-motto { text-align: center; font-size: 5px; font-style: italic; margin: 0.5mm 0 0 0; color: #666; }
+        .photo-section { text-align: center; margin: 2mm 0; }
+        .student-photo { width: 16mm; height: 20mm; border-radius: 50%; border: 2px solid #1e3c72; background: #f8f9fa; overflow: hidden; margin: 0 auto; }
+        .student-photo img { width: 100%; height: 100%; object-fit: cover; }
+        .student-details { text-align: center; padding: 0 3mm; }
+        .student-name { font-size: 8px; font-weight: 700; margin: 1mm 0; color: #1e3c72; }
+        .info-row { font-size: 6px; margin: 0.5mm 0; color: #555; }
+        .info-label { font-weight: 600; }
+        .id-number { font-size: 7px; font-weight: 700; margin: 1mm 0; color: #1e3c72; }
+        .footer-strip { position: absolute; bottom: 0; left: 0; right: 0; height: 4mm; background: #1e3c72; display: flex; align-items: center; justify-content: center; }
+        .footer-text { font-size: 4px; color: white; text-align: center; }
+        .pagination { text-align: center; margin: 20px 0; }
+        .pagination button { margin: 0 5px; padding: 8px 15px; }
+        @media print { .controls, .pagination { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="controls">
+            <select id="templateSelect">
+                <option value="corporate-blue">Corporate Blue</option>
+                <option value="corporate-green">Corporate Green</option>
+                <option value="corporate-purple">Corporate Purple</option>
+                <option value="corporate-red">Corporate Red</option>
+                <option value="corporate-dark">Corporate Dark</option>
+            </select>
+            <button onclick="window.print()">Print PDF</button>
+            <button onclick="window.close()">Close</button>
+        </div>
+
+        <div class="pagination" id="pagination"></div>
+        
+        <div class="id-grid" id="idGrid"></div>
+        
+        <div class="pagination" id="paginationBottom"></div>
+    </div>
+
+    <script>
+        {% if is_bulk %}
+            const studentsData = [
+                {% for s in students %}
+                {
+                    name: "{{ s.name|escapejs }}",
+                    student_class: "{{ s.student_class }}",
+                    section: "{{ s.section }}",
+                    reg_number: "{{ s.reg_number }}",
+                    address1: "{{ s.address1|escapejs }}",
+                    city: "{{ s.city|escapejs }}",
+                    father_name: "{{ s.father_name|escapejs }}",
+                    session: "{{ s.session }}",
+                    mobile: "{{ s.mobile }}",
+                    photo_url: "{{ s.get_random_photo_url }}"
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ];
+        {% else %}
+            const studentsData = [{
+                name: "{{ student.name|escapejs }}",
+                student_class: "{{ student.student_class }}",
+                section: "{{ student.section }}",
+                reg_number: "{{ student.reg_number }}",
+                address1: "{{ student.address1|escapejs }}",
+                city: "{{ student.city|escapejs }}",
+                father_name: "{{ student.father_name|escapejs }}",
+                session: "{{ student.session }}",
+                mobile: "{{ student.mobile }}",
+                photo_url: "{{ student.get_random_photo_url }}"
+            }];
+        {% endif %}
+        
+        const students = studentsData;
+        const cardsPerPage = 1;
+        let currentPage = 1;
+        let currentTemplate = 'corporate-blue';
+
+        function renderCards() {
+            const grid = document.getElementById('idGrid');
+            const startIndex = (currentPage - 1) * cardsPerPage;
+            const endIndex = Math.min(startIndex + cardsPerPage, students.length);
+            
+            grid.innerHTML = '';
+            
+            for (let i = startIndex; i < endIndex; i++) {
+                const student = students[i];
+                const card = document.createElement('div');
+                card.className = `id-card ${currentTemplate}`;
+                const gradients = {
+                    'corporate-blue': 'linear-gradient(135deg, #1e3c72 0%, #ffffff 100%)',
+                    'corporate-green': 'linear-gradient(135deg, #134e5e 0%, #ffffff 100%)',
+                    'corporate-purple': 'linear-gradient(135deg, #667eea 0%, #ffffff 100%)',
+                    'corporate-red': 'linear-gradient(135deg, #ee0979 0%, #ffffff 100%)',
+                    'corporate-dark': 'linear-gradient(135deg, #2c3e50 0%, #ffffff 100%)'
+                };
+                card.style.background = gradients[currentTemplate] || gradients['corporate-blue'];
+                
+                card.innerHTML = `
+                    <div class="card-header">
+                        {% if school.logo %}
+                        <div class="school-logo">
+                            <img src="{{ school.logo.url }}" alt="School Logo">
+                        </div>
+                        {% endif %}
+                        <div class="school-name">{% if school %}{{ school.school_name }}{% else %}Everest Academy{% endif %}</div>
+                        <div class="school-motto">Excellence in Education</div>
+                    </div>
+                    <div class="photo-section">
+                        <div class="student-photo">
+                            <img src="${student.photo_url}" alt="Photo" onerror="this.src='/static/img/default-student.png'">
+                        </div>
+                    </div>
+                    <div class="student-details">
+                        <div class="student-name">${student.name}</div>
+                        <div class="info-row"><span class="info-label">Class:</span> ${student.student_class} | <span class="info-label">Section:</span> ${student.section}</div>
+                        <div class="info-row"><span class="info-label">Roll No:</span> ${student.reg_number}</div>
+                        <div class="id-number">ID: STU${student.reg_number}</div>
+                    </div>
+                    <div class="footer-strip">
+                        <div class="footer-text">{% if school.address %}{{ school.address }} | {% endif %}{% if school.phone %}{{ school.phone }} | {% endif %}{% if school.email %}{{ school.email }}{% endif %}</div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            }
+        }
+
+        function renderPagination() {
+            const totalPages = Math.ceil(students.length / cardsPerPage);
+            const paginationHtml = [];
+            
+            if (currentPage > 1) {
+                paginationHtml.push(`<button onclick="changePage(${currentPage - 1})">Previous</button>`);
+            }
+            
+            for (let i = 1; i <= totalPages; i++) {
+                const active = i === currentPage ? 'style="background: #007bff; color: white;"' : '';
+                paginationHtml.push(`<button onclick="changePage(${i})" ${active}>${i}</button>`);
+            }
+            
+            if (currentPage < totalPages) {
+                paginationHtml.push(`<button onclick="changePage(${currentPage + 1})">Next</button>`);
+            }
+            
+            document.getElementById('pagination').innerHTML = paginationHtml.join('');
+            document.getElementById('paginationBottom').innerHTML = paginationHtml.join('');
+        }
+
+        function changePage(page) {
+            currentPage = page;
+            renderCards();
+            renderPagination();
+        }
+
+        document.getElementById('templateSelect').addEventListener('change', function() {
+            currentTemplate = this.value;
+            renderCards();
+        });
+
+        // Initial render
+        if (students.length > 0) {
+            renderCards();
+            renderPagination();
+        } else {
+            document.getElementById('idGrid').innerHTML = '<p style="text-align: center; grid-column: 1/-1;">No student data available. Please provide student_id parameter.</p>';
+        }
+    </script>
+</body>
+</html>

@@ -1,10 +1,14 @@
 from django.db import models
 from datetime import datetime
 from .nepali_calendar import NepaliCalendar
+import os
+import random
+from django.conf import settings
 
 class SchoolDetail(models.Model):
     school_name = models.CharField(max_length=200, default="Everest Academy")
     logo = models.ImageField(upload_to='school_logos/', blank=True, null=True)
+    principal_signature = models.ImageField(upload_to='signatures/', blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     phone = models.CharField(max_length=20, blank=True, null=True)
     email = models.EmailField(blank=True, null=True)
@@ -156,6 +160,20 @@ class Student(models.Model):
             return f'{nepali_dob.year}/{nepali_dob.month:02d}/{nepali_dob.day:02d}'
         except:
             return f'{self.dob.year + 57}/{self.dob.month:02d}/{self.dob.day:02d}'
+    
+    def get_random_photo_url(self):
+        """Get a random photo from static/img/students folder"""
+        try:
+            students_folder = os.path.join(settings.BASE_DIR, 'static', 'img', 'students')
+            if os.path.exists(students_folder):
+                image_files = [f for f in os.listdir(students_folder) 
+                             if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif'))]
+                if image_files:
+                    random_image = random.choice(image_files)
+                    return f'/static/img/students/{random_image}'
+            return '/static/img/default-student.png'  # Fallback
+        except:
+            return '/static/img/default-student.png'  # Fallback
     
     class Meta:
         ordering = ['-created_at']

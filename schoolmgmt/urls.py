@@ -99,6 +99,9 @@ urlpatterns = [
     path('collection-details/<str:period>/', views.collection_details, name='collection_details'),
     path('school-settings/', views.school_settings, name='school_settings'),
     path('school-settings-test/', views.school_settings_test, name='school_settings_test'),
+    path('id-creation/', views.id_creation, name='id_creation'),
+    path('generate-id/', views.generate_id, name='generate_id'),
+    path('print-id-cards/', views.print_id_cards, name='print_id_cards'),
     path('admin/', admin.site.urls),
 ]
 
