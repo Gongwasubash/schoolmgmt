@@ -1,0 +1,13 @@
+{% for blog in blogs %}
+<div class="blog-card">
+    {% if blog.photo %}
+        <img src="{{ blog.photo.url }}" alt="{{ blog.heading }}" class="blog-image">
+    {% endif %}
+    <div class="blog-content">
+        <h2 class="blog-title">{{ blog.heading }}</h2>
+        <div class="blog-date">{{ blog.created_at|date:"F d, Y" }}</div>
+        <p class="blog-description">{{ blog.description|truncatewords:30 }}</p>
+        <a href="{% url 'blog_detail' blog.id %}" class="read-more">Read More</a>
+    </div>
+</div>
+{% endfor %}

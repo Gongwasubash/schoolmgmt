@@ -596,3 +596,171 @@ class StudentDailyExpense(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+
+
+class AdminLogin(models.Model):
+    username = models.CharField(max_length=50, unique=True)
+    password = models.CharField(max_length=100)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.username
+    
+    class Meta:
+        verbose_name = "Admin Login"
+        verbose_name_plural = "Admin Logins"
+
+
+class StudentRegistration(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+    
+    GENDER_CHOICES = [
+        ('Boy', 'Boy'),
+        ('Girl', 'Girl'),
+    ]
+    
+    RELIGION_CHOICES = [
+        ('Hindu', 'Hindu'),
+        ('Muslim', 'Muslim'),
+        ('Christian', 'Christian'),
+        ('Other', 'Other'),
+    ]
+    
+    CLASS_CHOICES = [
+        ('Nursery', 'Nursery'),
+        ('LKG', 'LKG'),
+        ('UKG', 'UKG'),
+        ('One', 'One'),
+        ('Two', 'Two'),
+        ('Three', 'Three'),
+        ('Four', 'Four'),
+        ('Five', 'Five'),
+        ('Six', 'Six'),
+        ('Seven', 'Seven'),
+        ('Eight', 'Eight'),
+        ('Nine', 'Nine'),
+        ('Ten', 'Ten'),
+        ('Eleven', 'Eleven'),
+        ('Twelve', 'Twelve'),
+    ]
+    
+    SECTION_CHOICES = [
+        ('A', 'A'),
+        ('B', 'B'),
+        ('C', 'C'),
+        ('D', 'D'),
+    ]
+    
+    # Student Information
+    name = models.CharField(max_length=100)
+    student_class = models.CharField(max_length=10, choices=CLASS_CHOICES)
+    section = models.CharField(max_length=1, choices=SECTION_CHOICES, default='A')
+    gender = models.CharField(max_length=4, choices=GENDER_CHOICES)
+    dob = models.DateField()
+    religion = models.CharField(max_length=20, choices=RELIGION_CHOICES, default='Hindu')
+    
+    # Parent Information
+    father_name = models.CharField(max_length=100)
+    mother_name = models.CharField(max_length=100)
+    mobile = models.CharField(max_length=15)
+    
+    # Address Information
+    address = models.CharField(max_length=200)
+    city = models.CharField(max_length=50)
+    
+    # Registration Details
+    registration_date = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    remarks = models.TextField(blank=True)
+    
+    # Auto-generated fields
+    application_number = models.CharField(max_length=20, unique=True, blank=True)
+    
+    def save(self, *args, **kwargs):
+        if not self.application_number:
+            from datetime import datetime
+            self.application_number = f"APP{datetime.now().year}{StudentRegistration.objects.count() + 1:04d}"
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.name} - {self.application_number} ({self.status})"
+    
+    class Meta:
+        ordering = ['-registration_date']
+        verbose_name = "Student Registration"
+        verbose_name_plural = "Student Registrations"
+
+class ContactEnquiry(models.Model):
+    STATUS_CHOICES = [
+        ('new', 'New'),
+        ('contacted', 'Contacted'),
+        ('resolved', 'Resolved'),
+        ('closed', 'Closed'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    email = models.EmailField()
+    phone = models.CharField(max_length=15, blank=True)
+    subject = models.CharField(max_length=200)
+    enquiry = models.TextField()
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='new')
+    remarks = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.name} - {self.subject}"
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Contact Enquiry"
+        verbose_name_plural = "Contact Enquiries"
+
+class HeroSlider(models.Model):
+    title = models.CharField(max_length=100)
+    image = models.ImageField(upload_to='hero_images/')
+    is_active = models.BooleanField(default=True)
+    order = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.title
+    
+    class Meta:
+        ordering = ['order', '-created_at']
+
+class Blog(models.Model):
+    heading = models.CharField(max_length=200)
+    description = models.TextField()
+    photo = models.ImageField(upload_to='blog_images/')
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    def __str__(self):
+        return self.heading
+    
+    class Meta:
+        ordering = ['-created_at']
+
+class WelcomeSection(models.Model):
+    title = models.CharField(max_length=200, default="Welcome to Our School")
+    content = models.TextField()
+    image = models.ImageField(upload_to='welcome_images/', blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return self.title
+    
+    @classmethod
+    def get_active_welcome(cls):
+        return cls.objects.filter(is_active=True).first()
+    
+    class Meta:
+        ordering = ['-created_at']

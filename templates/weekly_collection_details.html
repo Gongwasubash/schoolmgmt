@@ -14,7 +14,7 @@
     <div class="collection-summary">
         <div class="summary-card">
             <h3>Total Weekly Collection</h3>
-            <div class="amount">Rs. {{ weekly_total|default:"0" }}</div>
+            <div class="amount">Rs {{ weekly_total|default:"0" }}</div>
         </div>
     </div>
 
@@ -37,7 +37,7 @@
                     <td>{{ collection.student_name }}</td>
                     <td>{{ collection.class_name }}</td>
                     <td>{{ collection.fee_type }}</td>
-                    <td>Rs. {{ collection.amount }}</td>
+                    <td>Rs {{ collection.amount }}</td>
                     <td>{{ collection.receipt_no }}</td>
                 </tr>
                 {% empty %}

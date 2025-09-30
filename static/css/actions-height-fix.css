@@ -1,0 +1,101 @@
+.actions-section {
+    height: 50% !important;
+}
+
+.action-btn {
+    height: 50px !important;
+    padding: 0 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-direction: row !important;
+    gap: 10px !important;
+    text-align: center !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    color: white !important;
+    background: linear-gradient(135deg, #007bff 0%, #0056b3 100%) !important;
+    border: 1px solid #0056b3 !important;
+    border-radius: 12px !important;
+    cursor: pointer !important;
+    transition: all 0.3s ease !important;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.15) !important;
+}
+
+.action-icon {
+    width: 18px !important;
+    height: 18px !important;
+    flex-shrink: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    color: white !important;
+}
+
+.action-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+    fill: white !important;
+    color: white !important;
+}
+
+.action-btn span {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: white !important;
+    display: flex !important;
+    align-items: center !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    line-height: 1 !important;
+    white-space: nowrap !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.actions-grid {
+    gap: 10px !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    align-items: stretch !important;
+    justify-items: stretch !important;
+}
+
+@media (max-width: 768px) {
+    .action-btn {
+        height: 45px !important;
+        padding: 8px 12px !important;
+        font-size: 12px !important;
+    }
+    
+    .action-btn span {
+        font-size: 12px !important;
+    }
+    
+    .actions-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
+@media (max-width: 480px) {
+    .action-btn {
+        height: 40px !important;
+        padding: 6px 10px !important;
+        font-size: 11px !important;
+        gap: 8px !important;
+    }
+    
+    .action-btn span {
+        font-size: 11px !important;
+    }
+    
+    .action-icon {
+        width: 16px !important;
+        height: 16px !important;
+    }
+}

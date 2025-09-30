@@ -1,0 +1,402 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Registration - {{ school.school_name|default:"School Management System" }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --accent-color: #f59e0b;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background: #f8fafc;
+            padding-top: 80px;
+        }
+
+        /* Header */
+        .navbar {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a202c !important;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            letter-spacing: -0.025em;
+        }
+
+        .navbar-brand img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            margin-right: 12px;
+        }
+
+        .navbar-nav .nav-link {
+            color: #4a5568 !important;
+            margin: 0 0.5rem;
+            padding: 0.75rem 1.25rem !important;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+            border-radius: 6px;
+            position: relative;
+        }
+
+        .navbar-nav .nav-link:hover {
+            color: #1a202c !important;
+            background: rgba(26, 32, 44, 0.05);
+        }
+
+        .navbar-nav .nav-link.active {
+            background: rgba(245, 158, 11, 0.1);
+            color: var(--accent-color) !important;
+        }
+
+        .registration-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .form-header {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .form-body {
+            padding: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-label {
+            font-weight: 600;
+            color: var(--text-dark);
+            margin-bottom: 0.5rem;
+        }
+        .form-control {
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 0.75rem;
+            transition: all 0.3s ease;
+        }
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        .btn-submit {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            width: 100%;
+            transition: transform 0.3s ease;
+        }
+        .btn-submit:hover {
+            transform: translateY(-2px);
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--text-dark);
+            color: white;
+            padding: 50px 0 20px;
+            margin-top: 3rem;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .footer-section h4 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+
+        .footer-section ul {
+            list-style: none;
+        }
+
+        .footer-section ul li {
+            margin-bottom: 0.5rem;
+        }
+
+        .footer-section ul li a {
+            color: #d1d5db;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        .footer-section ul li a:hover {
+            color: var(--accent-color);
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #374151;
+            padding-top: 1rem;
+            text-align: center;
+            color: #9ca3af;
+        }
+
+        @media (max-width: 768px) {
+            .registration-container { margin: 1rem; }
+            .form-header { padding: 1.5rem; }
+            .form-body { padding: 1.5rem; }
+            .form-header h2 { font-size: 1.5rem; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <img src="{% static 'img/Everest-Crest-Square.png' %}" alt="School Logo">
+                {{ school.school_name|default:"School Management System" }}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon" style="background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 30 30%27%3e%3cpath stroke=%27rgba%2874, 85, 104, 0.75%29%27 stroke-linecap=%27round%27 stroke-miterlimit=%2710%27 stroke-width=%272%27 d=%27M4 7h22M4 15h22M4 23h22%27/%3e%3c/svg%3e');"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#schools">Our Schools</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#values">Values</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#news">News</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="{% url 'public_registration' %}">Registration</a></li>
+                    <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="registration-container">
+        <div class="form-header">
+            <h2>Student Registration</h2>
+            <p>Join {{ school.school_name|default:"Our School" }} - Excellence in Education</p>
+        </div>
+        <div class="form-body">
+            {% if success %}
+                <div class="alert alert-success" role="alert">
+                    <h4 class="alert-heading">Registration Successful!</h4>
+                    <p>{{ message }}</p>
+                    <hr>
+                    <p class="mb-0">Please contact the school office for further instructions.</p>
+                </div>
+            {% elif error %}
+                <div class="alert alert-danger" role="alert">
+                    <h4 class="alert-heading">Registration Error</h4>
+                    <p>{{ error }}</p>
+                </div>
+            {% endif %}
+            
+            {% if not success %}
+            <form method="POST">
+                {% csrf_token %}
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Student Name *</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Class *</label>
+                            <select name="class" class="form-control" required>
+                                <option value="">Select Class</option>
+                                <option value="Nursery">Nursery</option>
+                                <option value="LKG">LKG</option>
+                                <option value="UKG">UKG</option>
+                                <option value="One">One</option>
+                                <option value="Two">Two</option>
+                                <option value="Three">Three</option>
+                                <option value="Four">Four</option>
+                                <option value="Five">Five</option>
+                                <option value="Six">Six</option>
+                                <option value="Seven">Seven</option>
+                                <option value="Eight">Eight</option>
+                                <option value="Nine">Nine</option>
+                                <option value="Ten">Ten</option>
+                                <option value="Eleven">Eleven</option>
+                                <option value="Twelve">Twelve</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Father's Name *</label>
+                            <input type="text" name="fatherName" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Mother's Name *</label>
+                            <input type="text" name="motherName" class="form-control" required>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Mobile Number *</label>
+                            <input type="tel" name="mobile" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Gender *</label>
+                            <select name="gender" class="form-control" required>
+                                <option value="">Select Gender</option>
+                                <option value="Boy">Boy</option>
+                                <option value="Girl">Girl</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Date of Birth *</label>
+                            <input type="date" name="dob" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Religion</label>
+                            <select name="religion" class="form-control">
+                                <option value="Hindu">Hindu</option>
+                                <option value="Muslim">Muslim</option>
+                                <option value="Christian">Christian</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label class="form-label">Address *</label>
+                    <input type="text" name="address1" class="form-control" required>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">City *</label>
+                            <input type="text" name="city" class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="form-label">Section</label>
+                            <select name="section" class="form-control">
+                                <option value="A">A</option>
+                                <option value="B">B</option>
+                                <option value="C">C</option>
+                                <option value="D">D</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-submit">Submit Registration</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer id="contact" class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="{% url 'home' %}">Home</a></li>
+                        <li><a href="#about">About Us</a></li>
+                        <li><a href="#schools">Our Schools</a></li>
+                        <li><a href="{% url 'public_registration' %}">Admissions</a></li>
+                        <li><a href="{% url 'studentlist' %}">Student Portal</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Academic</h4>
+                    <ul>
+                        <li><a href="#">Curriculum</a></li>
+                        <li><a href="#">Faculty</a></li>
+                        <li><a href="#">Academic Calendar</a></li>
+                        <li><a href="{% url 'reports' %}">Results</a></li>
+                        <li><a href="#">Library</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact Info</h4>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt me-2"></i>{{ school.address|default:"School Address" }}</li>
+                        <li><i class="fas fa-phone me-2"></i>{{ school.phone|default:"+977-1-XXXXXXX" }}</li>
+                        <li><i class="fas fa-envelope me-2"></i>{{ school.email|default:"info@school.edu.np" }}</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Follow Us</h4>
+                    <ul>
+                        <li><a href="#"><i class="fab fa-facebook me-2"></i>Facebook</a></li>
+                        <li><a href="#"><i class="fab fa-twitter me-2"></i>Twitter</a></li>
+                        <li><a href="#"><i class="fab fa-instagram me-2"></i>Instagram</a></li>
+                        <li><a href="#"><i class="fab fa-youtube me-2"></i>YouTube</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 {{ school.school_name|default:"School Management System" }}. All rights reserved. | Developed with Django</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail
+from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, ContactEnquiry, HeroSlider, Blog
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -74,3 +74,55 @@ class MarksheetAdmin(admin.ModelAdmin):
 class SchoolDetailAdmin(admin.ModelAdmin):
     list_display = ['school_name', 'phone', 'email', 'updated_at']
     fields = ['school_name', 'logo', 'principal_signature', 'address', 'phone', 'email']
+
+@admin.register(AdminLogin)
+class AdminLoginAdmin(admin.ModelAdmin):
+    list_display = ['username', 'is_active', 'created_at', 'updated_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['username']
+    fields = ['username', 'password', 'is_active']
+
+@admin.register(StudentRegistration)
+class StudentRegistrationAdmin(admin.ModelAdmin):
+    list_display = ['name', 'application_number', 'student_class', 'father_name', 'mobile', 'status', 'registration_date']
+    list_filter = ['status', 'student_class', 'gender', 'religion', 'registration_date']
+    search_fields = ['name', 'application_number', 'father_name', 'mother_name', 'mobile']
+    readonly_fields = ['application_number', 'registration_date']
+    ordering = ['-registration_date']
+    
+    fieldsets = (
+        ('Student Information', {
+            'fields': ('name', 'student_class', 'section', 'gender', 'dob', 'religion')
+        }),
+        ('Parent Information', {
+            'fields': ('father_name', 'mother_name', 'mobile')
+        }),
+        ('Address Information', {
+            'fields': ('address', 'city')
+        }),
+        ('Registration Details', {
+            'fields': ('application_number', 'registration_date', 'status', 'remarks')
+        }),
+    )
+
+@admin.register(ContactEnquiry)
+class ContactEnquiryAdmin(admin.ModelAdmin):
+    list_display = ['name', 'email', 'subject', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['name', 'email', 'subject']
+    readonly_fields = ['created_at']
+    ordering = ['-created_at']
+
+@admin.register(HeroSlider)
+class HeroSliderAdmin(admin.ModelAdmin):
+    list_display = ['title', 'is_active', 'order', 'created_at']
+    list_filter = ['is_active', 'created_at']
+    search_fields = ['title']
+    ordering = ['order', '-created_at']
+
+@admin.register(Blog)
+class BlogAdmin(admin.ModelAdmin):
+    list_display = ['heading', 'created_at']
+    list_filter = ['created_at']
+    search_fields = ['heading', 'description']
+    ordering = ['-created_at']

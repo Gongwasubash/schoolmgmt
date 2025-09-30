@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Enquiry Status</title>
+    <style>
+        .badge { padding: 5px 10px; border-radius: 3px; color: white; }
+        .bg-success { background-color: #28a745; }
+        .bg-info { background-color: #17a2b8; }
+        .bg-primary { background-color: #007bff; }
+        .bg-secondary { background-color: #6c757d; }
+        table { border-collapse: collapse; width: 100%; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+    </style>
+</head>
+<body>
+    <h1>Contact Enquiry Status Test</h1>
+    <p>Last updated: {% now "Y-m-d H:i:s" %}</p>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Subject</th>
+                <th>Status (Raw)</th>
+                <th>Status (Display)</th>
+                <th>Updated At</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for enquiry in enquiries %}
+            <tr>
+                <td>{{ enquiry.id }}</td>
+                <td>{{ enquiry.name }}</td>
+                <td>{{ enquiry.subject }}</td>
+                <td>{{ enquiry.status }}</td>
+                <td>
+                    {% if enquiry.status == 'contacted' %}
+                        <span class="badge bg-info">Contacted</span>
+                    {% elif enquiry.status == 'resolved' %}
+                        <span class="badge bg-primary">Resolved</span>
+                    {% elif enquiry.status == 'closed' %}
+                        <span class="badge bg-secondary">Closed</span>
+                    {% else %}
+                        <span class="badge bg-success">New</span>
+                    {% endif %}
+                </td>
+                <td>{{ enquiry.updated_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

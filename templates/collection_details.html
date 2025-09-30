@@ -12,12 +12,20 @@
         </div>
         <div class="header-stats">
             <div class="stat-box">
-                <span class="stat-number">Rs. {{ total_amount|floatformat:0 }}</span>
+                <span class="stat-number">Rs {{ total_amount|floatformat:0 }}</span>
                 <span class="stat-label">Total Amount</span>
             </div>
             <div class="stat-box">
                 <span class="stat-number">{{ total_payments }}</span>
-                <span class="stat-label">Total Payments</span>
+                <span class="stat-label">Total Records</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number">Rs {{ fee_total|floatformat:0 }}</span>
+                <span class="stat-label">Fee Collection</span>
+            </div>
+            <div class="stat-box">
+                <span class="stat-number">Rs {{ expense_total|floatformat:0 }}</span>
+                <span class="stat-label">Daily Expenses</span>
             </div>
         </div>
     </div>
@@ -27,10 +35,12 @@
         <table class="payments-table">
             <thead>
                 <tr>
+                    <th>Type</th>
                     <th>Receipt No</th>
                     <th>Date</th>
                     <th>Student Name</th>
                     <th>Class</th>
+                    <th>Description</th>
                     <th>Amount</th>
                     <th>Payment Method</th>
                     <th>Actions</th>
@@ -39,21 +49,40 @@
             <tbody>
                 {% for payment in payments %}
                 <tr>
+                    <td><span class="badge bg-primary">Fee</span></td>
                     <td>RCP{{ payment.id|stringformat:"04d" }}</td>
                     <td>{{ payment.payment_date|date:"M d, Y" }}</td>
                     <td>{{ payment.student.name }}</td>
                     <td>{{ payment.student.student_class }}-{{ payment.student.section }}</td>
-                    <td class="amount">Rs. {{ payment.payment_amount|floatformat:0 }}</td>
+                    <td>Fee Payment</td>
+                    <td class="amount">Rs {{ payment.payment_amount|floatformat:0 }}</td>
                     <td>{{ payment.payment_method }}</td>
                     <td>
                         <a href="{% url 'fee_receipt' payment.id %}" class="btn-view" target="_blank">View</a>
+                        <a href="javascript:void(0)" onclick="printReceipt({{ payment.id }})" class="btn-print">Print</a>
                     </td>
                 </tr>
-                {% empty %}
+                {% endfor %}
+                {% for expense in daily_expenses %}
                 <tr>
-                    <td colspan="7" class="no-data">No payments found for this period</td>
+                    <td><span class="badge bg-success">Expense</span></td>
+                    <td>EXP{{ expense.id|stringformat:"04d" }}</td>
+                    <td>{{ expense.expense_date|date:"M d, Y" }}</td>
+                    <td>{{ expense.student.name }}</td>
+                    <td>{{ expense.student.student_class }}-{{ expense.student.section }}</td>
+                    <td>{{ expense.description }}</td>
+                    <td class="amount">Rs {{ expense.amount|floatformat:0 }}</td>
+                    <td>Cash</td>
+                    <td>
+                        <span class="badge bg-info">Daily Expense</span>
+                    </td>
                 </tr>
                 {% endfor %}
+                {% if not payments and not daily_expenses %}
+                <tr>
+                    <td colspan="9" class="no-data">No payments or expenses found for this period</td>
+                </tr>
+                {% endif %}
             </tbody>
         </table>
     </div>
@@ -187,12 +216,38 @@
     background: #5a6fd8;
 }
 
+.btn-print {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 12px;
+    background: #28a745;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+    font-size: 12px;
+    margin-left: 5px;
+}
+
+.btn-print:hover {
+    background: #218838;
+}
+
 .no-data {
     text-align: center;
     padding: 40px;
     color: #666;
     font-style: italic;
 }
+
+<script>
+function printReceipt(paymentId) {
+    const printWindow = window.open(`/fee-receipt/${paymentId}/`, '_blank');
+    printWindow.onload = function() {
+        printWindow.print();
+    };
+}
+</script>
 
 @media (max-width: 768px) {
     .page-header {

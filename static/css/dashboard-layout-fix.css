@@ -1,0 +1,60 @@
+/* Dashboard Layout Fix */
+.stats-section {
+    margin-bottom: 2rem !important;
+}
+
+.collections-student-section {
+    display: flex !important;
+    gap: 2rem !important;
+    margin-bottom: 2rem !important;
+    align-items: stretch !important;
+}
+
+.left-column {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+}
+
+.collections-section {
+    flex: 1 !important;
+}
+
+.collections-card {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.actions-section {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.student-distribution-side {
+    flex: 1 !important;
+    max-width: 400px !important;
+}
+
+.student-distribution-side .chart-card {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+}
+
+.main-content-grid {
+    margin-top: 2rem !important;
+}
+
+@media (max-width: 768px) {
+    .collections-student-section {
+        flex-direction: column !important;
+        gap: 1.5rem !important;
+    }
+    
+    .student-distribution-side {
+        max-width: none !important;
+    }
+}

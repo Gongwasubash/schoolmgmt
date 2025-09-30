@@ -603,6 +603,10 @@
             <i class="fas fa-print"></i>
             Bulk Print
         </button>
+        <button class="btn-primary" onclick="bulkWhatsApp()" style="background: #25D366; margin-left: 0.5rem;">
+            <i class="fab fa-whatsapp"></i>
+            Bulk WhatsApp
+        </button>
     </div>
 
     <div class="filter-section">
@@ -675,7 +679,7 @@
             </div>
             <div class="stat-content">
                 <div class="stat-label">FEES COLLECTED</div>
-                <div class="stat-value" id="total-collected">Rs{{ total_collected|floatformat:0 }}</div>
+                <div class="stat-value" id="total-collected">Rs {{ total_collected|floatformat:0 }}</div>
             </div>
         </div>
         <div class="stat-card pending">
@@ -686,7 +690,7 @@
             </div>
             <div class="stat-content">
                 <div class="stat-label">FEES PENDING</div>
-                <div class="stat-value" id="total-pending">Rs{{ total_pending|floatformat:0 }}</div>
+                <div class="stat-value" id="total-pending">Rs {{ total_pending|floatformat:0 }}</div>
             </div>
         </div>
     </div>
@@ -723,13 +727,13 @@
                         </div>
                     </td>
                     <td>
-                        <div class="fee-amount">Rs{{ student.pending_amount|floatformat:0 }}</div>
+                        <div class="fee-amount">Rs {{ student.pending_amount|floatformat:0 }}</div>
                     </td>
                     <td>
-                        <div class="fee-amount" style="color: #28a745;">Rs{{ student.paid_amount|floatformat:0 }}</div>
+                        <div class="fee-amount" style="color: #28a745;">Rs {{ student.paid_amount|floatformat:0 }}</div>
                     </td>
                     <td>
-                        <div class="fee-amount" style="color: #dc3545;">Rs{{ student.daily_expenses_total|default:0|floatformat:0 }}</div>
+                        <div class="fee-amount" style="color: #dc3545;">Rs {{ student.daily_expenses_total|default:0|floatformat:0 }}</div>
                     </td>
                     <td>
                         <div class="fee-details" style="font-size: 0.75rem; color: #666;">
@@ -952,6 +956,46 @@ class FeeReceiptBook {
         window.open(`/bulk-print-receipts/?${params}`, '_blank');
     }
 
+    bulkWhatsApp() {
+        const classFilter = document.getElementById('class-filter').value;
+        
+        if (!classFilter) {
+            alert('Please select a class to send WhatsApp messages.');
+            return;
+        }
+        
+        const visibleRows = document.querySelectorAll('.fee-table tbody tr');
+        const students = [];
+        
+        visibleRows.forEach(row => {
+            const whatsappBtn = row.querySelector('button[onclick*="sendWhatsApp"]');
+            if (whatsappBtn) {
+                const onclick = whatsappBtn.getAttribute('onclick');
+                const match = onclick.match(/sendWhatsApp\((\d+), '([^']*)', '([^']*)'\)/);
+                if (match && match[2]) {
+                    students.push({
+                        id: match[1],
+                        mobile: match[2],
+                        name: match[3]
+                    });
+                }
+            }
+        });
+        
+        if (students.length === 0) {
+            alert('No students with mobile numbers found.');
+            return;
+        }
+        
+        if (confirm(`Open WhatsApp for ${students.length} students? Click OK and then click each WhatsApp tab to send messages.`)) {
+            students.forEach((student, index) => {
+                setTimeout(() => {
+                    this.sendWhatsApp(student.id, student.mobile, student.name);
+                }, index * 1000);
+            });
+        }
+    }
+
     async applyFilters() {
         const months = Array.from(document.querySelectorAll('.month-filter input:checked'), cb => cb.value);
         const classFilter = document.getElementById('class-filter').value;
@@ -996,13 +1040,13 @@ class FeeReceiptBook {
                     </div>
                 </td>
                 <td>
-                    <div class="fee-amount">Rs${Math.round(student.pending_amount).toLocaleString()}</div>
+                    <div class="fee-amount">Rs ${Math.round(student.pending_amount).toLocaleString()}</div>
                 </td>
                 <td>
-                    <div class="fee-amount" style="color: #28a745;">Rs${Math.round(student.paid_amount || 0).toLocaleString()}</div>
+                    <div class="fee-amount" style="color: #28a745;">Rs ${Math.round(student.paid_amount || 0).toLocaleString()}</div>
                 </td>
                 <td>
-                    <div class="fee-amount" style="color: #dc3545;">Rs${Math.round(student.daily_expenses_total || 0).toLocaleString()}</div>
+                    <div class="fee-amount" style="color: #dc3545;">Rs ${Math.round(student.daily_expenses_total || 0).toLocaleString()}</div>
                 </td>
                 <td>
                     <div class="fee-details" style="font-size: 0.75rem; color: #666;">
@@ -1027,8 +1071,8 @@ class FeeReceiptBook {
 
     updateStats(totalStudents, totalCollected, totalPending) {
         document.getElementById('total-students').textContent = totalStudents;
-        document.getElementById('total-collected').textContent = `Rs${Math.round(totalCollected).toLocaleString()}`;
-        document.getElementById('total-pending').textContent = `Rs${Math.round(totalPending).toLocaleString()}`;
+        document.getElementById('total-collected').textContent = `Rs ${Math.round(totalCollected).toLocaleString()}`;
+        document.getElementById('total-pending').textContent = `Rs ${Math.round(totalPending).toLocaleString()}`;
     }
 
     addStyles() {
@@ -1054,6 +1098,7 @@ function printReceipt(studentId) { feeBook.printReceipt(studentId); }
 function exportData() { feeBook.exportData(); }
 function applyFilters() { feeBook.applyFilters(); }
 function bulkPrint() { feeBook.bulkPrint(); }
+function bulkWhatsApp() { feeBook.bulkWhatsApp(); }
 
 
 </script>

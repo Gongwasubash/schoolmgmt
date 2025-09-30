@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail
+from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, WelcomeSection, ContactEnquiry
 from django.db import models
 from django.db.models import F, Q
 import json
@@ -51,7 +51,8 @@ def format_nepali_datetime_for_display(english_datetime):
     except:
         return str(english_datetime)
 
-def home(request):
+def dashboard(request):
+    """Original dashboard view - accessible via /dashboard/ URL"""
     # Get student statistics
     total_students = Student.objects.count()
     boys_count = Student.objects.filter(gender='Boy').count()
@@ -75,6 +76,12 @@ def home(request):
     # Get yearly collection (current year)
     yearly_collection = FeePayment.objects.filter(payment_date__year=today.year).aggregate(total=Sum('payment_amount'))['total'] or 0
     
+    
+    # Get pending enquiries count - only count pending registrations and non-closed contact enquiries
+    contact_enquiries_count = ContactEnquiry.objects.exclude(status='closed').count()
+    pending_registrations_count = StudentRegistration.objects.filter(status='pending').count()
+    pending_enquiries = contact_enquiries_count + pending_registrations_count
+    
     # Get class-wise data
     class_data = Student.objects.values('student_class').annotate(count=Count('student_class')).order_by('student_class')
     
@@ -82,6 +89,63 @@ def home(request):
     religion_data = Student.objects.values('religion').annotate(count=Count('religion')).order_by('religion')
     
     # Get comprehensive Nepali date information
+    nepali_info = get_comprehensive_nepali_info()
+    
+    context = {
+        'total_students': total_students,
+        'boys_count': boys_count,
+        'girls_count': girls_count,
+        'todays_birthdays': todays_birthdays,
+        'todays_collection': todays_collection,
+        'weekly_collection': weekly_collection,
+        'monthly_collection': monthly_collection,
+        'yearly_collection': yearly_collection,
+        'pending_enquiries': pending_enquiries,
+        'class_data': class_data,
+        'religion_data': religion_data,
+        'nepali_info': nepali_info,
+        'current_nepali_date': nepali_info['formatted_full'],
+        'nepali_year': nepali_info['nepali_date']['year'],
+        'current_nepali_session': nepali_info['session'],
+        'nepali_fiscal_year': nepali_info['fiscal_year'],
+        'nepali_weekday': nepali_info['weekday']['name_english'],
+        'is_weekend': nepali_info['is_weekend'],
+    }
+    
+    return render(request, 'index.html', context)
+
+def home(request):
+    # Lincoln School Homepage - Modern website homepage
+    # Get hero slider images
+    from .models import HeroSlider, Blog
+    hero_images = HeroSlider.objects.filter(is_active=True).order_by('order')
+    blogs = Blog.objects.all()[:3]
+    welcome_section = WelcomeSection.get_active_welcome()
+    
+    # Get basic statistics for potential use
+    total_students = Student.objects.count()
+    boys_count = Student.objects.filter(gender='Boy').count()
+    girls_count = Student.objects.filter(gender='Girl').count()
+    
+    # Get today's birthdays
+    today = date.today()
+    todays_birthdays = Student.objects.filter(dob__month=today.month, dob__day=today.day).count()
+    
+    # Get collection data
+    todays_collection = FeePayment.objects.filter(payment_date=today).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    from datetime import timedelta
+    week_start = today - timedelta(days=6)
+    weekly_collection = FeePayment.objects.filter(payment_date__range=[week_start, today]).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    monthly_collection = FeePayment.objects.filter(payment_date__year=today.year, payment_date__month=today.month).aggregate(total=Sum('payment_amount'))['total'] or 0
+    yearly_collection = FeePayment.objects.filter(payment_date__year=today.year).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    # Get class-wise and religion-wise data
+    class_data = Student.objects.values('student_class').annotate(count=Count('student_class')).order_by('student_class')
+    religion_data = Student.objects.values('religion').annotate(count=Count('religion')).order_by('religion')
+    
+    # Get Nepali date information
     nepali_info = get_comprehensive_nepali_info()
     
     context = {
@@ -104,7 +168,15 @@ def home(request):
         'is_weekend': nepali_info['is_weekend'],
     }
     
-    return render(request, 'index.html', context)
+    # Get school details for homepage
+    school = SchoolDetail.get_current_school()
+    context['school'] = school
+    context['hero_images'] = hero_images
+    context['blogs'] = blogs
+    context['welcome_section'] = welcome_section
+    
+    # Render the school homepage with dynamic school data
+    return render(request, 'school_homepage.html', context)
 
 def students(request):
     if request.method == 'POST':
@@ -647,9 +719,9 @@ def download_csv(request):
             student.student_class,
             student.section,
             student.reg_number,
-            f'₹{total_fee:,.2f}',
-            f'₹{paid_amount:,.2f}',
-            f'₹{pending_amount:,.2f}',
+            f'Rs.{total_fee:,.2f}',
+            f'Rs.{paid_amount:,.2f}',
+            f'Rs.{pending_amount:,.2f}',
             payment_status,
             student.last_payment_date.strftime('%Y-%m-%d') if student.last_payment_date else 'No payments',
             student.father_name,
@@ -987,13 +1059,33 @@ def submit_payment(request):
                     student.save()
                     break
             
-            # Delete paid daily expenses
+            # Record paid daily expenses as FeePayment entries and delete from StudentDailyExpense
             daily_expenses = json.loads(data.get('daily_expenses', '[]'))
             if daily_expenses:
+                for expense in daily_expenses:
+                    # Create FeePayment record for daily expense
+                    FeePayment.objects.create(
+                        student=student,
+                        selected_months='[]',
+                        fee_types='[]',
+                        custom_fees=json.dumps([{'name': expense['description'], 'amount': expense['amount']}]),
+                        total_fee=expense['amount'],
+                        payment_amount=expense['amount'],
+                        balance=0,
+                        payment_method=data['payment_method'],
+                        bank_name=data.get('bank_name', ''),
+                        cheque_dd_no=data.get('cheque_dd_no', ''),
+                        cheque_date=cheque_date,
+                        remarks=f"Daily Expense: {expense['description']}",
+                        sms_sent=data.get('sms_sent', False),
+                        whatsapp_sent=data.get('whatsapp_sent', False)
+                    )
+                
+                # Delete paid daily expenses
                 expense_ids = [expense['id'] for expense in daily_expenses]
                 StudentDailyExpense.objects.filter(id__in=expense_ids).delete()
             
-            return JsonResponse({'success': True, 'payment_ids': payment_ids})
+            return JsonResponse({'success': True, 'payment_ids': payment_ids, 'daily_expenses_paid': len(daily_expenses) if daily_expenses else 0})
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     
@@ -1389,7 +1481,7 @@ def generate_receipt_pdf(request, payment_id):
         y -= 15
         p.drawString(70, y, f"Payment Method: {payment.payment_method}")
         y -= 15
-        p.drawString(70, y, f"Amount Paid: ₹{payment.payment_amount}")
+        p.drawString(70, y, f"Amount Paid: Rs.{payment.payment_amount}")
         
         # Fee Details
         if payment.fee_types:
@@ -1404,7 +1496,7 @@ def generate_receipt_pdf(request, payment_id):
                     y -= 20
                     fee_name = fee_type.get('type', '').replace('_', ' ').title()
                     fee_amount = fee_type.get('amount', 0)
-                    p.drawString(70, y, f"{fee_name}: ₹{fee_amount}")
+                    p.drawString(70, y, f"{fee_name}: Rs.{fee_amount}")
             except json.JSONDecodeError:
                 pass
         
@@ -3548,7 +3640,80 @@ def school_settings_test(request):
     except Exception as e:
         return HttpResponse(f'Error: {str(e)}')
 
+def registration(request):
+    """Public registration page - no login required"""
+    return render(request, 'registration.html')
 
+@csrf_exempt
+def register_student_api(request):
+    """API endpoint to register new student"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Generate unique registration number
+            reg_number = f"REG{datetime.now().year}{Student.objects.count() + 1:04d}"
+            
+            student = Student.objects.create(
+                name=data['name'],
+                student_class=data['student_class'],
+                section=data['section'],
+                gender=data['gender'],
+                religion=data.get('religion', 'Hindu'),
+                dob=data['dob'],
+                address1=data['address1'],
+                city=data['city'],
+                mobile=data['mobile'],
+                father_name=data['father_name'],
+                father_mobile=data.get('father_mobile', ''),
+                mother_name=data['mother_name'],
+                admission_date=data['admission_date'],
+                session=data['session'],
+                reg_number=reg_number,
+                transport=data.get('transport', '00_No Transport Service | 0 Rs.'),
+                address2=data.get('address2', '')
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Registration successful',
+                'reg_number': reg_number,
+                'student_id': student.id
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
+
+def collection_dashboard(request):
+    """Collection dashboard showing overview of all collections"""
+    from datetime import timedelta
+    
+    today = date.today()
+    
+    # Get today's collection
+    todays_collection = FeePayment.objects.filter(payment_date=today).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    # Get weekly collection (last 7 days)
+    week_start = today - timedelta(days=6)
+    weekly_collection = FeePayment.objects.filter(payment_date__range=[week_start, today]).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    # Get monthly collection (current month)
+    monthly_collection = FeePayment.objects.filter(payment_date__year=today.year, payment_date__month=today.month).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    # Get yearly collection (current year)
+    yearly_collection = FeePayment.objects.filter(payment_date__year=today.year).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    context = {
+        'todays_collection': todays_collection,
+        'weekly_collection': weekly_collection,
+        'monthly_collection': monthly_collection,
+        'yearly_collection': yearly_collection,
+    }
+    
+    return render(request, 'collection_dashboard.html', context)
 
 def collection_details(request, period='today'):
     """Collection details page showing payments for specified period"""
@@ -3584,10 +3749,15 @@ def collection_details(request, period='today'):
         period_title = "Today's"
         date_range = today.strftime('%B %d, %Y')
     
-    # Get payments for the period
+    # Get payments for the period (FeePayment)
     payments = FeePayment.objects.filter(
         payment_date__range=[start_date, end_date]
     ).select_related('student').order_by('-payment_date', '-id')
+    
+    # Get daily expenses for the period
+    daily_expenses = StudentDailyExpense.objects.filter(
+        expense_date__range=[start_date, end_date]
+    ).select_related('student').order_by('-expense_date', '-id')
     
     # Process fee types for display
     for payment in payments:
@@ -3599,9 +3769,11 @@ def collection_details(request, period='today'):
             except json.JSONDecodeError:
                 pass
     
-    # Calculate totals
-    total_amount = payments.aggregate(total=Sum('payment_amount'))['total'] or 0
-    total_payments = payments.count()
+    # Calculate totals (FeePayment + StudentDailyExpense)
+    fee_total = payments.aggregate(total=Sum('payment_amount'))['total'] or 0
+    expense_total = daily_expenses.aggregate(total=Sum('amount'))['total'] or 0
+    total_amount = fee_total + expense_total
+    total_payments = payments.count() + daily_expenses.count()
     
     # Payment method summary
     payment_methods = payments.values('payment_method').annotate(
@@ -3611,10 +3783,13 @@ def collection_details(request, period='today'):
     
     context = {
         'payments': payments,
+        'daily_expenses': daily_expenses,
         'period_title': period_title,
         'date_range': date_range,
         'total_amount': total_amount,
         'total_payments': total_payments,
+        'fee_total': fee_total,
+        'expense_total': expense_total,
         'payment_methods': payment_methods,
         'period': period,
         'start_date': start_date,
@@ -3655,6 +3830,97 @@ def school_settings(request):
         })
         return render(request, 'school_settings.html', {'school': default_school})
 
+def website_settings(request):
+    from .models import HeroSlider, Blog
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'add_hero':
+            title = request.POST.get('hero_title', 'New Hero Image')
+            HeroSlider.objects.create(
+                title=title,
+                image=request.FILES['hero_image'],
+                is_active=True
+            )
+            messages.success(request, 'Hero image added successfully!')
+        
+        elif action == 'update_hero':
+            hero_id = request.POST.get('hero_id')
+            hero = get_object_or_404(HeroSlider, id=hero_id)
+            hero.title = request.POST.get('hero_title')
+            if 'hero_image' in request.FILES:
+                hero.image = request.FILES['hero_image']
+            hero.save()
+            messages.success(request, 'Hero image updated successfully!')
+        
+        elif action == 'delete_hero':
+            hero_id = request.POST.get('hero_id')
+            HeroSlider.objects.filter(id=hero_id).delete()
+            messages.success(request, 'Hero image deleted successfully!')
+        
+        elif action == 'add_blog':
+            Blog.objects.create(
+                heading=request.POST.get('blog_heading'),
+                description=request.POST.get('blog_description'),
+                photo=request.FILES['blog_image']
+            )
+            messages.success(request, 'Blog post added successfully!')
+        
+        elif action == 'update_blog':
+            blog_id = request.POST.get('blog_id')
+            blog = get_object_or_404(Blog, id=blog_id)
+            blog.heading = request.POST.get('blog_heading')
+            blog.description = request.POST.get('blog_description')
+            if 'blog_image' in request.FILES:
+                blog.photo = request.FILES['blog_image']
+            blog.save()
+            messages.success(request, 'Blog post updated successfully!')
+        
+        elif action == 'delete_blog':
+            blog_id = request.POST.get('blog_id')
+            Blog.objects.filter(id=blog_id).delete()
+            messages.success(request, 'Blog post deleted successfully!')
+        
+        elif action == 'add_welcome':
+            WelcomeSection.objects.update(is_active=False)
+            welcome_data = {
+                'title': request.POST.get('welcome_title'),
+                'content': request.POST.get('welcome_content'),
+                'is_active': True
+            }
+            if 'welcome_image' in request.FILES:
+                welcome_data['image'] = request.FILES['welcome_image']
+            WelcomeSection.objects.create(**welcome_data)
+            messages.success(request, 'Welcome section added successfully!')
+        
+        elif action == 'update_welcome':
+            welcome_id = request.POST.get('welcome_id')
+            welcome = get_object_or_404(WelcomeSection, id=welcome_id)
+            welcome.title = request.POST.get('welcome_title')
+            welcome.content = request.POST.get('welcome_content')
+            if 'welcome_image' in request.FILES:
+                welcome.image = request.FILES['welcome_image']
+            welcome.save()
+            messages.success(request, 'Welcome section updated successfully!')
+        
+        elif action == 'delete_welcome':
+            welcome_id = request.POST.get('welcome_id')
+            WelcomeSection.objects.filter(id=welcome_id).delete()
+            messages.success(request, 'Welcome section deleted successfully!')
+        
+        return redirect('website_settings')
+    
+    hero_images = HeroSlider.objects.all().order_by('order')
+    blogs = Blog.objects.all().order_by('-created_at')
+    welcome_sections = WelcomeSection.objects.all().order_by('-created_at')
+    
+    return render(request, 'website_settings.html', {
+        'hero_images': hero_images,
+        'blogs': blogs,
+        'welcome_sections': welcome_sections
+    })
+
 def id_creation(request):
     """ID Creation page for generating student ID cards"""
     students = Student.objects.all().order_by('name')
@@ -3670,6 +3936,39 @@ def id_creation(request):
         'students': students,
         'classes': classes
     })
+
+def photo_management(request):
+    """Photo management page for managing student photos"""
+    students = Student.objects.all().order_by('name')
+    return render(request, 'photo_management.html', {'students': students})
+
+def photo_gallery(request):
+    """Photo gallery page"""
+    return render(request, 'photo_gallery.html')
+
+@csrf_exempt
+def assign_photo(request):
+    """API to assign photo to student"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            return JsonResponse({'success': True, 'message': 'Photo assigned successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def remove_photo(request):
+    """API to remove photo from student"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            return JsonResponse({'success': True, 'message': 'Photo removed successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+
 
 def generate_id(request):
     student_id = request.GET.get('student_id')
@@ -3857,3 +4156,333 @@ School Administration'''
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def update_enquiry_status_api(request):
+    """API endpoint to update contact enquiry status"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            enquiry_id = data.get('enquiry_id')
+            status = data.get('status')
+            remarks = data.get('remarks', '')
+            
+            if not enquiry_id or not status:
+                return JsonResponse({'success': False, 'error': 'Enquiry ID and status are required'})
+            
+            enquiry = get_object_or_404(ContactEnquiry, id=enquiry_id)
+            enquiry.status = status
+            if remarks:
+                enquiry.remarks = remarks
+            enquiry.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Enquiry status updated to {status.title()}',
+                'enquiry_id': enquiry.id,
+                'new_status': status
+            })
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def update_registration_status_api(request):
+    """API endpoint to update student registration status"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            registration_id = data.get('registration_id')
+            status = data.get('status')
+            remarks = data.get('remarks', '')
+            
+            if not registration_id or not status:
+                return JsonResponse({'success': False, 'error': 'Registration ID and status are required'})
+            
+            registration = get_object_or_404(StudentRegistration, id=registration_id)
+            registration.status = status
+            if remarks:
+                registration.remarks = remarks
+            registration.save()
+            
+            # If approved, create student record
+            if status == 'approved':
+                if not Student.objects.filter(reg_number=registration.application_number).exists():
+                    Student.objects.create(
+                        name=registration.name,
+                        student_class=registration.student_class,
+                        section=registration.section,
+                        gender=registration.gender,
+                        dob=registration.dob,
+                        address1=registration.address,
+                        city=registration.city,
+                        mobile=registration.mobile,
+                        father_name=registration.father_name,
+                        mother_name=registration.mother_name,
+                        religion=registration.religion,
+                        reg_number=registration.application_number,
+                        admission_date=registration.registration_date,
+                        session=get_current_nepali_year_session(),
+                        transport='00_No Transport Service | 0 Rs.'
+                    )
+                    message = f'Registration approved and student {registration.name} added to system'
+                else:
+                    message = f'Registration status updated to {status.title()}'
+            else:
+                message = f'Registration status updated to {status.title()}'
+            
+            return JsonResponse({
+                'success': True,
+                'message': message,
+                'registration_id': registration.id,
+                'new_status': status
+            })
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def admin_login(request):
+    """Admin login page"""
+    if request.method == 'POST':
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        
+        try:
+            admin = AdminLogin.objects.get(username=username, password=password, is_active=True)
+            request.session['admin_logged_in'] = True
+            request.session['admin_username'] = admin.username
+            return redirect('dashboard')
+        except AdminLogin.DoesNotExist:
+            messages.error(request, 'Invalid username or password')
+    
+    return render(request, 'admin_login.html')
+
+def admin_logout(request):
+    """Admin logout"""
+    request.session.flush()
+    return redirect('admin_login')
+
+def public_registration(request):
+    """Public registration form for new student admissions"""
+    if request.method == 'POST':
+        try:
+            # Use current Nepali session for new students
+            session_name = get_current_nepali_year_session()
+            
+            # Create new student from form data
+            student = Student(
+                name=request.POST.get('name'),
+                student_class=request.POST.get('class'),
+                section=request.POST.get('section', 'A'),
+                address1=request.POST.get('address1'),
+                city=request.POST.get('city'),
+                mobile=request.POST.get('mobile'),
+                gender=request.POST.get('gender'),
+                religion=request.POST.get('religion', 'Hindu'),
+                dob=request.POST.get('dob'),
+                admission_date=date.today(),
+                session=session_name,
+                father_name=request.POST.get('fatherName'),
+                mother_name=request.POST.get('motherName'),
+                transport='00_No Transport Service | 0 Rs.',
+                reg_number=f'REG{date.today().year}{Student.objects.count()+1:04d}'
+            )
+            student.save()
+            
+            # Success message
+            context = {
+                'success': True,
+                'message': f'Registration submitted successfully! Registration Number: {student.reg_number}',
+                'student': student
+            }
+            return render(request, 'public_registration.html', context)
+            
+        except Exception as e:
+            context = {
+                'error': f'Error submitting registration: {str(e)}'
+            }
+            return render(request, 'public_registration.html', context)
+    
+    # GET request - show the form
+    try:
+        school = SchoolDetail.get_current_school()
+    except:
+        school = None
+    
+    return render(request, 'public_registration.html', {'school': school})
+
+def contact(request):
+    """Contact page"""
+    if request.method == 'POST':
+        try:
+            from .models import ContactEnquiry
+            ContactEnquiry.objects.create(
+                name=request.POST.get('name'),
+                email=request.POST.get('email'),
+                phone=request.POST.get('phone', ''),
+                subject=request.POST.get('subject'),
+                enquiry=request.POST.get('enquiry')
+            )
+            context = {
+                'success': True,
+                'message': 'Your enquiry has been submitted successfully. We will get back to you soon.',
+                'school': SchoolDetail.get_current_school()
+            }
+            return render(request, 'contact.html', context)
+        except Exception as e:
+            context = {
+                'error': f'Error submitting enquiry: {str(e)}',
+                'school': SchoolDetail.get_current_school()
+            }
+            return render(request, 'contact.html', context)
+    
+    try:
+        school = SchoolDetail.get_current_school()
+    except:
+        school = None
+    return render(request, 'contact.html', {'school': school})
+
+def blog_detail(request, blog_id):
+    """Blog detail page"""
+    from .models import Blog
+    from django.core.paginator import Paginator
+    
+    blog = get_object_or_404(Blog, id=blog_id)
+    
+    # Handle AJAX request for more other blogs
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        page = request.GET.get('page', 1)
+        all_other_blogs = Blog.objects.exclude(id=blog_id).order_by('-created_at')
+        paginator = Paginator(all_other_blogs, 5)
+        other_blogs_page = paginator.get_page(page)
+        return render(request, 'blog_detail_other_items.html', {'other_blogs': other_blogs_page})
+    
+    other_blogs = Blog.objects.exclude(id=blog_id).order_by('-created_at')[:5]
+    has_more_other_blogs = Blog.objects.exclude(id=blog_id).count() > 5
+    school = SchoolDetail.get_current_school()
+    
+    return render(request, 'blog_detail.html', {
+        'blog': blog, 
+        'other_blogs': other_blogs,
+        'has_more_other_blogs': has_more_other_blogs,
+        'school': school
+    })
+
+def pending_enquiry(request):
+    """Pending enquiry page"""
+    from .models import ContactEnquiry
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update_status':
+            registration_id = request.POST.get('registration_id')
+            status = request.POST.get('status')
+            remarks = request.POST.get('remarks', '')
+            
+            registration = get_object_or_404(StudentRegistration, id=registration_id)
+            registration.status = status
+            registration.remarks = remarks
+            registration.save()
+            
+            # If approved, create student record
+            if status == 'approved':
+                # Check if student already exists
+                if not Student.objects.filter(reg_number=registration.application_number).exists():
+                    Student.objects.create(
+                        name=registration.name,
+                        student_class=registration.student_class,
+                        section=registration.section,
+                        gender=registration.gender,
+                        dob=registration.dob,
+                        address1=registration.address,
+                        city=registration.city,
+                        mobile=registration.mobile,
+                        father_name=registration.father_name,
+                        mother_name=registration.mother_name,
+                        religion=registration.religion,
+                        reg_number=registration.application_number,
+                        admission_date=registration.registration_date,
+                        session=get_current_nepali_year_session(),
+                        transport='00_No Transport Service | 0 Rs.'
+                    )
+                    messages.success(request, f'Registration approved and student {registration.name} added to system')
+                else:
+                    messages.success(request, f'Registration status updated to {status.title()}')
+            else:
+                messages.success(request, f'Registration status updated to {status.title()}')
+            
+            return redirect('pending_enquiry')
+        
+        elif action == 'update_enquiry_status':
+            enquiry_id = request.POST.get('enquiry_id')
+            status = request.POST.get('status')
+            remarks = request.POST.get('remarks', '')
+            
+            enquiry = get_object_or_404(ContactEnquiry, id=enquiry_id)
+            enquiry.status = status
+            if remarks:
+                enquiry.remarks = remarks
+            enquiry.save()
+            
+            messages.success(request, f'Contact enquiry status updated to {status.title()}')
+            return redirect('pending_enquiry')
+    
+    enquiries = ContactEnquiry.objects.all().order_by('-created_at')
+    registrations = StudentRegistration.objects.all().order_by('-registration_date')
+    
+    response = render(request, 'pending_enquiry.html', {
+        'enquiries': enquiries,
+        'registrations': registrations
+    })
+    
+    # Add cache-busting headers to ensure fresh data
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response
+
+def blog_list(request):
+    """Public blog list page"""
+    from .models import Blog
+    from django.core.paginator import Paginator
+    
+    blogs = Blog.objects.all().order_by('-created_at')
+    paginator = Paginator(blogs, 6)  # Show 6 blogs per page
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    school = SchoolDetail.get_current_school()
+    
+    # For AJAX requests, return only the blog items
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return render(request, 'blog_items.html', {'blogs': page_obj})
+    
+    return render(request, 'blog_list.html', {
+        'blogs': page_obj,
+        'school': school,
+        'has_next': page_obj.has_next(),
+        'next_page': page_obj.next_page_number() if page_obj.has_next() else None
+    })
+
+def test_enquiry_status(request):
+    """Test view to check enquiry status display"""
+    from .models import ContactEnquiry
+    
+    enquiries = ContactEnquiry.objects.all().order_by('-created_at')
+    
+    response = render(request, 'test_enquiry_status.html', {
+        'enquiries': enquiries
+    })
+    
+    # Add cache-busting headers
+    response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+    response['Pragma'] = 'no-cache'
+    response['Expires'] = '0'
+    
+    return response

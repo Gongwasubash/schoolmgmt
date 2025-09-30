@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blog - {{ school.school_name }}</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Arial', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f8f9fa;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .blog-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 2rem;
+            margin: 2rem 0;
+        }
+        
+        .blog-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .blog-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .blog-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        
+        .blog-content {
+            padding: 1.5rem;
+        }
+        
+        .blog-title {
+            font-size: 1.25rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+        }
+        
+        .blog-description {
+            color: #666;
+            margin-bottom: 1rem;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        
+        .blog-date {
+            color: #888;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        
+        .read-more {
+            background: #667eea;
+            color: white;
+            padding: 0.5rem 1rem;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+            transition: background 0.3s ease;
+        }
+        
+        .read-more:hover {
+            background: #5a6fd8;
+        }
+        
+        .no-blogs {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+        
+        .back-home {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .back-home a {
+            background: #28a745;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            text-decoration: none;
+            border-radius: 5px;
+            display: inline-block;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h1>{{ school.school_name }} Blog</h1>
+            <p>Stay updated with our latest news and announcements</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        {% if blogs %}
+            <div class="blog-grid" id="blog-container">
+                {% for blog in blogs %}
+                <div class="blog-card">
+                    {% if blog.photo %}
+                        <img src="{{ blog.photo.url }}" alt="{{ blog.heading }}" class="blog-image">
+                    {% endif %}
+                    <div class="blog-content">
+                        <h2 class="blog-title">{{ blog.heading }}</h2>
+                        <div class="blog-date">{{ blog.created_at|date:"F d, Y" }}</div>
+                        <p class="blog-description">{{ blog.description|truncatewords:30 }}</p>
+                        <a href="{% url 'blog_detail' blog.id %}" class="read-more">Read More</a>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            {% if has_next %}
+            <div style="text-align: center; margin: 2rem 0;">
+                <button id="load-more-btn" data-next-page="{{ next_page }}" style="background: #667eea; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 5px; cursor: pointer;">Load More</button>
+                <div id="loading" style="display: none; margin-top: 1rem;">
+                    <div style="display: inline-block; width: 20px; height: 20px; border: 3px solid #f3f3f3; border-top: 3px solid #667eea; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                </div>
+            </div>
+            {% endif %}
+        {% else %}
+            <div class="no-blogs">
+                <h2>No blogs available at the moment</h2>
+                <p>Please check back later for updates.</p>
+            </div>
+        {% endif %}
+        
+        <div class="back-home">
+            <a href="{% url 'home' %}">← Back to Home</a>
+        </div>
+    </div>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loadMoreBtn = document.getElementById('load-more-btn');
+        const blogContainer = document.getElementById('blog-container');
+        const loading = document.getElementById('loading');
+        
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', function() {
+                const nextPage = this.getAttribute('data-next-page');
+                
+                loading.style.display = 'block';
+                loadMoreBtn.style.display = 'none';
+                
+                fetch(`?page=${nextPage}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    blogContainer.insertAdjacentHTML('beforeend', html);
+                    loading.style.display = 'none';
+                    
+                    const currentPage = parseInt(nextPage);
+                    const newNextPage = currentPage + 1;
+                    
+                    fetch(`?page=${newNextPage}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(nextHtml => {
+                        if (nextHtml.trim()) {
+                            loadMoreBtn.setAttribute('data-next-page', newNextPage);
+                            loadMoreBtn.style.display = 'block';
+                        }
+                    })
+                    .catch(() => {
+                        // No more pages
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    loading.style.display = 'none';
+                    loadMoreBtn.style.display = 'block';
+                });
+            });
+        }
+    });
+    </script>
+</body>
+</html>
