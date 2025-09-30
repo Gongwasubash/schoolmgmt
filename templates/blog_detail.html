@@ -1,0 +1,347 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ blog.heading }} - {{ school.school_name|default:"School Management System" }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --accent-color: #f59e0b;
+            --text-dark: #1f2937;
+            --text-light: #6b7280;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc;
+            padding-top: 80px;
+        }
+        .navbar {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            border-bottom: 1px solid rgba(0,0,0,0.08);
+            box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+        }
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #1a202c !important;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            letter-spacing: -0.025em;
+        }
+        .navbar-brand img {
+            width: 48px;
+            height: 48px;
+            object-fit: contain;
+            margin-right: 12px;
+        }
+        .navbar-nav .nav-link {
+            color: #4a5568 !important;
+            margin: 0 0.5rem;
+            padding: 0.75rem 1.25rem !important;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.2s ease;
+            border-radius: 6px;
+        }
+        .navbar-nav .nav-link:hover {
+            color: #1a202c !important;
+            background: rgba(26, 32, 44, 0.05);
+        }
+        .blog-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+        .blog-main {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+        }
+        .blog-sidebar {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 2rem;
+            height: fit-content;
+        }
+        .sidebar-blog {
+            display: block;
+            text-decoration: none;
+            color: inherit;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1.5rem;
+            border-bottom: 1px solid #e5e7eb;
+        }
+        .sidebar-blog:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+        }
+        .sidebar-blog-image {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 8px;
+            margin-bottom: 0.5rem;
+        }
+        .sidebar-blog-title {
+            font-size: 1rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 0.5rem;
+        }
+        .sidebar-blog-date {
+            font-size: 0.8rem;
+            color: var(--accent-color);
+        }
+        .blog-image {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 0;
+        }
+        .blog-content {
+            padding: 2rem;
+        }
+        .blog-date {
+            color: var(--accent-color);
+            font-size: 0.9rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+        }
+        .blog-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+        .blog-description {
+            font-size: 1.1rem;
+            line-height: 1.8;
+            color: var(--text-dark);
+        }
+        .footer {
+            background: var(--text-dark);
+            color: white;
+            padding: 50px 0 20px;
+            margin-top: 3rem;
+        }
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        .footer-section h4 {
+            color: var(--accent-color);
+            margin-bottom: 1rem;
+        }
+        .footer-section ul {
+            list-style: none;
+        }
+        .footer-section ul li {
+            margin-bottom: 0.5rem;
+        }
+        .footer-section ul li a {
+            color: #d1d5db;
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .footer-section ul li a:hover {
+            color: var(--accent-color);
+        }
+        .footer-bottom {
+            border-top: 1px solid #374151;
+            padding-top: 1rem;
+            text-align: center;
+            color: #9ca3af;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <img src="{% static 'img/Everest-Crest-Square.png' %}" alt="School Logo">
+                {{ school.school_name|default:"School Management System" }}
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#about">About</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#schools">Our Schools</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#values">Values</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'home' %}#news">News</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'public_registration' %}">Registration</a></li>
+                    <li class="nav-item"><a class="nav-link" href="{% url 'contact' %}">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="blog-container">
+        <div class="blog-main">
+            {% if blog.photo %}
+                <img src="{{ blog.photo.url }}" alt="{{ blog.heading }}" class="blog-image">
+            {% endif %}
+            <div class="blog-content">
+                <div class="blog-date">{{ blog.created_at|date:"F d, Y" }}</div>
+                <h1 class="blog-title">{{ blog.heading }}</h1>
+                <div class="blog-description">{{ blog.description|linebreaks }}</div>
+                <div class="text-center mt-4">
+                    <a href="{% url 'home' %}#news" class="btn btn-primary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to News
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="blog-sidebar">
+            <h4 style="color: var(--primary-color); margin-bottom: 1.5rem;">Other News</h4>
+            <div id="other-news-container">
+                {% for other_blog in other_blogs %}
+                    <a href="{% url 'blog_detail' other_blog.id %}" class="sidebar-blog">
+                        {% if other_blog.photo %}
+                            <img src="{{ other_blog.photo.url }}" alt="{{ other_blog.heading }}" class="sidebar-blog-image">
+                        {% endif %}
+                        <div class="sidebar-blog-title">{{ other_blog.heading|truncatewords:8 }}</div>
+                        <div class="sidebar-blog-date">{{ other_blog.created_at|date:"M d, Y" }}</div>
+                    </a>
+                {% endfor %}
+            </div>
+            
+            {% if has_more_other_blogs %}
+            <div style="text-align: center; margin-top: 1rem;">
+                <button id="load-more-other-news" style="background: var(--accent-color); color: white; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9rem;" data-page="2">
+                    Load More
+                </button>
+                <div id="other-news-loading" style="display: none; margin-top: 1rem;">
+                    <div style="display: inline-block; width: 16px; height: 16px; border: 2px solid #f3f3f3; border-top: 2px solid var(--accent-color); border-radius: 50%; animation: spin 1s linear infinite;"></div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="{% url 'home' %}">Home</a></li>
+                        <li><a href="{% url 'home' %}#about">About Us</a></li>
+                        <li><a href="{% url 'home' %}#schools">Our Schools</a></li>
+                        <li><a href="{% url 'public_registration' %}">Admissions</a></li>
+                        <li><a href="{% url 'studentlist' %}">Student Portal</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Academic</h4>
+                    <ul>
+                        <li><a href="#">Curriculum</a></li>
+                        <li><a href="#">Faculty</a></li>
+                        <li><a href="#">Academic Calendar</a></li>
+                        <li><a href="{% url 'reports' %}">Results</a></li>
+                        <li><a href="#">Library</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact Info</h4>
+                    <ul>
+                        <li><i class="fas fa-map-marker-alt me-2"></i>{{ school.address|default:"School Address" }}</li>
+                        <li><i class="fas fa-phone me-2"></i>{{ school.phone|default:"+977-1-XXXXXXX" }}</li>
+                        <li><i class="fas fa-envelope me-2"></i>{{ school.email|default:"info@school.edu.np" }}</li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Follow Us</h4>
+                    <ul>
+                        <li><a href="#"><i class="fab fa-facebook me-2"></i>Facebook</a></li>
+                        <li><a href="#"><i class="fab fa-twitter me-2"></i>Twitter</a></li>
+                        <li><a href="#"><i class="fab fa-instagram me-2"></i>Instagram</a></li>
+                        <li><a href="#"><i class="fab fa-youtube me-2"></i>YouTube</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 {{ school.school_name|default:"School Management System" }}. All rights reserved. | Developed with Django</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const loadMoreBtn = document.getElementById('load-more-other-news');
+        const otherNewsContainer = document.getElementById('other-news-container');
+        const otherNewsLoading = document.getElementById('other-news-loading');
+        
+        if (loadMoreBtn) {
+            loadMoreBtn.addEventListener('click', function() {
+                const page = this.getAttribute('data-page');
+                
+                otherNewsLoading.style.display = 'block';
+                loadMoreBtn.style.display = 'none';
+                
+                fetch(`?page=${page}`, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => response.text())
+                .then(html => {
+                    otherNewsContainer.insertAdjacentHTML('beforeend', html);
+                    otherNewsLoading.style.display = 'none';
+                    
+                    const nextPage = parseInt(page) + 1;
+                    
+                    fetch(`?page=${nextPage}`, {
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
+                    .then(response => response.text())
+                    .then(nextHtml => {
+                        if (nextHtml.trim()) {
+                            loadMoreBtn.setAttribute('data-page', nextPage);
+                            loadMoreBtn.style.display = 'block';
+                        }
+                    })
+                    .catch(() => {
+                        // No more pages
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    otherNewsLoading.style.display = 'none';
+                    loadMoreBtn.style.display = 'block';
+                });
+            });
+        }
+    });
+    </script>
+</body>
+</html>

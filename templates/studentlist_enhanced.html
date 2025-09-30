@@ -833,7 +833,7 @@ function showStudentModal(student) {
                     ${student.recent_payments.map(payment => `
                         <div class="payment-item">
                             <span>${payment.date}</span>
-                            <span>Rs. ${payment.amount}</span>
+                            <span>Rs ${payment.amount}</span>
                             <span>${payment.method}</span>
                         </div>
                     `).join('')}

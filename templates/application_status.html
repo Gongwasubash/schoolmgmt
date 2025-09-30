@@ -1,0 +1,136 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application Status - {{ school.school_name|default:"School Management System" }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8fafc;
+            padding-top: 80px;
+        }
+        .navbar {
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(20px);
+            padding: 1rem 0;
+            position: fixed;
+            top: 0;
+            width: 100%;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.05);
+        }
+        .application-container {
+            max-width: 600px;
+            margin: 2rem auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .status-header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        .status-body {
+            padding: 2rem;
+        }
+        .status-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        .status-pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+        .status-approved {
+            background: #d1fae5;
+            color: #065f46;
+        }
+        .status-rejected {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <img src="{% static 'img/Everest-Crest-Square.png' %}" alt="School Logo" style="width: 48px; height: 48px; margin-right: 12px;">
+                {{ school.school_name|default:"School Management System" }}
+            </a>
+        </div>
+    </nav>
+
+    <div class="application-container">
+        <div class="status-header">
+            <h2><i class="fas fa-file-alt me-2"></i>Application Status</h2>
+        </div>
+        <div class="status-body">
+            <div class="text-center mb-4">
+                <h4>{{ registration.name }}</h4>
+                <p class="text-muted">Application Number: <strong>{{ registration.application_number }}</strong></p>
+            </div>
+            
+            <div class="row mb-3">
+                <div class="col-sm-4"><strong>Class:</strong></div>
+                <div class="col-sm-8">{{ registration.student_class }} - {{ registration.section }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4"><strong>Father's Name:</strong></div>
+                <div class="col-sm-8">{{ registration.father_name }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4"><strong>Mobile:</strong></div>
+                <div class="col-sm-8">{{ registration.mobile }}</div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-sm-4"><strong>Registration Date:</strong></div>
+                <div class="col-sm-8">{{ registration.registration_date|date:"F d, Y" }}</div>
+            </div>
+            <div class="row mb-4">
+                <div class="col-sm-4"><strong>Status:</strong></div>
+                <div class="col-sm-8">
+                    <span class="status-badge status-{{ registration.status }}">
+                        {% if registration.status == 'pending' %}
+                            <i class="fas fa-clock me-1"></i>Pending
+                        {% elif registration.status == 'approved' %}
+                            <i class="fas fa-check me-1"></i>Approved
+                        {% else %}
+                            <i class="fas fa-times me-1"></i>Rejected
+                        {% endif %}
+                    </span>
+                </div>
+            </div>
+            
+            {% if registration.status == 'pending' %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    Your application is under review. Please contact the school office for updates.
+                </div>
+            {% elif registration.status == 'approved' %}
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>
+                    Congratulations! Your application has been approved. Please visit the school office to complete the admission process.
+                </div>
+            {% endif %}
+            
+            <div class="text-center mt-4">
+                <a href="{% url 'home' %}" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

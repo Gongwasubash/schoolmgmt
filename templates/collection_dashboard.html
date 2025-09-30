@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Collection Dashboard - School Management{% endblock %}
+
+{% block content %}
+<div class="collection-dashboard">
+    <div class="dashboard-header">
+        <h1>Collection Dashboard</h1>
+        <p>Real-time fee collection overview</p>
+    </div>
+
+    <div class="collection-cards">
+        <div class="collection-card today">
+            <div class="card-icon">Rs</div>
+            <div class="card-content">
+                <h3>Rs {{ todays_collection|floatformat:0 }}</h3>
+                <p>Total collected today</p>
+            </div>
+        </div>
+
+        <div class="collection-card weekly">
+            <div class="card-icon">📊</div>
+            <div class="card-content">
+                <h3>Rs {{ weekly_collection|floatformat:0 }}</h3>
+                <p>Weekly Collection</p>
+                <small>This week's total</small>
+            </div>
+        </div>
+
+        <div class="collection-card monthly">
+            <div class="card-icon">📈</div>
+            <div class="card-content">
+                <h3>Rs {{ monthly_collection|floatformat:0 }}</h3>
+                <p>Monthly Collection</p>
+                <small>This month's total</small>
+            </div>
+        </div>
+
+        <div class="collection-card yearly">
+            <div class="card-icon">🏆</div>
+            <div class="card-content">
+                <h3>Rs {{ yearly_collection|floatformat:0 }}</h3>
+                <p>Yearly Collection</p>
+                <small>This year's total</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.collection-dashboard {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    text-align: center;
+    margin-bottom: 40px;
+}
+
+.dashboard-header h1 {
+    font-size: 2.5rem;
+    color: #2c3e50;
+    margin-bottom: 10px;
+}
+
+.dashboard-header p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+.collection-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.collection-card {
+    background: white;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-left: 5px solid;
+}
+
+.collection-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.collection-card.today {
+    border-left-color: #e74c3c;
+    background: linear-gradient(135deg, #fff 0%, #ffebee 100%);
+}
+
+.collection-card.weekly {
+    border-left-color: #3498db;
+    background: linear-gradient(135deg, #fff 0%, #e3f2fd 100%);
+}
+
+.collection-card.monthly {
+    border-left-color: #2ecc71;
+    background: linear-gradient(135deg, #fff 0%, #e8f5e8 100%);
+}
+
+.collection-card.yearly {
+    border-left-color: #f39c12;
+    background: linear-gradient(135deg, #fff 0%, #fff8e1 100%);
+}
+
+.card-icon {
+    font-size: 3rem;
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.8);
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.today .card-icon { color: #e74c3c; }
+.weekly .card-icon { color: #3498db; }
+.monthly .card-icon { color: #2ecc71; }
+.yearly .card-icon { color: #f39c12; }
+
+.card-content h3 {
+    font-size: 2.2rem;
+    font-weight: 700;
+    margin: 0 0 8px 0;
+    color: #2c3e50;
+}
+
+.card-content p {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 5px 0;
+    color: #34495e;
+}
+
+.card-content small {
+    font-size: 0.9rem;
+    color: #7f8c8d;
+    font-weight: 400;
+}
+
+@media (max-width: 768px) {
+    .collection-cards {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .collection-card {
+        padding: 25px;
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .card-icon {
+        width: 60px;
+        height: 60px;
+        font-size: 2.5rem;
+    }
+    
+    .card-content h3 {
+        font-size: 1.8rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 2rem;
+    }
+}
+</style>
+{% endblock %}

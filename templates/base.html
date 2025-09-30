@@ -7,6 +7,7 @@
     <meta name="csrf-token" content="{{ csrf_token }}">
     <title>{% block title %}School Management{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="{% static 'css/dashboard-sidebar-fix.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% block extra_css %}{% endblock %}
 </head>
@@ -18,7 +19,7 @@
                 <h2 style="font-size: 14px; margin-top: 5px;">{{ school_info.school_name }}</h2>
             </div>
             <nav class="sidebar-nav">
-                <a href="{% url 'home' %}" class="nav-item{% if request.resolver_match.url_name == 'home' %} active{% endif %}">
+                <a href="{% url 'dashboard' %}" class="nav-item{% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'home' %} active{% endif %}">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
                             <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z"/>
@@ -86,29 +87,71 @@
                     </span>
                     <span class="nav-text">School Settings</span>
                 </a>
+
+                <a href="{% url 'website_settings' %}" class="nav-item{% if request.resolver_match.url_name == 'website_settings' %} active{% endif %}">
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M16.36,14C16.44,13.34 16.5,12.68 16.5,12C16.5,11.32 16.44,10.66 16.36,10H19.74C19.9,10.64 20,11.31 20,12C20,12.69 19.9,13.36 19.74,14M14.59,19.56C15.19,18.45 15.65,17.25 15.97,16H18.92C17.96,17.65 16.43,18.93 14.59,19.56M14.34,14H9.66C9.56,13.34 9.5,12.68 9.5,12C9.5,11.32 9.56,10.65 9.66,10H14.34C14.43,10.65 14.5,11.32 14.5,12C14.5,12.68 14.43,13.34 14.34,14M12,19.96C11.17,18.76 10.5,17.43 10.09,16H13.91C13.5,17.43 12.83,18.76 12,19.96M8,8H5.08C6.03,6.34 7.57,5.06 9.4,4.44C8.8,5.55 8.35,6.75 8,8M5.08,16H8C8.35,17.25 8.8,18.45 9.4,19.56C7.57,18.93 6.03,17.65 5.08,16M4.26,14C4.1,13.36 4,12.69 4,12C4,11.31 4.1,10.64 4.26,10H7.64C7.56,10.66 7.5,11.32 7.5,12C7.5,12.68 7.56,13.34 7.64,14M12,4.03C12.83,5.23 13.5,6.57 13.91,8H10.09C10.5,6.57 11.17,5.23 12,4.03M18.92,8H15.97C15.65,6.75 15.19,5.55 14.59,4.44C16.43,5.07 17.96,6.34 18.92,8M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">Website Settings</span>
+                </a>
             </nav>
         </aside>
         
         <div class="mobile-overlay" onclick="closeSidebar()"></div>
         
         <div class="main-content">
-            <header class="topbar">
-                <div style="display: flex; align-items: center; gap: 1rem;">
-                    <button class="menu-toggle" onclick="toggleSidebar()">
-                        <svg viewBox="0 0 24 24" fill="currentColor" style="width: 24px; height: 24px;">
-                            <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
-                        </svg>
-                    </button>
-                    <div onclick="openSchoolSettingsPopup()" style="cursor: pointer; display: flex; align-items: center;">
-                        <img src="{% if school_info.logo %}{{ school_info.logo.url }}{% else %}{% static 'img/Everest-Crest-Square.png' %}{% endif %}" alt="{{ school_info.school_name }}" style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px;">
-                        <h1>{{ school_info.school_name }} - School Management System</h1>
+            <!-- Navbar -->
+            <nav class="navbar" style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 1rem 0; border-bottom: 1px solid #e9ecef; position: sticky; top: 0; z-index: 1000;">
+                <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center; gap: 1rem;">
+                        <button class="menu-toggle" onclick="toggleSidebar()" style="background: none; border: none; cursor: pointer;">
+                            <svg viewBox="0 0 24 24" fill="currentColor" style="width: 24px; height: 24px;">
+                                <path d="M3,6H21V8H3V6M3,11H21V13H3V11M3,16H21V18H3V16Z"/>
+                            </svg>
+                        </button>
+                        <div onclick="openSchoolSettingsPopup()" style="cursor: pointer; display: flex; align-items: center;">
+                            <img src="{% if school_info.logo %}{{ school_info.logo.url }}{% else %}{% static 'img/Everest-Crest-Square.png' %}{% endif %}" alt="{{ school_info.school_name }}" style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px;">
+                            <h1 style="font-size: 1.5rem; margin: 0; color: #333;">{{ school_info.school_name }}</h1>
+                        </div>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <a href="/logout/" style="color: #dc3545; text-decoration: none; padding: 0.5rem 1rem;">Logout</a>
                     </div>
                 </div>
-            </header>
+            </nav>
             
             <main class="content">
                 {% block content %}{% endblock %}
             </main>
+            
+            <!-- Footer -->
+            <footer style="background: #f8f9fa; padding: 2rem 0; margin-top: 2rem; border-top: 1px solid #e9ecef;">
+                <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem;">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 2rem; text-align: center;">
+                        <div>
+                            <h5 style="color: #333; margin-bottom: 1rem;">{{ school_info.school_name }}</h5>
+                            <p style="color: #666; margin: 0;">Excellence in Education</p>
+                        </div>
+                        <div>
+                            <h6 style="color: #333; margin-bottom: 1rem;">Contact Info</h6>
+                            <p style="color: #666; margin: 0.5rem 0;">{{ school_info.address|default:"Kathmandu, Nepal" }}</p>
+                            <p style="color: #666; margin: 0.5rem 0;">Phone: {{ school_info.phone|default:"+977-1-4444444" }}</p>
+                            <p style="color: #666; margin: 0.5rem 0;">Email: {{ school_info.email|default:"info@school.edu.np" }}</p>
+                        </div>
+                        <div>
+                            <h6 style="color: #333; margin-bottom: 1rem;">Quick Links</h6>
+                            <p style="margin: 0.5rem 0;"><a href="{% url 'public_registration' %}" style="color: #007bff; text-decoration: none;">Student Registration</a></p>
+                            <p style="margin: 0.5rem 0;"><a href="{% url 'home' %}" style="color: #007bff; text-decoration: none;">Dashboard</a></p>
+                        </div>
+                    </div>
+                    <hr style="margin: 2rem 0; border-color: #e9ecef;">
+                    <div style="text-align: center; color: #666;">
+                        <p style="margin: 0;">&copy; 2025 {{ school_info.school_name }}. All rights reserved.</p>
+                    </div>
+                </div>
+            </footer>
         </div>
     </div>
     

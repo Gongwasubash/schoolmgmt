@@ -1,0 +1,121 @@
+/* Chart Responsive Fixes */
+.charts-section {
+    display: grid;
+    gap: 1.5rem;
+    margin: 2rem 0;
+}
+
+.main-chart {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.main-chart .chart-container {
+    position: relative;
+    height: 400px;
+    width: 100%;
+    overflow: visible;
+}
+
+.main-chart {
+    min-height: 480px;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-chart .chart-container {
+    flex: 1;
+}
+
+.class-table {
+    margin-top: 1rem;
+    padding: 1rem;
+    background: #f8f9fa;
+    border-radius: 8px;
+}
+
+.class-table table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.class-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid #dee2e6;
+    text-align: left;
+}
+
+.class-table td:last-child {
+    text-align: right;
+    font-weight: 600;
+}
+
+.charts-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+.chart-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    overflow: hidden;
+}
+
+.chart-card canvas {
+    position: relative !important;
+    height: 150px !important;
+    width: 100% !important;
+    max-height: 150px !important;
+}
+
+.charts-row .chart-card {
+    min-height: 280px;
+    display: flex;
+    flex-direction: column;
+}
+
+.charts-row .chart-container {
+    position: relative;
+    height: 160px;
+    width: 100%;
+    flex: 1;
+    margin-top: auto;
+}
+
+.charts-row .chart-container canvas {
+    height: 160px !important;
+    width: 100% !important;
+}
+
+.chart-card h3 {
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: #333;
+    text-align: center;
+}
+
+.chart-stats {
+    display: flex;
+    justify-content: space-around;
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    color: #666;
+}
+
+@media (max-width: 768px) {
+    .charts-row {
+        grid-template-columns: 1fr;
+    }
+    .main-chart .chart-container {
+        height: 250px;
+    }
+    .chart-card canvas {
+        height: 180px !important;
+    }
+}

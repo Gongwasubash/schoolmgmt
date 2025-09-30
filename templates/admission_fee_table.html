@@ -35,7 +35,7 @@
                     <td>{{ student.name }}</td>
                     <td>{{ student.student_class }}</td>
                     <td>{{ student.section }}</td>
-                    <td>Rs. {{ student.admission_fee|default:"0" }}</td>
+                    <td>Rs {{ student.admission_fee|default:"0" }}</td>
                     <td>
                         {% if student.admission_paid or student.has_monthly_payment %}
                             <span class="status-badge paid">PAID</span>

@@ -1,0 +1,9 @@
+{% for other_blog in other_blogs %}
+<a href="{% url 'blog_detail' other_blog.id %}" class="sidebar-blog">
+    {% if other_blog.photo %}
+        <img src="{{ other_blog.photo.url }}" alt="{{ other_blog.heading }}" class="sidebar-blog-image">
+    {% endif %}
+    <div class="sidebar-blog-title">{{ other_blog.heading|truncatewords:8 }}</div>
+    <div class="sidebar-blog-date">{{ other_blog.created_at|date:"M d, Y" }}</div>
+</a>
+{% endfor %}

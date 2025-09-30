@@ -19,9 +19,11 @@ from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views
+from . import registration_views
 
 urlpatterns = [
     path('', views.home, name='home'),
+    path('dashboard/', views.dashboard, name='dashboard'),
     path('students/', views.students, name='students'),
     path('studentlist/', views.studentlist, name='studentlist'),
     path('teachers/', views.teachers, name='teachers'),
@@ -96,15 +98,36 @@ urlpatterns = [
     path('api/student-expenses/<int:student_id>/', views.get_student_expenses_api, name='get_student_expenses_api'),
     path('api/class-expenses/<str:class_name>/', views.get_class_expenses_api, name='get_class_expenses_api'),
     path('api/todays-all-expenses/', views.get_todays_all_expenses_api, name='get_todays_all_expenses_api'),
+    path('collection-dashboard/', views.collection_dashboard, name='collection_dashboard'),
     path('collection-details/<str:period>/', views.collection_details, name='collection_details'),
     path('school-settings/', views.school_settings, name='school_settings'),
+    path('website-settings/', views.website_settings, name='website_settings'),
     path('school-settings-test/', views.school_settings_test, name='school_settings_test'),
     path('id-creation/', views.id_creation, name='id_creation'),
+    path('photo-management/', views.photo_management, name='photo_management'),
+    path('photo-gallery/', views.photo_gallery, name='photo_gallery'),
+    path('api/assign-photo/', views.assign_photo, name='assign_photo'),
+    path('api/remove-photo/', views.remove_photo, name='remove_photo'),
     path('generate-id/', views.generate_id, name='generate_id'),
     path('print-id-cards/', views.print_id_cards, name='print_id_cards'),
     path('whatsapp-balance/', views.whatsapp_balance, name='whatsapp_balance'),
     path('send-fee-email/', views.send_fee_email, name='send_fee_email'),
     path('fee-payment-report-dashboard/', views.fee_payment_report_dashboard, name='fee_payment_report_dashboard'),
+    path('api/update-enquiry-status/', views.update_enquiry_status_api, name='update_enquiry_status_api'),
+    path('api/update-registration-status/', views.update_registration_status_api, name='update_registration_status_api'),
+    path('public-registration/', registration_views.public_registration, name='public_registration'),
+    path('application-status/<int:registration_id>/', registration_views.application_status, name='application_status'),
+    path('api/approve-registration/', registration_views.approve_registration, name='approve_registration'),
+    path('api/register-student/', views.register_student_api, name='register_student_api'),
+    path('login/', views.admin_login, name='admin_login'),
+    path('logout/', views.admin_logout, name='admin_logout'),
+    path('contact/', views.contact, name='contact'),
+    path('blog/<int:blog_id>/', views.blog_detail, name='blog_detail'),
+    path('pending-enquiry/', views.pending_enquiry, name='pending_enquiry'),
+    path('blog/', views.blog_list, name='blog_redirect'),
+    path('blogs/', views.blog_list, name='blog_list'),
+    path('blog/<int:blog_id>/', views.blog_detail, name='blog_detail'),
+    path('test-enquiry-status/', views.test_enquiry_status, name='test_enquiry_status'),
     path('admin/', admin.site.urls),
 ]
 

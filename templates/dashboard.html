@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>School Management Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="../static/css/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <nav class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2>SchoolPro</h2>
+                <p>Management System</p>
+            </div>
+            <div class="sidebar-nav">
+                <a href="#" class="nav-item active">
+                    <i class="fas fa-tachometer-alt"></i>
+                    Dashboard
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-tasks"></i>
+                    Pending Task
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-database"></i>
+                    Data Backup
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fab fa-whatsapp"></i>
+                    WhatsApp
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-globe"></i>
+                    Website
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-cog"></i>
+                    Software Setting
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-user-graduate"></i>
+                    Student
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-warehouse"></i>
+                    Stock Center
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-bus"></i>
+                    Transport
+                </a>
+                <a href="#" class="nav-item">
+                    <i class="fas fa-calendar-alt"></i>
+                    Time Table
+                </a>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <button class="menu-toggle" onclick="toggleSidebar()">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <div class="header-left">
+                    <h1>Greenwood International School</h1>
+                    <div class="session-info">Academic Session: 2025-26</div>
+                </div>
+                <div class="header-stats">
+                    <div class="header-stat">
+                        <div class="header-stat-value">3</div>
+                        <div class="header-stat-label">Today's Birthday</div>
+                    </div>
+                    <div class="header-stat">
+                        <div class="header-stat-value">12</div>
+                        <div class="header-stat-label">Pending Enquiry</div>
+                    </div>
+                    <div class="header-stat">
+                        <div class="header-stat-value">₹2,450</div>
+                        <div class="header-stat-label">WhatsApp Balance</div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Dashboard Content -->
+            <div class="dashboard-content">
+                <!-- Today's Collection -->
+                <section class="collection-section">
+                    <div class="collection-card">
+                        <div class="collection-title">Today's Collection</div>
+                        <div class="collection-amount">₹1,25,750</div>
+                        <div class="collection-subtitle">Total Collection Amount</div>
+                    </div>
+                </section>
+
+                <!-- Quick Actions -->
+                <section class="actions-section">
+                    <h2 class="section-title">Quick Actions</h2>
+                    <div class="actions-grid">
+                        <a href="#" class="action-btn">
+                            <div class="action-icon">
+                                <i class="fas fa-user-plus"></i>
+                            </div>
+                            <div class="action-text">New Admission</div>
+                        </a>
+                        <a href="#" class="action-btn">
+                            <div class="action-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div class="action-text">Fee by ID</div>
+                        </a>
+                        <a href="#" class="action-btn">
+                            <div class="action-icon">
+                                <i class="fas fa-search"></i>
+                            </div>
+                            <div class="action-text">Fee by Search</div>
+                        </a>
+                        <a href="#" class="action-btn">
+                            <div class="action-icon">
+                                <i class="fas fa-list"></i>
+                            </div>
+                            <div class="action-text">Student List</div>
+                        </a>
+                        <a href="#" class="action-btn">
+                            <div class="action-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="action-text">Student Detail</div>
+                        </a>
+                        <a href="#" class="action-btn">
+                            <div class="action-icon">
+                                <i class="fas fa-receipt"></i>
+                            </div>
+                            <div class="action-text">Fee Receipt Book</div>
+                        </a>
+                        <a href="#" class="action-btn">
+                            <div class="action-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <div class="action-text">Fee Pending Report</div>
+                        </a>
+                        <a href="#" class="action-btn">
+                            <div class="action-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="action-text">Fee Payment Report</div>
+                        </a>
+                    </div>
+                </section>
+
+                <!-- Charts Section -->
+                <section class="charts-section">
+                    <!-- Total Students Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Total Students</h3>
+                            <span class="stat-value" style="font-size: 1.5rem;">1,247</span>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="studentsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Gender Ratio Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Gender Distribution</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="genderChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Additional Charts -->
+                <section class="charts-section">
+                    <!-- Religion Data Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Religion Data</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="religionChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Category Details Chart -->
+                    <div class="chart-card">
+                        <div class="chart-header">
+                            <h3 class="chart-title">Category Details</h3>
+                        </div>
+                        <div class="chart-container">
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        // Toggle Sidebar
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+        }
+
+        // Chart.js Configuration
+        Chart.defaults.font.family = 'Inter';
+        Chart.defaults.plugins.legend.position = 'bottom';
+
+        // Students Distribution Chart (Donut)
+        const studentsCtx = document.getElementById('studentsChart').getContext('2d');
+        new Chart(studentsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Nursery', 'Class I', 'Class II', 'Class III', 'Class IV', 'Class V', 'Class VI', 'Class VII', 'Class VIII', 'Class IX', 'Class X'],
+                datasets: [{
+                    data: [45, 89, 92, 105, 98, 87, 112, 125, 134, 178, 182],
+                    backgroundColor: [
+                        '#4f46e5', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6',
+                        '#f97316', '#06b6d4', '#84cc16', '#f43f5e', '#6366f1', '#14b8a6'
+                    ],
+                    borderWidth: 0,
+                    cutout: '60%'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: 5
+                },
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 15,
+                            boxWidth: 12
+                        }
+                    }
+                }
+            }
+        });
+
+        // Gender Distribution Chart (Bar)
+        const genderCtx = document.getElementById('genderChart').getContext('2d');
+        new Chart(genderCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Boys', 'Girls'],
+                datasets: [{
+                    data: [687, 560],
+                    backgroundColor: ['#4f46e5', '#f43f5e'],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: 5
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            padding: 5
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            padding: 5
+                        }
+                    }
+                }
+            }
+        });
+
+        // Religion Data Chart (Donut)
+        const religionCtx = document.getElementById('religionChart').getContext('2d');
+        new Chart(religionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Others'],
+                datasets: [{
+                    data: [756, 298, 134, 45, 14],
+                    backgroundColor: ['#f97316', '#10b981', '#4f46e5', '#f59e0b', '#8b5cf6'],
+                    borderWidth: 0,
+                    cutout: '50%'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: 5
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 8,
+                            boxWidth: 10
+                        }
+                    }
+                }
+            }
+        });
+
+        // Category Details Chart (Pie)
+        const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+        new Chart(categoryCtx, {
+            type: 'pie',
+            data: {
+                labels: ['General', 'OBC', 'SC', 'ST', 'EWS'],
+                datasets: [{
+                    data: [567, 398, 156, 89, 37],
+                    backgroundColor: ['#06b6d4', '#84cc16', '#f59e0b', '#ef4444', '#8b5cf6'],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: {
+                    padding: 5
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            padding: 8,
+                            boxWidth: 10
+                        }
+                    }
+                }
+            }
+        });
+
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(event) {
+            const sidebar = document.getElementById('sidebar');
+            const menuToggle = document.querySelector('.menu-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(event.target) && 
+                !menuToggle.contains(event.target)) {
+                sidebar.classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>

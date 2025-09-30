@@ -73,7 +73,7 @@
                     <input type="text" id="expenseDescription" placeholder="Enter expense description..." required>
                 </div>
                 <div class="form-group">
-                    <label>Amount (Rs.)</label>
+                    <label>Amount (Rs)</label>
                     <input type="number" id="expenseAmount" placeholder="0.00" min="0" step="0.01" required>
                 </div>
             </div>
@@ -102,7 +102,7 @@
                         <th>Roll No</th>
                         <th>Class</th>
                         <th>Description</th>
-                        <th>Amount (Rs.)</th>
+                        <th>Amount (Rs)</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -814,7 +814,7 @@ function displayExpensesTable(expenses) {
             <td>${expense.student_reg_number || 'N/A'}</td>
             <td>${expense.student_class}</td>
             <td>${expense.description}</td>
-            <td>Rs. ${expense.amount}</td>
+            <td>Rs ${expense.amount}</td>
             <td>
                 <button onclick="editExpenseFromTable(${expense.id}, '${expense.description}', ${expense.amount})" class="table-edit-btn">Edit</button>
                 <button onclick="deleteExpenseFromTable(${expense.id})" class="table-delete-btn">Delete</button>
@@ -930,7 +930,7 @@ function cancelExpenseEdit(expenseId, originalDesc, originalAmount) {
     
     // Restore original values
     descCell.textContent = originalDesc;
-    amountCell.textContent = `Rs. ${originalAmount}`;
+    amountCell.textContent = `Rs ${originalAmount}`;
     actionCell.innerHTML = `
         <button onclick="editExpenseFromTable(${expenseId}, '${originalDesc}', ${originalAmount})" class="table-edit-btn">Edit</button>
         <button onclick="deleteExpenseFromTable(${expenseId})" class="table-delete-btn">Delete</button>
@@ -1121,7 +1121,7 @@ function displayStudentExpenses(data) {
     let html = `
         <div class="expense-summary">
             <h3>${data.student.name} - Today's Expenses</h3>
-            <p><strong>Total Amount:</strong> Rs. ${data.total_amount}</p>
+            <p><strong>Total Amount:</strong> Rs ${data.total_amount}</p>
             <p><strong>Total Transactions:</strong> ${data.expenses.length}</p>
         </div>
         <div class="expenses-list">
@@ -1133,7 +1133,7 @@ function displayStudentExpenses(data) {
                 <div class="expense-item">
                     <div class="expense-details">
                         <strong>${expense.description}</strong>
-                        <span class="expense-amount">Rs. ${expense.amount}</span>
+                        <span class="expense-amount">Rs ${expense.amount}</span>
                     </div>
                     <div class="expense-meta">
                         <small>Time: ${expense.time}</small>

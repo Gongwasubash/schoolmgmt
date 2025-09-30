@@ -25,7 +25,7 @@
             </div>
             <div class="stat-content">
                 <div class="stat-label">TOTAL COLLECTION</div>
-                <div class="stat-value">Rs{{ total_collected|floatformat:0 }}</div>
+                <div class="stat-value">Rs {{ total_collected|floatformat:0 }}</div>
             </div>
         </div>
         <div class="stat-card pending">
@@ -34,7 +34,7 @@
             </div>
             <div class="stat-content">
                 <div class="stat-label">PENDING FEES</div>
-                <div class="stat-value">Rs{{ total_pending|floatformat:0 }}</div>
+                <div class="stat-value">Rs {{ total_pending|floatformat:0 }}</div>
             </div>
         </div>
         <div class="stat-card students">
@@ -101,7 +101,7 @@
                         <td>{{ payment.payment_date }}</td>
                         <td>{{ payment.student.name }}</td>
                         <td>{{ payment.student.student_class }}</td>
-                        <td>Rs{{ payment.payment_amount|floatformat:0 }}</td>
+                        <td>Rs {{ payment.payment_amount|floatformat:0 }}</td>
                         <td>{{ payment.payment_method }}</td>
                         <td><span class="status-badge success">Paid</span></td>
                     </tr>
