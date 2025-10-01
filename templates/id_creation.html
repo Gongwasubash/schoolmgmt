@@ -38,14 +38,16 @@
             <table class="students-table" id="studentsTable">
                 <thead>
                     <tr>
-                        <th><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
-                        <th>S.N.</th>
-                        <th>Photo</th>
-                        <th>Student Name</th>
-                        <th>Class</th>
-                        <th>Section</th>
-                        <th>Roll Number</th>
-                        <th>Actions</th>
+                        <th style="width: 50px;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll()"></th>
+                        <th style="width: 60px;">S.N.</th>
+                        <th style="width: 80px;">Photo</th>
+                        <th style="width: 200px;">Student Name</th>
+                        <th style="width: 80px;">Class</th>
+                        <th style="width: 80px;">Section</th>
+                        <th style="width: 120px;">Roll Number</th>
+                        <th style="width: 180px;">Father Name</th>
+                        <th style="width: 120px;">Mobile</th>
+                        <th style="width: 150px;">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -66,8 +68,11 @@
                         <td class="student-class">{{ student.student_class }}</td>
                         <td class="student-section">{{ student.section }}</td>
                         <td class="student-roll">{{ student.reg_number }}</td>
+                        <td class="father-name">{{ student.father_name|default:"N/A" }}</td>
+                        <td class="mobile">{{ student.mobile|default:"N/A" }}</td>
                         <td class="actions-cell">
-                            <button type="button" class="btn-generate" onclick="generateID({{ student.id }})">Generate ID</button>
+                            <button type="button" class="btn-preview" onclick="previewID({{ student.id }})">Preview</button>
+                            <button type="button" class="btn-print" onclick="printID({{ student.id }})">Print</button>
                         </td>
                     </tr>
                     {% endfor %}
@@ -160,7 +165,8 @@
 .students-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 900px;
+    min-width: 1200px;
+    font-size: 14px;
 }
 
 .students-table th,
@@ -226,6 +232,15 @@
     margin-right: 5px;
     padding: 6px 12px;
     font-size: 12px;
+}
+
+.father-name, .mobile {
+    color: #666;
+    font-size: 13px;
+}
+
+.mobile {
+    font-family: monospace;
 }
 
 .btn-generate, .btn-preview, .btn-print {

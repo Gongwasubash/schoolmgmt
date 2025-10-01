@@ -87,6 +87,10 @@ urlpatterns = [
     path('grade-sheet-certificate-populated/', views.populate_grade_sheet_certificate, name='grade_sheet_certificate_populated'),
     path('student-marksheet-finder/', views.student_marksheet_finder, name='student_marksheet_finder'),
     path('student_attendance_dashboard/', views.student_attendance_dashboard, name='student_attendance_dashboard'),
+    path('api/save-attendance/', views.save_attendance, name='save_attendance'),
+    path('api/load-attendance/', views.load_attendance, name='load_attendance'),
+    path('api/attendance-summary/<int:student_id>/', views.get_attendance_summary, name='get_attendance_summary'),
+    path('attendance-report/', views.attendance_report, name='attendance_report'),
     # Nepali Date API endpoints
     path('api/nepali-date/', views.get_nepali_date_api, name='get_nepali_date_api'),
     path('api/convert-date/', views.convert_date_api, name='convert_date_api'),

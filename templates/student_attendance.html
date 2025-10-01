@@ -1,0 +1,719 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Student Attendance - School Management{% endblock %}
+
+{% block extra_css %}
+<style>
+.attendance-container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.attendance-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px;
+    border-radius: 15px;
+    margin-bottom: 30px;
+    text-align: center;
+}
+
+.attendance-header h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 600;
+}
+
+.attendance-controls {
+    background: white;
+    padding: 25px;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 30px;
+}
+
+.controls-row {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.control-group label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.control-group select,
+.control-group input {
+    padding: 10px 15px;
+    border: 2px solid #e5e7eb;
+    border-radius: 8px;
+    font-size: 1rem;
+    transition: border-color 0.3s;
+}
+
+.control-group select:focus,
+.control-group input:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.btn-load {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.btn-load:hover {
+    transform: translateY(-2px);
+}
+
+.attendance-table-container {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+}
+
+.attendance-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.attendance-table th {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 15px;
+    text-align: left;
+    font-weight: 600;
+}
+
+.attendance-table td {
+    padding: 15px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.attendance-table tr:hover {
+    background-color: #f9fafb;
+}
+
+.student-photo {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #e5e7eb;
+}
+
+.attendance-status {
+    display: flex;
+    gap: 10px;
+}
+
+.status-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 20px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.status-btn.present {
+    background-color: #10b981;
+    color: white;
+}
+
+.status-btn.absent {
+    background-color: #ef4444;
+    color: white;
+}
+
+.status-btn.late {
+    background-color: #f59e0b;
+    color: white;
+}
+
+.status-btn:not(.active) {
+    opacity: 0.3;
+}
+
+.save-attendance {
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+    transition: transform 0.2s;
+}
+
+.save-attendance:hover {
+    transform: translateY(-3px);
+}
+
+.no-students {
+    text-align: center;
+    padding: 50px;
+    color: #6b7280;
+    font-size: 1.2rem;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.action-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.whatsapp-btn {
+    background-color: #25d366;
+    color: white;
+}
+
+.whatsapp-btn:hover {
+    background-color: #128c7e;
+    transform: scale(1.1);
+}
+
+.email-btn {
+    background-color: #ea4335;
+    color: white;
+}
+
+.email-btn:hover {
+    background-color: #d33b2c;
+    transform: scale(1.1);
+}
+
+.action-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .attendance-container {
+        padding: 10px;
+    }
+    
+    .attendance-header {
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .attendance-header h1 {
+        font-size: 1.8rem;
+    }
+    
+    .controls-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .control-group {
+        width: 100%;
+    }
+    
+    .attendance-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+    
+    .attendance-table {
+        min-width: 800px;
+    }
+    
+    .attendance-table th,
+    .attendance-table td {
+        padding: 8px;
+        font-size: 0.9rem;
+    }
+    
+    .student-photo {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .attendance-status {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .status-btn {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .action-btn {
+        padding: 6px 10px;
+    }
+    
+    .save-attendance {
+        bottom: 20px;
+        right: 20px;
+        padding: 12px 20px;
+        font-size: 1rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .attendance-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .attendance-table {
+        min-width: 700px;
+    }
+    
+    .attendance-table th,
+    .attendance-table td {
+        padding: 6px;
+        font-size: 0.8rem;
+    }
+    
+    .student-photo {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .status-btn {
+        padding: 5px 10px;
+        font-size: 0.75rem;
+    }
+    
+    .save-attendance {
+        bottom: 15px;
+        right: 15px;
+        padding: 10px 15px;
+        font-size: 0.9rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="attendance-container">
+    <div class="attendance-header">
+        <h1>Student Attendance</h1>
+        <p>Mark daily attendance for students</p>
+    </div>
+
+    <div class="attendance-controls">
+        <div class="controls-row">
+            <div class="control-group">
+                <label for="classSelect">Select Class</label>
+                <select id="classSelect">
+                    <option value="">All Classes</option>
+                    {% for class in classes %}
+                    <option value="{{ class }}">{{ class }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="sectionSelect">Select Section</label>
+                <select id="sectionSelect">
+                    <option value="">All Sections</option>
+                    {% for section in sections %}
+                    <option value="{{ section }}">{{ section }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="attendanceDate">Date</label>
+                <input type="date" id="attendanceDate" value="{{ today }}" onchange="loadAttendanceData()">
+            </div>
+            <div class="control-group">
+                <label>&nbsp;</label>
+                <button class="btn-load" onclick="loadAttendanceData()">Load Attendance</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="attendance-table-container">
+        <table class="attendance-table">
+            <thead>
+                <tr>
+                    <th>Photo</th>
+                    <th>Student Name</th>
+                    <th>Class</th>
+                    <th>Section</th>
+                    <th>Roll Number</th>
+                    <th>Attendance Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="studentsTableBody">
+                {% for student in students %}
+                <tr data-student-id="{{ student.id }}" data-class="{{ student.student_class }}" data-section="{{ student.section }}">
+                    <td>
+                        <img src="/static/images/default-avatar.png" 
+                             alt="{{ student.name }}" class="student-photo">
+                    </td>
+                    <td><strong>{{ student.name }}</strong></td>
+                    <td>{{ student.student_class }}</td>
+                    <td>{{ student.section }}</td>
+                    <td>{{ student.reg_number }}</td>
+                    <td>
+                        <div class="attendance-status">
+                            <button class="status-btn present {% if student.attendance_status == 'present' %}active{% endif %}" 
+                                    onclick="setAttendance({{ student.id }}, 'present', this)">
+                                Present
+                            </button>
+                            <button class="status-btn absent {% if student.attendance_status == 'absent' %}active{% endif %}" 
+                                    onclick="setAttendance({{ student.id }}, 'absent', this)">
+                                Absent
+                            </button>
+                            <button class="status-btn late {% if student.attendance_status == 'late' %}active{% endif %}" 
+                                    onclick="setAttendance({{ student.id }}, 'late', this)">
+                                Late
+                            </button>
+                        </div>
+                    </td>
+                    <td>
+                        <div class="action-buttons" id="actions-{{ student.id }}">
+                            <button class="action-btn whatsapp-btn" onclick="sendWhatsApp({{ student.id }}, '{{ student.name }}', '{{ student.mobile }}')" title="Send WhatsApp">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                    <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893A11.821 11.821 0 0020.465 3.488"/>
+                                </svg>
+                            </button>
+                            <button class="action-btn email-btn" onclick="sendEmail({{ student.id }}, '{{ student.name }}', '{{ student.email }}')" title="Send Email">
+                                <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+                                    <path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" class="no-students">
+                        No students found
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <button class="save-attendance" onclick="saveAttendance()">
+        Save Attendance
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let attendanceData = {};
+
+function filterStudents() {
+    const selectedClass = document.getElementById('classSelect').value;
+    const selectedSection = document.getElementById('sectionSelect').value;
+    
+    const rows = document.querySelectorAll('[data-student-id]');
+    let visibleCount = 0;
+    
+    rows.forEach(row => {
+        const studentClass = row.getAttribute('data-class');
+        const studentSection = row.getAttribute('data-section');
+        let showStudent = true;
+        
+        // Apply class filter only if a class is selected
+        if (selectedClass && studentClass !== selectedClass) {
+            showStudent = false;
+        }
+        
+        // Apply section filter only if a section is selected
+        if (selectedSection && studentSection !== selectedSection) {
+            showStudent = false;
+        }
+        
+        if (showStudent) {
+            row.style.display = '';
+            visibleCount++;
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Show message based on results
+    if (visibleCount === 0) {
+        const tbody = document.getElementById('studentsTableBody');
+        tbody.innerHTML = '<tr><td colspan="7" class="no-students">No students found for selected criteria</td></tr>';
+    } else {
+        console.log(`Showing ${visibleCount} students`);
+    }
+}
+
+function loadAttendanceData() {
+    const attendanceDate = document.getElementById('attendanceDate').value;
+    const selectedClass = document.getElementById('classSelect').value;
+    const selectedSection = document.getElementById('sectionSelect').value;
+    
+    if (!attendanceDate) {
+        alert('Please select a date');
+        return;
+    }
+    
+    // Show loading
+    const loadBtn = document.querySelector('.btn-load');
+    const originalText = loadBtn.textContent;
+    loadBtn.textContent = 'Loading...';
+    loadBtn.disabled = true;
+    
+    // Build query parameters
+    let params = new URLSearchParams({
+        date: attendanceDate
+    });
+    
+    if (selectedClass) params.append('class', selectedClass);
+    if (selectedSection) params.append('section', selectedSection);
+    
+    fetch(`/api/load-attendance/?${params}`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Update attendance data
+            attendanceData = data.attendance;
+            
+            // Update UI to reflect loaded attendance
+            const rows = document.querySelectorAll('[data-student-id]');
+            rows.forEach(row => {
+                const studentId = row.getAttribute('data-student-id');
+                const status = attendanceData[studentId] || 'present';
+                
+                // Update button states
+                const buttons = row.querySelectorAll('.status-btn');
+                buttons.forEach(btn => btn.classList.remove('active'));
+                
+                const activeButton = row.querySelector(`.status-btn.${status}`);
+                if (activeButton) {
+                    activeButton.classList.add('active');
+                }
+            });
+            
+            // Apply filters
+            filterStudents();
+            
+            console.log(`Loaded attendance for ${Object.keys(data.attendance).length} students`);
+        } else {
+            alert('Error loading attendance: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error loading attendance');
+    })
+    .finally(() => {
+        loadBtn.textContent = originalText;
+        loadBtn.disabled = false;
+    });
+}
+
+function setAttendance(studentId, status, button) {
+    // Remove active class from all buttons in this row
+    const row = button.closest('tr');
+    const buttons = row.querySelectorAll('.status-btn');
+    buttons.forEach(btn => btn.classList.remove('active'));
+    
+    // Add active class to clicked button
+    button.classList.add('active');
+    
+    // Update attendance data
+    attendanceData[studentId] = status;
+}
+
+function saveAttendance() {
+    // Always save to current date (today)
+    const today = new Date();
+    const attendanceDate = today.toISOString().split('T')[0];
+    
+    // Only collect attendance data from currently visible/filtered students
+    const visibleRows = document.querySelectorAll('[data-student-id]:not([style*="display: none"])');
+    const currentAttendance = {};
+    
+    if (visibleRows.length === 0) {
+        alert('No students visible to save attendance for. Please apply filters first.');
+        return;
+    }
+    
+    visibleRows.forEach(row => {
+        const studentId = row.getAttribute('data-student-id');
+        const activeButton = row.querySelector('.status-btn.active');
+        if (activeButton) {
+            if (activeButton.classList.contains('present')) {
+                currentAttendance[studentId] = 'present';
+            } else if (activeButton.classList.contains('absent')) {
+                currentAttendance[studentId] = 'absent';
+            } else if (activeButton.classList.contains('late')) {
+                currentAttendance[studentId] = 'late';
+            }
+        } else {
+            currentAttendance[studentId] = 'present'; // Default
+        }
+    });
+    
+    // Show loading
+    const saveBtn = document.querySelector('.save-attendance');
+    const originalText = saveBtn.textContent;
+    saveBtn.textContent = 'Saving...';
+    saveBtn.disabled = true;
+    
+    fetch('/api/save-attendance/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: JSON.stringify({
+            date: attendanceDate,
+            attendance: currentAttendance,
+            marked_by: 'Admin'
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(data.message || 'Attendance saved successfully!');
+            // Update attendanceData with saved data
+            attendanceData = { ...attendanceData, ...currentAttendance };
+        } else {
+            alert('Error saving attendance: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving attendance');
+    })
+    .finally(() => {
+        saveBtn.textContent = originalText;
+        saveBtn.disabled = false;
+    });
+}
+
+// Helper function to get CSRF token
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function sendWhatsApp(studentId, studentName, mobile) {
+    const row = document.querySelector(`[data-student-id="${studentId}"]`);
+    const activeButton = row.querySelector('.status-btn.active');
+    
+    if (!activeButton || !activeButton.classList.contains('absent')) {
+        alert('WhatsApp notification is only available for absent students');
+        return;
+    }
+    
+    if (!mobile || mobile === '9999999999') {
+        alert('No valid mobile number found for this student');
+        return;
+    }
+    
+    const message = `Dear Parent, Your child ${studentName} is marked absent today. Please contact the school for more information. - School Administration`;
+    const cleanMobile = mobile.replace(/[^0-9]/g, '');
+    const whatsappUrl = `https://wa.me/${cleanMobile}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
+}
+
+function sendEmail(studentId, studentName, email) {
+    const row = document.querySelector(`[data-student-id="${studentId}"]`);
+    const activeButton = row.querySelector('.status-btn.active');
+    
+    if (!activeButton || !activeButton.classList.contains('absent')) {
+        alert('Email notification is only available for absent students');
+        return;
+    }
+    
+    if (!email || email === 'subashgongwanepal@gmail.com') {
+        alert('No valid email found for this student');
+        return;
+    }
+    
+    const subject = `Absence Notification - ${studentName}`;
+    const body = `Dear Parent,\n\nYour child ${studentName} is marked absent today (${new Date().toLocaleDateString()}).\n\nPlease contact the school if you have any questions.\n\nBest regards,\nSchool Administration`;
+    
+    const mailtoUrl = `mailto:${email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailtoUrl;
+}
+
+// Initialize attendance data and set today's date
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    document.getElementById('attendanceDate').value = today;
+    
+    // Initialize attendance data for all students from backend
+    const rows = document.querySelectorAll('[data-student-id]');
+    rows.forEach(row => {
+        const studentId = row.getAttribute('data-student-id');
+        const activeButton = row.querySelector('.status-btn.active');
+        if (activeButton) {
+            if (activeButton.classList.contains('present')) {
+                attendanceData[studentId] = 'present';
+            } else if (activeButton.classList.contains('absent')) {
+                attendanceData[studentId] = 'absent';
+            } else if (activeButton.classList.contains('late')) {
+                attendanceData[studentId] = 'late';
+            }
+        } else {
+            attendanceData[studentId] = 'present'; // Default
+        }
+    });
+    
+    // Auto-load attendance for today if available
+    {% if attendance_marked %}
+    console.log('Attendance already marked for today');
+    {% else %}
+    console.log('No attendance marked for today yet');
+    {% endif %}
+});
+</script>
+{% endblock %}

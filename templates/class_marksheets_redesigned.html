@@ -382,9 +382,169 @@
         .sidebar-btn:hover {
             background: #2980b9;
         }
+
+        /* Responsive Design */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+            
+            .sidebar.active {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+                width: 100%;
+            }
+            
+            .see-marksheet {
+                width: 100%;
+                height: auto;
+                margin: 10px;
+                padding: 15px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .see-header {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .nepal-emblem {
+                margin: 0 auto 10px;
+            }
+            
+            .student-columns {
+                flex-direction: column;
+                gap: 5mm;
+            }
+            
+            .student-row {
+                flex-direction: column;
+            }
+            
+            .student-label {
+                width: 100%;
+                margin-bottom: 2px;
+            }
+            
+            .student-value {
+                width: 100%;
+            }
+            
+            .marks-table {
+                font-size: 8px;
+            }
+            
+            .marks-table th,
+            .marks-table td {
+                padding: 1mm;
+            }
+            
+            .result-summary {
+                flex-direction: column;
+            }
+            
+            .result-box {
+                width: 100%;
+                margin-bottom: 10px;
+            }
+            
+            .eca-table {
+                font-size: 7px;
+            }
+            
+            .eca-table th,
+            .eca-table td {
+                padding: 0.5mm;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .see-marksheet {
+                padding: 10px;
+                margin: 5px;
+            }
+            
+            .government-header {
+                font-size: 16px;
+            }
+            
+            .marksheet-title {
+                font-size: 14px;
+            }
+            
+            .marks-table {
+                font-size: 7px;
+            }
+            
+            .marks-table th,
+            .marks-table td {
+                padding: 0.5mm;
+            }
+            
+            .eca-table {
+                font-size: 6px;
+            }
+            
+            .result-box {
+                font-size: 9px;
+            }
+            
+            .signatures {
+                flex-direction: column;
+                gap: 20px;
+            }
+            
+            .signature-block {
+                width: 100%;
+            }
+        }
+
+        /* Mobile Menu Toggle */
+        .mobile-menu-toggle {
+            display: none;
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: #2c3e50;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 1002;
+        }
+
+        @media (max-width: 1024px) {
+            .mobile-menu-toggle {
+                display: block;
+            }
+            
+            .print-btn {
+                top: 20px;
+                right: 80px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .print-btn {
+                padding: 8px 16px;
+                font-size: 12px;
+            }
+            
+            .mobile-menu-toggle {
+                padding: 8px;
+                font-size: 12px;
+            }
+        }
     </style>
 </head>
 <body>
+    <button class="mobile-menu-toggle no-print" onclick="toggleSidebar()">☰ Menu</button>
     <button class="print-btn no-print" onclick="window.print()">Print Marksheets</button>
     
     <div class="sidebar no-print">
@@ -501,6 +661,17 @@
                 </tbody>
             </table>
 
+            <!-- Attendance Information -->
+            <div style="border: 1px solid #000; padding: 2mm; margin-bottom: 3mm; font-size: 10px;">
+                <div style="text-align: center; margin-bottom: 2mm;"><strong>ATTENDANCE RECORD</strong></div>
+                <div style="display: flex; justify-content: space-between;">
+                    <span><strong>Total School Days:</strong> {{ data.total_school_days }}</span>
+                    <span><strong>Present:</strong> {{ data.student_present_days }}</span>
+                    <span><strong>Leave:</strong> {{ data.student_leave_days }}</span>
+                    <span><strong>Absent:</strong> {{ data.student_absent_days }}</span>
+                </div>
+            </div>
+
             <!-- ECA/CCA Table -->
             <table class="eca-table">
                 <thead>
@@ -609,8 +780,8 @@
                     <div>Total Marks: {{ data.obtained_marks }}/{{ data.total_marks }}</div>
                     <div>Percentage: {{ data.percentage }}%</div>
                     <div>Grade: {{ data.overall_grade }}</div>
-                    <div>GPA: {{ data.total_grade_points|default:"N/A" }}</div>
-                    <div>Result: {{ data.overall_status|upper }}</div>
+                    <div>GPA: {{ data.gpa|floatformat:2 }}</div>
+                    <div>Result: {% if data.overall_grade in 'C,D+,D,E' %}FAIL{% else %}PASS{% endif %}</div>
                 </div>
                 
                 <div class="result-box">
@@ -662,6 +833,24 @@
         function printMarksheets() {
             window.print();
         }
+        
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            sidebar.classList.toggle('active');
+        }
+        
+        // Close sidebar when clicking outside on mobile
+        document.addEventListener('click', function(e) {
+            const sidebar = document.querySelector('.sidebar');
+            const toggle = document.querySelector('.mobile-menu-toggle');
+            
+            if (window.innerWidth <= 1024 && 
+                !sidebar.contains(e.target) && 
+                !toggle.contains(e.target) && 
+                sidebar.classList.contains('active')) {
+                sidebar.classList.remove('active');
+            }
+        });
     </script>
 </body>
 </html>
