@@ -5,15 +5,18 @@
 {% block content %}
 <div class="collection-details">
     <div class="page-header">
-        <h1>Monthly Collection Details</h1>
+        <h1>{{ period_title }} Collection Details</h1>
         <div class="breadcrumb">
-            <a href="{% url 'dashboard' %}">Home</a> / Monthly Collection Details
+            <a href="{% url 'dashboard' %}">Home</a> / {{ period_title }} Collection Details
+        </div>
+        <div class="date-range" style="color: #666; margin-top: 5px; font-size: 14px;">
+            <strong>Period:</strong> {{ date_range }}
         </div>
     </div>
 
     <div class="collection-summary">
         <div class="summary-card">
-            <h3>Total Monthly Collection</h3>
+            <h3>Total Collection (Last 30 Days)</h3>
             <div class="amount">Rs {{ total_amount|default:"0" }}</div>
         </div>
         <div class="summary-card">
@@ -69,13 +72,14 @@
                 {% if not payments and not daily_expenses %}
                 <tr>
                     <td colspan="7" class="no-data">
-                        No collections found for this month<br>
+                        No collections found for the last 30 days<br>
                         {% if debug_info %}
                         <small style="color: #666; margin-top: 10px; display: block;">
                             Debug Info: Total payments in database: {{ debug_info.all_payments_count }}, 
                             Total expenses: {{ debug_info.all_expenses_count }}<br>
-                            Current month payments: {{ debug_info.current_month_payments }}, 
-                            Current month expenses: {{ debug_info.current_month_expenses }}
+                            Last 30 days payments: {{ debug_info.last_30_days_payments }}, 
+                            Last 30 days expenses: {{ debug_info.last_30_days_expenses }}<br>
+                            Date range: {{ debug_info.date_range_used }}
                         </small>
                         {% endif %}
                     </td>

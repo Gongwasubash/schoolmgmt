@@ -5,453 +5,1412 @@
 
 {% block content %}
 {% csrf_token %}
-<div class="container-fluid mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">Pending Enquiries</h4>
-                    <small class="text-muted">Total: {{ enquiries.count }} enquiries | Last updated: {% now "Y-m-d H:i:s" %}</small>
+<div class="enquiry-dashboard">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <div class="header-content">
+            <h1 class="page-title">Enquiry Management</h1>
+            <p class="page-subtitle">Manage contact enquiries and student registrations</p>
+        </div>
+        <div class="header-stats">
+            <div class="stat-card">
+                <div class="stat-number">{{ enquiries_count }}</div>
+                <div class="stat-label">Contact Enquiries</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">{{ registrations_count }}</div>
+                <div class="stat-label">Registrations</div>
+            </div>
+        </div>
+    </div>
+    
+
+
+    <!-- Tabs Navigation -->
+    <div class="tabs-container">
+        <div class="tab-nav">
+            <button class="tab-btn active" data-tab="enquiries">Contact Enquiries</button>
+            <button class="tab-btn" data-tab="registrations">Student Registrations</button>
+        </div>
+    </div>
+
+    <!-- Contact Enquiries Tab -->
+    <div class="tab-content active" id="enquiries-tab">
+        <div class="content-card">
+            <div class="card-header">
+                <h3>Contact Enquiries</h3>
+                <div class="filter-controls">
+                    <select class="filter-select" id="enquiry-status-filter" onchange="filterEnquiries()">
+                        <option value="">All Status</option>
+                        <option value="new" {% if selected_enquiry_status == 'new' %}selected{% endif %}>New</option>
+                        <option value="contacted" {% if selected_enquiry_status == 'contacted' %}selected{% endif %}>Contacted</option>
+                        <option value="resolved" {% if selected_enquiry_status == 'resolved' %}selected{% endif %}>Resolved</option>
+                        <option value="closed" {% if selected_enquiry_status == 'closed' %}selected{% endif %}>Closed</option>
+                    </select>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-bordered table-sm">
-                            <thead class="table-dark">
-                                <tr>
-                                    <th style="width: 5%">#</th>
-                                    <th style="width: 14%">Name</th>
-                                    <th style="width: 18%">Email</th>
-                                    <th style="width: 11%">Phone</th>
-                                    <th style="width: 14%">Subject</th>
-                                    <th style="width: 23%">Full Enquiry</th>
-                                    <th style="width: 8%">Date</th>
-                                    <th style="width: 12%">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for enquiry in enquiries %}
-                                <tr onclick="openEnquiryModal({{ enquiry.id }}, '{{ enquiry.name|escapejs }}', '{{ enquiry.email|escapejs }}', '{{ enquiry.phone|default:"-"|escapejs }}', '{{ enquiry.subject|escapejs }}', '{{ enquiry.enquiry|escapejs }}', '{{ enquiry.created_at|date:"Y-m-d" }}', '{{ enquiry.status|default:"new" }}')" style="cursor: pointer;">
-                                    <td>{{ forloop.counter }}</td>
-                                    <td><strong>{{ enquiry.name }}</strong></td>
-                                    <td><small>{{ enquiry.email }}</small></td>
-                                    <td><small>{{ enquiry.phone|default:"-" }}</small></td>
-                                    <td>{{ enquiry.subject }}</td>
-                                    <td><small>{{ enquiry.enquiry|truncatewords:15 }}</small></td>
-                                    <td><small>{{ enquiry.created_at|date:"M d" }}</small></td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-1">
-                                            {% if enquiry.status == 'new' %}
-                                                <span class="badge bg-success">New</span>
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <button type="button" class="btn btn-outline-info btn-sm" onclick="quickUpdateEnquiryStatus({{ enquiry.id }}, 'contacted')" title="Mark as Contacted">
-                                                        <i class="fas fa-phone"></i>
-                                                    </button>
-                                                </div>
-                                            {% elif enquiry.status == 'contacted' %}
-                                                <span class="badge bg-info">Contacted</span>
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="quickUpdateEnquiryStatus({{ enquiry.id }}, 'resolved')" title="Mark as Resolved">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                </div>
-                                            {% elif enquiry.status == 'resolved' %}
-                                                <span class="badge bg-primary">Resolved</span>
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="quickUpdateEnquiryStatus({{ enquiry.id }}, 'closed')" title="Mark as Closed">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </div>
-                                            {% elif enquiry.status == 'closed' %}
-                                                <span class="badge bg-secondary">Closed</span>
-                                            {% else %}
-                                                <span class="badge bg-warning">{{ enquiry.status|default:"New" }}</span>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="8" class="text-center text-muted py-4">
-                                        <i class="fas fa-inbox fa-2x mb-2"></i><br>
-                                        No pending enquiries found
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+            </div>
+            <div class="card-body">
+                <div class="enquiries-grid">
+                    {% for enquiry in enquiries %}
+                    <div class="enquiry-card" data-status="{{ enquiry.status|default:'new' }}">
+                        <div class="enquiry-header">
+                            <div class="enquiry-info">
+                                <h4 class="enquiry-name">{{ enquiry.name|default:'No Name' }}</h4>
+                                <p class="enquiry-subject">{{ enquiry.subject|default:'No Subject' }}</p>
+                            </div>
+                            <div class="enquiry-status">
+                                <span class="status-badge status-{{ enquiry.status|default:'new' }}">{{ enquiry.status|default:'New'|title }}</span>
+                            </div>
+                        </div>
+                        <div class="enquiry-details">
+                            <div class="detail-row">
+                                <i class="fas fa-envelope"></i>
+                                <span>{{ enquiry.email }}</span>
+                            </div>
+                            {% if enquiry.phone %}
+                            <div class="detail-row">
+                                <i class="fas fa-phone"></i>
+                                <span>{{ enquiry.phone }}</span>
+                            </div>
+                            {% endif %}
+                            <div class="detail-row">
+                                <i class="fas fa-calendar"></i>
+                                <span>{{ enquiry.created_at|date:"M d, Y" }}</span>
+                            </div>
+                        </div>
+                        <div class="enquiry-message">
+                            <p>{{ enquiry.enquiry|truncatewords:20 }}</p>
+                        </div>
+                        <div class="enquiry-actions">
+                            <button class="btn btn-view" onclick="viewEnquiry({{ enquiry.id }}, '{{ enquiry.name|escapejs }}', '{{ enquiry.email|escapejs }}', '{{ enquiry.phone|default:"-"|escapejs }}', '{{ enquiry.subject|escapejs }}', '{{ enquiry.enquiry|escapejs }}', '{{ enquiry.created_at|date:"Y-m-d" }}', '{{ enquiry.status|default:"new" }}')">View Details</button>
+                            {% if enquiry.status == 'new' %}
+                            <button class="btn btn-primary" onclick="quickUpdateStatus({{ enquiry.id }}, 'contacted', 'enquiry')">Mark Contacted</button>
+                            {% elif enquiry.status == 'contacted' %}
+                            <button class="btn btn-success" onclick="quickUpdateStatus({{ enquiry.id }}, 'resolved', 'enquiry')">Mark Resolved</button>
+                            {% elif enquiry.status == 'resolved' %}
+                            <button class="btn btn-secondary" onclick="quickUpdateStatus({{ enquiry.id }}, 'closed', 'enquiry')">Close</button>
+                            {% endif %}
+                        </div>
                     </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="fas fa-inbox fa-3x"></i>
+                        <h3>No Enquiries Found</h3>
+                        <p>No contact enquiries have been received yet. (Total in DB: {{ enquiries_count }})</p>
+                        {% if enquiries_count > 0 %}
+                        <div style="background: #ffeeee; padding: 10px; margin: 10px; border: 1px solid #ff0000;">
+                            <strong>Template Issue:</strong> Database has {{ enquiries_count }} enquiries but template loop is empty!<br>
+                            <strong>Debug data:</strong> {{ debug_enquiry_list }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Registration Enquiries Section -->
-    <div class="row mt-4">
-        <div class="col-12">
-            <div class="card">
-                <div class="card-header">
-                    <h4 class="card-title mb-0">Student Registration Enquiries</h4>
-                    <small class="text-muted">Total: {{ registrations.count }} registrations</small>
+    <!-- Student Registrations Tab -->
+    <div class="tab-content" id="registrations-tab">
+        <div class="content-card">
+            <div class="card-header">
+                <h3>Student Registrations</h3>
+                <div class="filter-controls">
+                    <select class="filter-select" id="registration-status-filter" onchange="filterRegistrations()">
+                        <option value="">All Status</option>
+                        <option value="pending" {% if selected_registration_status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="approved" {% if selected_registration_status == 'approved' %}selected{% endif %}>Approved</option>
+                        <option value="rejected" {% if selected_registration_status == 'rejected' %}selected{% endif %}>Rejected</option>
+                    </select>
                 </div>
-                <div class="card-body">
-                    <div class="table-responsive">
-                        <table class="table table-striped table-bordered table-sm">
-                            <thead class="table-primary">
-                                <tr>
-                                    <th style="width: 5%">#</th>
-                                    <th style="width: 14%">Student Name</th>
-                                    <th style="width: 8%">Class</th>
-                                    <th style="width: 7%">Gender</th>
-                                    <th style="width: 13%">Father Name</th>
-                                    <th style="width: 10%">Mobile</th>
-                                    <th style="width: 13%">Address</th>
-                                    <th style="width: 9%">App. No.</th>
-                                    <th style="width: 8%">Date</th>
-                                    <th style="width: 14%">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for registration in registrations %}
-                                <tr onclick="openRegistrationModal({{ registration.id }}, '{{ registration.name|escapejs }}', '{{ registration.student_class }}', '{{ registration.gender }}', '{{ registration.father_name|escapejs }}', '{{ registration.mother_name|escapejs }}', '{{ registration.mobile }}', '{{ registration.address|escapejs }}', '{{ registration.city|escapejs }}', '{{ registration.dob }}', '{{ registration.religion }}', '{{ registration.application_number }}', '{{ registration.registration_date|date:"Y-m-d" }}', '{{ registration.status }}')" style="cursor: pointer;">
-                                    <td>{{ forloop.counter }}</td>
-                                    <td><strong>{{ registration.name }}</strong></td>
-                                    <td>{{ registration.student_class }}</td>
-                                    <td>{{ registration.gender }}</td>
-                                    <td>{{ registration.father_name }}</td>
-                                    <td><small>{{ registration.mobile }}</small></td>
-                                    <td><small>{{ registration.address|truncatewords:3 }}</small></td>
-                                    <td><small>{{ registration.application_number }}</small></td>
-                                    <td><small>{{ registration.registration_date|date:"M d" }}</small></td>
-                                    <td>
-                                        <div class="d-flex align-items-center gap-1">
-                                            {% if registration.status == 'pending' %}
-                                                <span class="badge bg-warning">Pending</span>
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <button type="button" class="btn btn-outline-success btn-sm" onclick="quickUpdateRegistrationStatus({{ registration.id }}, 'approved')" title="Approve Registration">
-                                                        <i class="fas fa-check"></i>
-                                                    </button>
-                                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="quickUpdateRegistrationStatus({{ registration.id }}, 'rejected')" title="Reject Registration">
-                                                        <i class="fas fa-times"></i>
-                                                    </button>
-                                                </div>
-                                            {% elif registration.status == 'approved' %}
-                                                <span class="badge bg-success">Approved</span>
-                                            {% elif registration.status == 'rejected' %}
-                                                <span class="badge bg-danger">Rejected</span>
-                                                <div class="btn-group btn-group-sm" role="group">
-                                                    <button type="button" class="btn btn-outline-success btn-sm" onclick="quickUpdateRegistrationStatus({{ registration.id }}, 'approved')" title="Approve Registration">
-                                                        <i class="fas fa-undo"></i>
-                                                    </button>
-                                                </div>
-                                            {% else %}
-                                                <span class="badge bg-secondary">{{ registration.status }}</span>
-                                            {% endif %}
-                                        </div>
-                                    </td>
-                                </tr>
-                                {% empty %}
-                                <tr>
-                                    <td colspan="10" class="text-center text-muted py-4">
-                                        <i class="fas fa-user-plus fa-2x mb-2"></i><br>
-                                        No registration enquiries found
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+            </div>
+            <div class="card-body">
+                <div class="registrations-grid">
+                    {% for registration in registrations %}
+                    <div class="registration-card" data-status="{{ registration.status|default:'pending' }}">
+                        <div class="registration-header">
+                            <div class="student-info">
+                                <h4 class="student-name">{{ registration.name|default:'No Name' }}</h4>
+                                <p class="student-class">Class {{ registration.student_class|default:'N/A' }} - Section {{ registration.section|default:'N/A' }}</p>
+                            </div>
+                            <div class="registration-status">
+                                <span class="status-badge status-{{ registration.status|default:'pending' }}">{{ registration.status|default:'Pending'|title }}</span>
+                            </div>
+                        </div>
+                        <div class="registration-details">
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <label>Gender:</label>
+                                    <span>{{ registration.gender }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>DOB:</label>
+                                    <span>{{ registration.dob|date:"M d, Y" }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Father:</label>
+                                    <span>{{ registration.father_name }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Mobile:</label>
+                                    <span>{{ registration.mobile }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>App. No:</label>
+                                    <span>{{ registration.application_number }}</span>
+                                </div>
+                                <div class="detail-item">
+                                    <label>Date:</label>
+                                    <span>{{ registration.registration_date|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="registration-actions">
+                            <button class="btn btn-view" onclick="viewRegistration({{ registration.id }}, '{{ registration.name|escapejs }}', '{{ registration.student_class }}', '{{ registration.section }}', '{{ registration.gender }}', '{{ registration.dob|date:"M d, Y" }}', '{{ registration.religion }}', '{{ registration.father_name|escapejs }}', '{{ registration.mother_name|escapejs }}', '{{ registration.mobile }}', '{{ registration.address|escapejs }}', '{{ registration.city|escapejs }}', '{{ registration.application_number }}', '{{ registration.registration_date|date:"M d, Y" }}', '{{ registration.status }}')">View Details</button>
+                            {% if registration.status == 'pending' %}
+                            <button class="btn btn-success" onclick="quickUpdateStatus({{ registration.id }}, 'approved', 'registration')">Approve</button>
+                            <button class="btn btn-danger" onclick="quickUpdateStatus({{ registration.id }}, 'rejected', 'registration')">Reject</button>
+                            {% elif registration.status == 'approved' %}
+                            <button class="btn btn-secondary" onclick="quickUpdateStatus({{ registration.id }}, 'rejected', 'registration')">Reject</button>
+                            {% elif registration.status == 'rejected' %}
+                            <button class="btn btn-success" onclick="quickUpdateStatus({{ registration.id }}, 'approved', 'registration')">Approve</button>
+                            <button class="btn btn-danger" onclick="deleteRegistration({{ registration.id }})">Delete</button>
+                            {% endif %}
+                        </div>
                     </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="fas fa-user-plus fa-3x"></i>
+                        <h3>No Registrations Found</h3>
+                        <p>No student registration applications have been received yet. (Total in DB: {{ registrations_count }})</p>
+                        {% if registrations_count > 0 %}
+                        <div style="background: #ffeeee; padding: 10px; margin: 10px; border: 1px solid #ff0000;">
+                            <strong>Template Issue:</strong> Database has {{ registrations_count }} registrations but template loop is empty!<br>
+                            <strong>Debug data:</strong> {{ debug_registration_list }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Contact Enquiry Details Modal -->
-<div class="modal fade" id="enquiryModal" tabindex="-1" style="display: none;">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Contact Enquiry Details</h5>
-                <button type="button" class="btn-close" onclick="closeEnquiryModal()">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Contact Information</h6>
-                        <p><strong>Name:</strong> <span id="modalEnquiryName"></span></p>
-                        <p><strong>Email:</strong> <span id="modalEnquiryEmail"></span></p>
-                        <p><strong>Phone:</strong> <span id="modalEnquiryPhone"></span></p>
-                        <p><strong>Subject:</strong> <span id="modalEnquirySubject"></span></p>
-                        <p><strong>Date:</strong> <span id="modalEnquiryDate"></span></p>
-                    </div>
-                    <div class="col-md-6">
-                        <h6>Enquiry Details</h6>
-                        <p><strong>Message:</strong></p>
-                        <div style="max-height: 150px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 4px;">
-                            <span id="modalEnquiryMessage"></span>
+
+<!-- Modern Enquiry Modal -->
+<div class="modal-overlay" id="enquiryModal">
+    <div class="modal-container">
+        <div class="modal-header">
+            <h3>Enquiry Details</h3>
+            <button class="modal-close" onclick="closeModal('enquiryModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="modal-grid">
+                <div class="modal-section">
+                    <h4>Contact Information</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Name:</label>
+                            <span id="modalEnquiryName"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Email:</label>
+                            <span id="modalEnquiryEmail"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Phone:</label>
+                            <span id="modalEnquiryPhone"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Subject:</label>
+                            <span id="modalEnquirySubject"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Date:</label>
+                            <span id="modalEnquiryDate"></span>
                         </div>
                     </div>
                 </div>
-                <div class="row mt-3">
-                    <div class="col-12">
-                        <h6>Update Status</h6>
-                        <form method="post" action="{% url 'pending_enquiry' %}" onsubmit="console.log('Form submitted with enquiry_id:', document.getElementById('modalEnquiryId').value, 'status:', document.getElementById('modalEnquiryStatus').value);">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="update_enquiry_status">
-                            <input type="hidden" name="enquiry_id" id="modalEnquiryId">
-                            <div class="form-group mb-3">
-                                <select name="status" id="modalEnquiryStatus" class="form-control">
-                                    <option value="new">New</option>
-                                    <option value="contacted">Contacted</option>
-                                    <option value="resolved">Resolved</option>
-                                    <option value="closed">Closed</option>
-                                </select>
-                            </div>
-                            <div class="form-group mb-3">
-                                <textarea name="remarks" placeholder="Add remarks (optional)" class="form-control" rows="3"></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Update Status</button>
-                            <button type="button" class="btn btn-secondary" onclick="closeEnquiryModal()">Cancel</button>
-                        </form>
+                <div class="modal-section">
+                    <h4>Message</h4>
+                    <div class="message-content">
+                        <p id="modalEnquiryMessage"></p>
                     </div>
                 </div>
+            </div>
+            <div class="modal-actions">
+                <form method="post" action="{% url 'pending_enquiry' %}" class="status-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_enquiry_status">
+                    <input type="hidden" name="enquiry_id" id="modalEnquiryId">
+                    <div class="form-group">
+                        <label>Update Status:</label>
+                        <select name="status" id="modalEnquiryStatus" class="form-select">
+                            <option value="new">New</option>
+                            <option value="contacted">Contacted</option>
+                            <option value="resolved">Resolved</option>
+                            <option value="closed">Closed</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Remarks:</label>
+                        <textarea name="remarks" placeholder="Add remarks (optional)" class="form-textarea" rows="3"></textarea>
+                    </div>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Update Status</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('enquiryModal')">Cancel</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
-<!-- Registration Details Modal -->
-<div class="modal fade" id="registrationModal" tabindex="-1" style="display: none;">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Registration Details</h5>
-                <button type="button" class="btn-close" onclick="closeRegistrationModal()">&times;</button>
+<!-- Modern Registration Modal -->
+<div class="modal-overlay" id="registrationModal">
+    <div class="modal-container large">
+        <div class="modal-header">
+            <h3>Registration Details</h3>
+            <button class="modal-close" onclick="closeModal('registrationModal')">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="registration-details">
+                <div class="detail-section">
+                    <h4>Student Information</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Name:</label>
+                            <span id="modalName"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Class:</label>
+                            <span id="modalClass"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Section:</label>
+                            <span id="modalSection"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Gender:</label>
+                            <span id="modalGender"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Date of Birth:</label>
+                            <span id="modalDob"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Religion:</label>
+                            <span id="modalReligion"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-section">
+                    <h4>Parent Information</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Father Name:</label>
+                            <span id="modalFatherName"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Mother Name:</label>
+                            <span id="modalMotherName"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Mobile:</label>
+                            <span id="modalMobile"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Address:</label>
+                            <span id="modalAddress"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>City:</label>
+                            <span id="modalCity"></span>
+                        </div>
+                    </div>
+                </div>
+                <div class="detail-section">
+                    <h4>Application Details</h4>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <label>Application No:</label>
+                            <span id="modalAppNumber"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Registration Date:</label>
+                            <span id="modalRegDate"></span>
+                        </div>
+                        <div class="info-item">
+                            <label>Current Status:</label>
+                            <span id="modalCurrentStatus" class="status-badge"></span>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Student Information</h6>
-                        <p><strong>Name:</strong> <span id="modalName"></span></p>
-                        <p><strong>Class:</strong> <span id="modalClass"></span></p>
-                        <p><strong>Gender:</strong> <span id="modalGender"></span></p>
-                        <p><strong>Date of Birth:</strong> <span id="modalDob"></span></p>
-                        <p><strong>Religion:</strong> <span id="modalReligion"></span></p>
+            <div class="modal-actions">
+                <form method="post" action="{% url 'pending_enquiry' %}" class="status-form">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="update_status">
+                    <input type="hidden" name="registration_id" id="modalRegistrationId">
+                    <div class="form-group">
+                        <label>Update Status:</label>
+                        <select name="status" id="modalStatus" class="form-select">
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
                     </div>
-                    <div class="col-md-6">
-                        <h6>Parent Information</h6>
-                        <p><strong>Father Name:</strong> <span id="modalFatherName"></span></p>
-                        <p><strong>Mother Name:</strong> <span id="modalMotherName"></span></p>
-                        <p><strong>Mobile:</strong> <span id="modalMobile"></span></p>
-                        <p><strong>Address:</strong> <span id="modalAddress"></span></p>
-                        <p><strong>City:</strong> <span id="modalCity"></span></p>
+                    <div class="form-group">
+                        <label>Remarks:</label>
+                        <textarea name="remarks" placeholder="Add remarks (optional)" class="form-textarea" rows="3"></textarea>
                     </div>
-                </div>
-                <div class="row">
-                    <div class="col-md-6">
-                        <h6>Application Details</h6>
-                        <p><strong>Application No:</strong> <span id="modalAppNumber"></span></p>
-                        <p><strong>Registration Date:</strong> <span id="modalRegDate"></span></p>
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Update Status</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeModal('registrationModal')">Cancel</button>
                     </div>
-                    <div class="col-md-6">
-                        <h6>Update Status</h6>
-                        <form method="post" action="{% url 'pending_enquiry' %}">
-                            {% csrf_token %}
-                            <input type="hidden" name="action" value="update_status">
-                            <input type="hidden" name="registration_id" id="modalRegistrationId">
-                            <div class="form-group mb-3">
-                                <select name="status" id="modalStatus" class="form-control">
-                                    <option value="pending">Pending</option>
-                                    <option value="approved">Approved</option>
-                                    <option value="rejected">Rejected</option>
-                                </select>
-                            </div>
-                            <div class="form-group mb-3">
-                                <textarea name="remarks" placeholder="Add remarks (optional)" class="form-control" rows="3"></textarea>
-                            </div>
-                            <button type="submit" class="btn btn-primary">Update Status</button>
-                            <button type="button" class="btn btn-secondary" onclick="closeRegistrationModal()">Cancel</button>
-                        </form>
-                    </div>
-                </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
 
 <style>
-.modal {
+/* Modern Dashboard Styling */
+.enquiry-dashboard {
+    padding: 20px;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    color: white;
+}
+
+.header-content h1 {
+    margin: 0;
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: white;
+}
+
+.header-content p {
+    margin: 5px 0 0 0;
+    opacity: 0.9;
+    font-size: 1.1rem;
+    color: white;
+}
+
+.header-stats {
+    display: flex;
+    gap: 20px;
+}
+
+.stat-card {
+    background: rgba(255, 255, 255, 0.2);
+    padding: 20px;
+    border-radius: 12px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+.stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 5px;
+    color: white;
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    opacity: 0.9;
+    color: white;
+}
+
+/* Tabs Styling */
+.tabs-container {
+    margin-bottom: 30px;
+}
+
+.tab-nav {
+    display: flex;
+    background: white;
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 15px 30px;
+    border: none;
+    background: transparent;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #64748b;
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.tab-btn:hover:not(.active) {
+    background: #f1f5f9;
+    color: #475569;
+}
+
+/* Content Cards */
+.content-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.card-header {
+    padding: 25px 30px;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.card-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.filter-controls {
+    display: flex;
+    gap: 15px;
+}
+
+.filter-select {
+    padding: 10px 15px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    background: white;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.filter-select:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.card-body {
+    padding: 30px;
+}
+
+/* Grid Layouts */
+.enquiries-grid, .registrations-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 25px;
+}
+
+.enquiry-card, .registration-card {
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 2px 15px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.enquiry-card:hover, .registration-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    border-color: #667eea;
+}
+
+.enquiry-header, .registration-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 20px;
+}
+
+.enquiry-name, .student-name {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 0 0 5px 0;
+}
+
+.enquiry-subject, .student-class {
+    color: #64748b;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.enquiry-status, .registration-status {
+    flex-shrink: 0;
+}
+
+.status-badge {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.status-new { background: #dcfce7; color: #166534; }
+.status-contacted { background: #dbeafe; color: #1e40af; }
+.status-resolved { background: #f3e8ff; color: #7c3aed; }
+.status-closed { background: #f1f5f9; color: #475569; }
+.status-pending { background: #fef3c7; color: #d97706; }
+.status-approved { background: #dcfce7; color: #166534; }
+.status-rejected { background: #fee2e2; color: #dc2626; }
+
+.enquiry-details, .registration-details {
+    margin-bottom: 20px;
+}
+
+.detail-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+    color: #64748b;
+    font-size: 0.9rem;
+}
+
+.detail-row i {
+    width: 16px;
+    color: #94a3b8;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.detail-item label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detail-item span {
+    color: #1e293b;
+    font-weight: 500;
+}
+
+.enquiry-message {
+    background: #f8fafc;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 4px solid #667eea;
+}
+
+.enquiry-message p {
+    margin: 0;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.enquiry-actions, .registration-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+}
+
+.btn-view {
+    background: #f1f5f9;
+    color: #475569;
+    border: 2px solid #e2e8f0;
+}
+
+.btn-view:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+}
+
+.btn-success:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4);
+}
+
+.btn-danger {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    color: white;
+}
+
+.btn-danger:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(239, 68, 68, 0.4);
+}
+
+.btn-secondary {
+    background: #f1f5f9;
+    color: #475569;
+    border: 2px solid #e2e8f0;
+}
+
+.btn-secondary:hover {
+    background: #e2e8f0;
+    border-color: #cbd5e1;
+}
+
+.empty-state {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+}
+
+.empty-state i {
+    margin-bottom: 20px;
+    color: #cbd5e1;
+}
+
+.empty-state h3 {
+    margin: 0 0 10px 0;
+    color: #64748b;
+    font-weight: 600;
+}
+
+.empty-state p {
+    margin: 0;
+    color: #94a3b8;
+}
+
+/* Tab Content */
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: scale(1); }
+    to { opacity: 0; transform: scale(0.95); }
+}
+
+/* Modal Styling */
+.modal-overlay {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0,0,0,0.5);
-    z-index: 1000;
-    display: flex;
+    background: rgba(0, 0, 0, 0.6);
+    display: none;
     align-items: center;
     justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(4px);
 }
-.modal-dialog {
-    position: relative;
-    margin: 0;
-    max-width: 800px;
-    width: 90%;
+
+.modal-overlay.active {
+    display: flex;
 }
-.modal-content {
+
+.modal-container {
     background: white;
-    border-radius: 8px;
-    padding: 0;
+    border-radius: 16px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+    animation: modalSlideIn 0.3s ease;
 }
+
+.modal-container.large {
+    max-width: 900px;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
 .modal-header {
-    padding: 15px 20px;
-    border-bottom: 1px solid #ddd;
+    padding: 25px 30px;
+    border-bottom: 1px solid #e2e8f0;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 16px 16px 0 0;
 }
-.modal-body {
-    padding: 20px;
+
+.modal-header h3 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
 }
-.btn-close {
+
+.modal-close {
     background: none;
     border: none;
-    font-size: 20px;
+    font-size: 24px;
     cursor: pointer;
+    color: white;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+    padding: 5px;
+    border-radius: 4px;
 }
 
-/* Quick action buttons styling */
-.btn-group-sm .btn {
-    padding: 0.2rem 0.4rem;
-    font-size: 0.75rem;
-    line-height: 1.2;
+.modal-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.1);
 }
 
-.btn-group-sm .btn i {
-    font-size: 0.7rem;
+.modal-body {
+    padding: 30px;
 }
 
-/* Status column alignment */
-td .d-flex {
-    align-items: center;
-    gap: 0.25rem;
+.modal-grid {
+    display: grid;
+    gap: 30px;
+    margin-bottom: 30px;
 }
 
-/* Ensure badges don't wrap */
-.badge {
-    white-space: nowrap;
+.modal-section, .detail-section {
+    background: #f8fafc;
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
 }
+
+.modal-section h4, .detail-section h4 {
+    margin: 0 0 15px 0;
+    color: #1e293b;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.info-item {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.info-item label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.info-item span {
+    color: #1e293b;
+    font-weight: 500;
+    padding: 8px 0;
+}
+
+.message-content {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.message-content p {
+    margin: 0;
+    line-height: 1.6;
+    color: #475569;
+}
+
+.registration-details {
+    display: grid;
+    gap: 25px;
+    margin-bottom: 30px;
+}
+
+.modal-actions {
+    border-top: 1px solid #e2e8f0;
+    padding-top: 25px;
+}
+
+.status-form {
+    display: grid;
+    gap: 20px;
+}
+
+.form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.9rem;
+}
+
+.form-select, .form-textarea {
+    padding: 12px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.3s ease;
+    background: white;
+}
+
+.form-select:focus, .form-textarea:focus {
+    outline: none;
+    border-color: #667eea;
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+.form-textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.button-group {
+    display: flex;
+    gap: 15px;
+    justify-content: flex-end;
+}
+
+/* Loading States */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
+    position: relative;
+}
+
+.loading::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    margin: -10px 0 0 -10px;
+    border: 2px solid #f3f3f3;
+    border-top: 2px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    z-index: 10;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Notification */
+.notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 9999;
+    padding: 15px 25px;
+    border-radius: 12px;
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+    animation: slideInRight 0.3s ease;
+    max-width: 400px;
+}
+
+.notification-success {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+}
+
+.notification-error {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.notification-info {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(100%);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .enquiries-grid, .registrations-grid {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+    
+    .header-stats {
+        justify-content: center;
+    }
+}
+
+@media (max-width: 768px) {
+    .enquiry-dashboard {
+        padding: 15px;
+    }
+    
+    .dashboard-header {
+        padding: 20px;
+    }
+    
+    .header-content h1 {
+        font-size: 2rem;
+    }
+    
+    .enquiries-grid, .registrations-grid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+    
+    .enquiry-card, .registration-card {
+        padding: 20px;
+    }
+    
+    .enquiry-header, .registration-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+    
+    .enquiry-actions, .registration-actions {
+        flex-direction: column;
+    }
+    
+    .btn {
+        width: 100%;
+        justify-content: center;
+    }
+    
+    .tab-nav {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        text-align: center;
+    }
+    
+    .card-header {
+        flex-direction: column;
+        gap: 15px;
+        align-items: flex-start;
+    }
+    
+    .filter-controls {
+        width: 100%;
+    }
+    
+    .filter-select {
+        width: 100%;
+    }
+    
+    .modal-container {
+        width: 95%;
+        margin: 20px;
+    }
+    
+    .modal-header, .modal-body {
+        padding: 20px;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .button-group {
+        flex-direction: column;
+    }
+    
+    .registration-details {
+        gap: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content h1 {
+        font-size: 1.75rem;
+    }
+    
+    .stat-card {
+        padding: 15px;
+    }
+    
+    .stat-number {
+        font-size: 1.5rem;
+    }
+    
+    .enquiry-card, .registration-card {
+        padding: 15px;
+    }
+    
+    .card-body {
+        padding: 20px;
+    }
+    
+    .modal-body {
+        padding: 15px;
+    }
+    
+    .btn {
+        padding: 12px 16px;
+        font-size: 0.85rem;
+    }
+}
+
+
 </style>
 
 <script>
-function openRegistrationModal(id, name, studentClass, gender, fatherName, motherName, mobile, address, city, dob, religion, appNumber, regDate, status) {
+// Tab functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const tabBtns = document.querySelectorAll('.tab-btn');
+    const tabContents = document.querySelectorAll('.tab-content');
+    
+    tabBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const targetTab = btn.dataset.tab;
+            
+            // Remove active class from all tabs and contents
+            tabBtns.forEach(b => b.classList.remove('active'));
+            tabContents.forEach(c => c.classList.remove('active'));
+            
+            // Add active class to clicked tab and corresponding content
+            btn.classList.add('active');
+            document.getElementById(targetTab + '-tab').classList.add('active');
+        });
+    });
+    
+    // Backend filtering is handled by form submission
+    // Client-side filtering removed in favor of server-side filtering
+});
+
+// Backend filtering functions
+function filterEnquiries() {
+    const status = document.getElementById('enquiry-status-filter').value;
+    const url = new URL(window.location);
+    if (status) {
+        url.searchParams.set('enquiry_status', status);
+    } else {
+        url.searchParams.delete('enquiry_status');
+    }
+    window.location.href = url.toString();
+}
+
+function filterRegistrations() {
+    const status = document.getElementById('registration-status-filter').value;
+    const url = new URL(window.location);
+    if (status) {
+        url.searchParams.set('registration_status', status);
+    } else {
+        url.searchParams.delete('registration_status');
+    }
+    window.location.href = url.toString();
+}
+
+// Modal functions
+function viewEnquiry(id, name, email, phone, subject, enquiry, date, status) {
+    document.getElementById('modalEnquiryId').value = id;
+    document.getElementById('modalEnquiryName').textContent = name;
+    document.getElementById('modalEnquiryEmail').textContent = email;
+    document.getElementById('modalEnquiryPhone').textContent = phone || '-';
+    document.getElementById('modalEnquirySubject').textContent = subject;
+    document.getElementById('modalEnquiryMessage').textContent = enquiry;
+    document.getElementById('modalEnquiryDate').textContent = date;
+    document.getElementById('modalEnquiryStatus').value = status || 'new';
+    openModal('enquiryModal');
+}
+
+function viewRegistration(id, name, studentClass, section, gender, dob, religion, fatherName, motherName, mobile, address, city, appNumber, regDate, status) {
     document.getElementById('modalRegistrationId').value = id;
     document.getElementById('modalName').textContent = name;
     document.getElementById('modalClass').textContent = studentClass;
+    document.getElementById('modalSection').textContent = section;
     document.getElementById('modalGender').textContent = gender;
+    document.getElementById('modalDob').textContent = dob;
+    document.getElementById('modalReligion').textContent = religion;
     document.getElementById('modalFatherName').textContent = fatherName;
     document.getElementById('modalMotherName').textContent = motherName;
     document.getElementById('modalMobile').textContent = mobile;
     document.getElementById('modalAddress').textContent = address;
     document.getElementById('modalCity').textContent = city;
-    document.getElementById('modalDob').textContent = dob;
-    document.getElementById('modalReligion').textContent = religion;
     document.getElementById('modalAppNumber').textContent = appNumber;
     document.getElementById('modalRegDate').textContent = regDate;
+    document.getElementById('modalCurrentStatus').textContent = status.toUpperCase();
+    document.getElementById('modalCurrentStatus').className = 'status-badge status-' + status;
     document.getElementById('modalStatus').value = status;
-    document.getElementById('registrationModal').style.display = 'block';
+    openModal('registrationModal');
 }
 
-function openEnquiryModal(id, name, email, phone, subject, enquiry, date, status) {
-    console.log('Opening modal for enquiry ID:', id, 'with status:', status);
-    document.getElementById('modalEnquiryId').value = id;
-    document.getElementById('modalEnquiryName').textContent = name;
-    document.getElementById('modalEnquiryEmail').textContent = email;
-    document.getElementById('modalEnquiryPhone').textContent = phone;
-    document.getElementById('modalEnquirySubject').textContent = subject;
-    document.getElementById('modalEnquiryMessage').textContent = enquiry;
-    document.getElementById('modalEnquiryDate').textContent = date;
-    document.getElementById('modalEnquiryStatus').value = status || 'new';
-    console.log('Modal status set to:', document.getElementById('modalEnquiryStatus').value);
-    document.getElementById('enquiryModal').style.display = 'block';
+function openModal(modalId) {
+    document.getElementById(modalId).classList.add('active');
+    document.body.style.overflow = 'hidden';
 }
 
-function closeEnquiryModal() {
-    document.getElementById('enquiryModal').style.display = 'none';
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.remove('active');
+    document.body.style.overflow = 'auto';
 }
 
-function closeRegistrationModal() {
-    document.getElementById('registrationModal').style.display = 'none';
+// Close modal when clicking outside
+document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('modal-overlay')) {
+        closeModal(e.target.id);
+    }
+});
+
+
+
+// Quick status update function
+function quickUpdateStatus(id, newStatus, type) {
+    if (!confirm(`Are you sure you want to update this ${type} status to ${newStatus.toUpperCase()}?`)) {
+        return;
+    }
+    
+    const card = event.target.closest(type === 'enquiry' ? '.enquiry-card' : '.registration-card');
+    const statusBadge = card.querySelector('.status-badge');
+    const originalContent = statusBadge.textContent;
+    const originalClass = statusBadge.className;
+    
+    // Show loading state
+    statusBadge.textContent = 'Updating...';
+    statusBadge.className = 'status-badge';
+    card.classList.add('loading');
+    
+    const endpoint = type === 'enquiry' ? '/api/update-enquiry-status/' : '/api/update-registration-status/';
+    const bodyData = type === 'enquiry' ? 
+        { enquiry_id: id, status: newStatus } : 
+        { registration_id: id, status: newStatus };
+    
+    fetch(endpoint, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify(bodyData)
+    })
+    .then(response => response.json())
+    .then(data => {
+        card.classList.remove('loading');
+        if (data.success) {
+            statusBadge.textContent = newStatus.charAt(0).toUpperCase() + newStatus.slice(1);
+            statusBadge.className = `status-badge status-${newStatus}`;
+            card.dataset.status = newStatus;
+            updateCardActions(card, newStatus, id, type);
+            showNotification(data.message || 'Status updated successfully', 'success');
+        } else {
+            statusBadge.textContent = originalContent;
+            statusBadge.className = originalClass;
+            showNotification('Error: ' + (data.error || 'Unknown error'), 'error');
+        }
+    })
+    .catch(error => {
+        card.classList.remove('loading');
+        statusBadge.textContent = originalContent;
+        statusBadge.className = originalClass;
+        showNotification('Network error. Please try again.', 'error');
+    });
 }
 
-// Quick status update functions
-function quickUpdateEnquiryStatus(enquiryId, newStatus) {
-    if (confirm(`Are you sure you want to update this enquiry status to ${newStatus.toUpperCase()}?`)) {
-        fetch('/api/update-enquiry-status/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({
-                enquiry_id: enquiryId,
-                status: newStatus
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while updating the status.');
-        });
+function updateCardActions(card, newStatus, id, type) {
+    const actionsContainer = card.querySelector(type === 'enquiry' ? '.enquiry-actions' : '.registration-actions');
+    const viewBtn = actionsContainer.querySelector('.btn-view');
+    
+    // Clear existing action buttons except view button
+    const actionBtns = actionsContainer.querySelectorAll('.btn:not(.btn-view)');
+    actionBtns.forEach(btn => btn.remove());
+    
+    // Add appropriate action buttons based on new status
+    if (type === 'enquiry') {
+        if (newStatus === 'new') {
+            const contactBtn = createButton('Mark Contacted', 'btn-primary', () => quickUpdateStatus(id, 'contacted', 'enquiry'));
+            actionsContainer.appendChild(contactBtn);
+        } else if (newStatus === 'contacted') {
+            const resolveBtn = createButton('Mark Resolved', 'btn-success', () => quickUpdateStatus(id, 'resolved', 'enquiry'));
+            actionsContainer.appendChild(resolveBtn);
+        } else if (newStatus === 'resolved') {
+            const closeBtn = createButton('Close', 'btn-secondary', () => quickUpdateStatus(id, 'closed', 'enquiry'));
+            actionsContainer.appendChild(closeBtn);
+        }
+    } else {
+        if (newStatus === 'pending') {
+            const approveBtn = createButton('Approve', 'btn-success', () => quickUpdateStatus(id, 'approved', 'registration'));
+            const rejectBtn = createButton('Reject', 'btn-danger', () => quickUpdateStatus(id, 'rejected', 'registration'));
+            actionsContainer.appendChild(approveBtn);
+            actionsContainer.appendChild(rejectBtn);
+        } else if (newStatus === 'rejected') {
+            const approveBtn = createButton('Approve', 'btn-success', () => quickUpdateStatus(id, 'approved', 'registration'));
+            const deleteBtn = createButton('Delete', 'btn-danger', () => deleteRegistration(id));
+            actionsContainer.appendChild(approveBtn);
+            actionsContainer.appendChild(deleteBtn);
+        }
     }
 }
 
-function quickUpdateRegistrationStatus(registrationId, newStatus) {
-    if (confirm(`Are you sure you want to update this registration status to ${newStatus.toUpperCase()}?`)) {
-        fetch('/api/update-registration-status/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
-            },
-            body: JSON.stringify({
-                registration_id: registrationId,
-                status: newStatus
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert(data.message);
-                location.reload();
-            } else {
-                alert('Error: ' + data.error);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert('An error occurred while updating the status.');
-        });
-    }
+function createButton(text, className, onClick) {
+    const btn = document.createElement('button');
+    btn.textContent = text;
+    btn.className = `btn ${className}`;
+    btn.onclick = onClick;
+    return btn;
 }
 
-window.onclick = function(event) {
-    var registrationModal = document.getElementById('registrationModal');
-    var enquiryModal = document.getElementById('enquiryModal');
-    if (event.target == registrationModal) {
-        closeRegistrationModal();
+// Delete registration function
+function deleteRegistration(id) {
+    if (!confirm('Are you sure you want to permanently delete this registration? This action cannot be undone.')) {
+        return;
     }
-    if (event.target == enquiryModal) {
-        closeEnquiryModal();
-    }
+    
+    const card = event.target.closest('.registration-card');
+    card.classList.add('loading');
+    
+    fetch('/api/delete-registration/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: JSON.stringify({ registration_id: id })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            card.style.animation = 'fadeOut 0.3s ease';
+            setTimeout(() => card.remove(), 300);
+            showNotification('Registration deleted successfully', 'success');
+        } else {
+            card.classList.remove('loading');
+            showNotification('Error: ' + (data.error || 'Failed to delete registration'), 'error');
+        }
+    })
+    .catch(error => {
+        card.classList.remove('loading');
+        showNotification('Network error. Please try again.', 'error');
+    });
+}
+
+
+
+
+
+
+
+
+
+
+
+// Notification system
+function showNotification(message, type = 'info') {
+    const existing = document.querySelector('.notification');
+    if (existing) existing.remove();
+    
+    const notification = document.createElement('div');
+    notification.className = `notification notification-${type}`;
+    notification.innerHTML = `
+        <i class="fas ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+        <span>${message}</span>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.remove();
+        }
+    }, 4000);
 }
 </script>
 
