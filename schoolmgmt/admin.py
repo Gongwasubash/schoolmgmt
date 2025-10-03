@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, ContactEnquiry, HeroSlider, Blog, StudentAttendance
+from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, ContactEnquiry, HeroSlider, Blog, StudentAttendance, Teacher, TeacherClassSubject
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -51,10 +51,19 @@ class SessionAdmin(admin.ModelAdmin):
 
 @admin.register(Subject)
 class SubjectAdmin(admin.ModelAdmin):
-    list_display = ['name', 'code', 'class_name', 'max_marks', 'pass_marks']
-    list_filter = ['class_name', 'max_marks', 'pass_marks']
+    list_display = ['name', 'code', 'class_name', 'specialization', 'max_marks', 'pass_marks']
+    list_filter = ['class_name', 'specialization', 'max_marks', 'pass_marks']
     search_fields = ['name', 'code', 'class_name']
     ordering = ['class_name', 'name']
+    
+    fieldsets = (
+        ('Subject Information', {
+            'fields': ('name', 'code', 'class_name', 'specialization')
+        }),
+        ('Grading', {
+            'fields': ('max_marks', 'pass_marks')
+        }),
+    )
 
 @admin.register(Exam)
 class ExamAdmin(admin.ModelAdmin):
@@ -77,10 +86,44 @@ class SchoolDetailAdmin(admin.ModelAdmin):
 
 @admin.register(AdminLogin)
 class AdminLoginAdmin(admin.ModelAdmin):
-    list_display = ['username', 'is_active', 'created_at', 'updated_at']
-    list_filter = ['is_active', 'created_at']
-    search_fields = ['username']
-    fields = ['username', 'password', 'is_active']
+    list_display = ['username', 'get_teacher_name', 'get_teacher_designation', 'get_permissions', 'is_active', 'created_at']
+    list_filter = ['is_active', 'is_super_admin', 'can_create_users', 'can_delete_users', 'teacher__designation', 'created_at']
+    search_fields = ['username', 'teacher__name', 'teacher__designation']
+    
+    fieldsets = (
+        ('Login Information', {
+            'fields': ('username', 'password', 'teacher', 'is_active')
+        }),
+        ('User Management Permissions', {
+            'fields': ('is_super_admin', 'can_create_users', 'can_delete_users')
+        }),
+        ('Sidebar Menu Permissions', {
+            'fields': ('can_view_dashboard', 'can_view_students', 'can_view_teachers', 'can_view_reports', 'can_view_marksheet', 'can_view_fee_structure', 'can_view_fee_receipt', 'can_view_daily_expenses', 'can_view_school_settings', 'can_view_website_settings', 'can_view_user_management', 'can_view_attendance')
+        }),
+        ('Additional Permissions', {
+            'fields': ('can_view_charts', 'can_view_stats', 'can_view_fees', 'can_view_receipts', 'can_view_expenses', 'can_view_settings'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def get_teacher_name(self, obj):
+        return obj.teacher.name if obj.teacher else 'System Admin'
+    get_teacher_name.short_description = 'Name'
+    
+    def get_teacher_designation(self, obj):
+        return obj.teacher.designation if obj.teacher else 'System'
+    get_teacher_designation.short_description = 'Designation'
+    
+    def get_permissions(self, obj):
+        perms = []
+        if obj.is_super_admin:
+            perms.append('Super Admin')
+        if obj.can_create_users:
+            perms.append('Create Users')
+        if obj.can_delete_users:
+            perms.append('Delete Users')
+        return ', '.join(perms) if perms else 'Basic'
+    get_permissions.short_description = 'Permissions'
 
 @admin.register(StudentRegistration)
 class StudentRegistrationAdmin(admin.ModelAdmin):
@@ -143,3 +186,63 @@ class StudentAttendanceAdmin(admin.ModelAdmin):
             'fields': ('marked_by', 'date_nepali')
         }),
     )
+
+class TeacherClassSubjectInline(admin.TabularInline):
+    model = TeacherClassSubject
+    extra = 1
+    fields = ['class_name', 'subject', 'is_active']
+    
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "subject":
+            # Filter subjects based on selected class
+            kwargs["queryset"] = Subject.objects.all().order_by('class_name', 'name')
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+@admin.register(Teacher)
+class TeacherAdmin(admin.ModelAdmin):
+    list_display = ['name', 'designation', 'phone_number', 'get_assigned_classes_display', 'is_active']
+    list_filter = ['designation', 'is_active', 'gender', 'joining_date']
+    search_fields = ['name', 'phone_number', 'email', 'qualification']
+    ordering = ['name']
+    inlines = [TeacherClassSubjectInline]
+    
+    fieldsets = (
+        ('Personal Information', {
+            'fields': ('name', 'gender', 'date_of_birth', 'phone_number', 'email', 'address', 'photo')
+        }),
+        ('Professional Information', {
+            'fields': ('designation', 'joining_date', 'qualification', 'salary')
+        }),
+        ('Status', {
+            'fields': ('is_active',)
+        }),
+    )
+    
+    def get_assigned_classes_display(self, obj):
+        """Display assigned classes in admin list"""
+        classes = obj.get_assigned_classes()
+        return ', '.join(classes) if classes else 'No assignments'
+    get_assigned_classes_display.short_description = 'Assigned Classes'
+
+@admin.register(TeacherClassSubject)
+class TeacherClassSubjectAdmin(admin.ModelAdmin):
+    list_display = ['teacher', 'class_name', 'subject', 'is_active', 'created_at']
+    list_filter = ['class_name', 'is_active', 'subject__specialization', 'created_at']
+    search_fields = ['teacher__name', 'subject__name', 'class_name']
+    ordering = ['teacher__name', 'class_name', 'subject__name']
+    date_hierarchy = 'created_at'
+    
+    fieldsets = (
+        ('Assignment Details', {
+            'fields': ('teacher', 'class_name', 'subject', 'is_active')
+        }),
+        ('Timestamps', {
+            'fields': ('created_at', 'updated_at'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ['created_at', 'updated_at']
+    
+    def get_queryset(self, request):
+        return super().get_queryset(request).select_related('teacher', 'subject')

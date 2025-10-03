@@ -18,15 +18,22 @@ from django.contrib import admin
 from django.urls import path
 from django.conf import settings
 from django.conf.urls.static import static
-from . import views
+from . import views, views_admin, views_user
 from . import registration_views
 
 urlpatterns = [
     path('', views.home, name='home'),
     path('dashboard/', views.dashboard, name='dashboard'),
+
     path('students/', views.students, name='students'),
+    path('students/<int:student_id>/', views.student_detail, name='student_detail'),
+    path('student-admission/', views.student_admission, name='student_admission'),
     path('studentlist/', views.studentlist, name='studentlist'),
     path('teachers/', views.teachers, name='teachers'),
+    path('teacher/<int:teacher_id>/view/', views.teacher_view, name='teacher_view'),
+    path('teacher/<int:teacher_id>/edit/', views.teacher_edit, name='teacher_edit'),
+    path('teacher/<int:teacher_id>/assign/', views.teacher_assignment, name='teacher_assignment'),
+    path('teacher/<int:teacher_id>/delete/', views.teacher_delete, name='teacher_delete'),
     path('classes/', views.classes, name='classes'),
     path('reports/', views.reports, name='reports'),
     path('fees/', views.fees, name='fees'),
@@ -68,8 +75,12 @@ urlpatterns = [
     path('marksheet-new/', views.marksheet_new, name='marksheet_new'),
     path('marksheet-advanced/', views.marksheet_advanced, name='marksheet_advanced'),
     path('api/subjects-by-class/<str:class_name>/', views.subjects_by_class_api, name='subjects_by_class_api'),
+    path('api/subjects-by-class/<str:class_name>/', views.api_subjects_by_class, name='api_subjects_by_class'),
     path('api/marksheet-data/<int:exam_id>/<int:subject_id>/', views.marksheet_data_api, name='marksheet_data_api'),
     path('api/save-marksheet/', views.save_marksheet_api, name='save_marksheet_api'),
+    path('api/populate-all-marksheet-data/', views.populate_all_marksheet_data, name='populate_all_marksheet_data'),
+    path('api/auto-populate-exam-marks/<int:exam_id>/', views.auto_populate_exam_marks, name='auto_populate_exam_marks'),
+    path('api/student-marksheet-data/<int:student_id>/', views.get_student_marksheet_data, name='get_student_marksheet_data'),
     path('generate-class-marksheets/<int:exam_id>/', views.generate_class_marksheets, name='generate_class_marksheets'),
     path('generate-class-marksheets-print/<int:exam_id>/', views.generate_class_marksheets_new_tab, name='generate_class_marksheets_print'),
     path('generate-class-marksheets-see-style/<int:exam_id>/', views.generate_class_marksheets_see_style, name='generate_class_marksheets_see_style'),
@@ -104,6 +115,9 @@ urlpatterns = [
     path('api/todays-all-expenses/', views.get_todays_all_expenses_api, name='get_todays_all_expenses_api'),
     path('collection-dashboard/', views.collection_dashboard, name='collection_dashboard'),
     path('collection-details/<str:period>/', views.collection_details, name='collection_details'),
+    path('weekly-collection-details/', views.weekly_collection_details, name='weekly_collection_details'),
+    path('monthly-collection-details/', views.monthly_collection_details, name='monthly_collection_details'),
+    path('yearly-collection-details/', views.yearly_collection_details, name='yearly_collection_details'),
     path('school-settings/', views.school_settings, name='school_settings'),
     path('website-settings/', views.website_settings, name='website_settings'),
     path('school-settings-test/', views.school_settings_test, name='school_settings_test'),
@@ -123,8 +137,8 @@ urlpatterns = [
     path('application-status/<int:registration_id>/', registration_views.application_status, name='application_status'),
     path('api/approve-registration/', registration_views.approve_registration, name='approve_registration'),
     path('api/register-student/', views.register_student_api, name='register_student_api'),
-    path('login/', views.admin_login, name='admin_login'),
-    path('logout/', views.admin_logout, name='admin_logout'),
+    path('login/', views_admin.admin_login_view, name='admin_login'),
+    path('logout/', views_admin.admin_logout, name='admin_logout'),
     path('contact/', views.contact, name='contact'),
     path('blog/<int:blog_id>/', views.blog_detail, name='blog_detail'),
     path('pending-enquiry/', views.pending_enquiry, name='pending_enquiry'),
@@ -133,6 +147,21 @@ urlpatterns = [
     path('blog/<int:blog_id>/', views.blog_detail, name='blog_detail'),
     path('test-enquiry-status/', views.test_enquiry_status, name='test_enquiry_status'),
     path('admin/', admin.site.urls),
+    
+    # Admin Login URLs
+    path('admin-login/', views_admin.admin_login_view, name='admin_login_view'),
+    path('admin-dashboard/', views_admin.admin_dashboard, name='admin_dashboard'),
+    path('admin-logout/', views_admin.admin_logout, name='admin_logout_view'),
+    path('user-management/', views_admin.user_management, name='user_management'),
+    path('create-user/', views_admin.create_user, name='create_user'),
+    path('admin/delete-user/<int:user_id>/', views_admin.delete_user, name='delete_user'),
+    path('admin/enable-all-permissions/<int:user_id>/', views_admin.enable_all_permissions, name='enable_all_permissions'),
+    path('edit-user/<int:user_id>/', views_admin.edit_user, name='edit_user'),
+    
+    # User Dashboard URLs
+    path('user-login/', views_user.user_login_view, name='user_login'),
+    path('user-dashboard/', views_user.user_dashboard, name='user_dashboard'),
+    path('user-logout/', views_user.user_logout, name='user_logout'),
 ]
 
 # Serve media files during development

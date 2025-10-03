@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="csrf-token" content="{{ csrf_token }}">
+    {% csrf_token %}
     <title>{% block title %}School Management{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/dashboard-sidebar-fix.css' %}">
@@ -19,6 +20,7 @@
                 <h2 style="font-size: 14px; margin-top: 5px;">{{ school_info.school_name }}</h2>
             </div>
             <nav class="sidebar-nav">
+                {% if is_super_admin or user_permissions.can_view_dashboard %}
                 <a href="{% url 'dashboard' %}" class="nav-item{% if request.resolver_match.url_name == 'dashboard' or request.resolver_match.url_name == 'home' %} active{% endif %}">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -27,6 +29,8 @@
                     </span>
                     <span class="nav-text">Dashboard</span>
                 </a>
+                {% endif %}
+                {% if is_super_admin or user_permissions.can_view_students %}
                 <a href="{% url 'students' %}" class="nav-item{% if request.resolver_match.url_name == 'students' %} active{% endif %}">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -35,7 +39,19 @@
                     </span>
                     <span class="nav-text">Students</span>
                 </a>
+                {% endif %}
+                {% if is_super_admin or user_permissions.can_view_teachers %}
+                <a href="{% url 'teachers' %}" class="nav-item{% if request.resolver_match.url_name == 'teachers' %} active{% endif %}">
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12,2A3,3 0 0,1 15,5V11A3,3 0 0,1 12,14A3,3 0 0,1 9,11V5A3,3 0 0,1 12,2M19,11C19,14.53 16.39,17.44 13,17.93V21H11V17.93C7.61,17.44 5,14.53 5,11H7A5,5 0 0,0 17,11H19Z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">Teachers</span>
+                </a>
+                {% endif %}
 
+                {% if is_super_admin or user_permissions.can_view_reports %}
                 <a href="{% url 'reports' %}" class="nav-item{% if request.resolver_match.url_name == 'reports' %} active{% endif %}">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -44,6 +60,8 @@
                     </span>
                     <span class="nav-text">Reports</span>
                 </a>
+                {% endif %}
+                {% if is_super_admin or user_permissions.can_view_marksheet %}
                 <a href="{% url 'marksheet_system' %}" class="nav-item{% if request.resolver_match.url_name == 'marksheet_system' %} active{% endif %}">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -52,6 +70,8 @@
                     </span>
                     <span class="nav-text">Marksheet</span>
                 </a>
+                {% endif %}
+                {% if is_super_admin or user_permissions.can_view_fee_structure %}
                 <a href="{% url 'fees' %}" class="nav-item{% if request.resolver_match.url_name == 'fees' %} active{% endif %}">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -60,8 +80,10 @@
                     </span>
                     <span class="nav-text">Fee Structure</span>
                 </a>
+                {% endif %}
 
 
+                {% if is_super_admin or user_permissions.can_view_fee_receipt %}
                 <a href="{% url 'fee_receipt_book' %}" class="nav-item{% if request.resolver_match.url_name == 'fee_receipt_book' %} active{% endif %}">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -70,6 +92,8 @@
                     </span>
                     <span class="nav-text">Fee Receipt</span>
                 </a>
+                {% endif %}
+                {% if is_super_admin or user_permissions.can_view_daily_expenses %}
                 <a href="{% url 'student_daily_exp' %}" class="nav-item{% if request.resolver_match.url_name == 'student_daily_exp' %} active{% endif %}">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -78,7 +102,20 @@
                     </span>
                     <span class="nav-text">Daily Expenses</span>
                 </a>
+                {% endif %}
 
+                {% if is_super_admin or user_permissions.can_view_attendance %}
+                <a href="{% url 'student_attendance_dashboard' %}" class="nav-item{% if request.resolver_match.url_name == 'student_attendance_dashboard' %} active{% endif %}">
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,19H5V5H19V19Z M17,12H7V10H17V12Z M15,16H7V14H15V16Z M17,8H7V6H17V8Z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">Student Attendance</span>
+                </a>
+                {% endif %}
+
+                {% if is_super_admin or user_permissions.can_view_school_settings %}
                 <a href="{% url 'school_settings' %}" class="nav-item{% if request.resolver_match.url_name == 'school_settings' %} active{% endif %}">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -87,7 +124,9 @@
                     </span>
                     <span class="nav-text">School Settings</span>
                 </a>
+                {% endif %}
 
+                {% if is_super_admin or user_permissions.can_view_website_settings %}
                 <a href="{% url 'website_settings' %}" class="nav-item{% if request.resolver_match.url_name == 'website_settings' %} active{% endif %}">
                     <span class="nav-icon">
                         <svg viewBox="0 0 24 24" fill="currentColor">
@@ -96,6 +135,18 @@
                     </span>
                     <span class="nav-text">Website Settings</span>
                 </a>
+                {% endif %}
+                
+                {% if is_super_admin or user_permissions.can_view_user_management %}
+                <a href="{% url 'user_management' %}" class="nav-item{% if request.resolver_match.url_name == 'user_management' %} active{% endif %}">
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">User Management</span>
+                </a>
+                {% endif %}
             </nav>
         </aside>
         
@@ -117,7 +168,71 @@
                         </div>
                     </div>
                     <div style="display: flex; gap: 1rem; align-items: center;">
-                        <a href="/logout/" style="color: #dc3545; text-decoration: none; padding: 0.5rem 1rem;">Logout</a>
+                        <div class="profile-dropdown" style="position: relative;">
+                            <button class="profile-btn" onclick="toggleProfileDropdown()" style="background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 5px; transition: background 0.3s;">
+                                <div class="profile-avatar" style="width: 32px; height: 32px; background: #007bff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                    {% if admin_username %}{{ admin_username|first|upper }}{% else %}U{% endif %}
+                                </div>
+                                <span style="color: #333; font-weight: 500;">{% if admin_username %}{{ admin_username }}{% else %}User{% endif %}</span>
+                                <svg style="width: 16px; height: 16px; color: #666;" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7,10L12,15L17,10H7Z"/>
+                                </svg>
+                            </button>
+                            <div class="profile-menu" id="profileMenu" style="position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e9ecef; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 280px; z-index: 1001; display: none;">
+                                <div style="padding: 1rem; border-bottom: 1px solid #e9ecef;">
+                                    <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem;">
+                                        <div class="profile-avatar-large" style="width: 48px; height: 48px; background: #007bff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 1.25rem;">
+                                            {% if admin_username %}{{ admin_username|first|upper }}{% else %}U{% endif %}
+                                        </div>
+                                        <div>
+                                            <div style="font-weight: 600; color: #333; font-size: 1rem;">{% if admin_username %}{{ admin_username }}{% else %}User{% endif %}</div>
+                                            <div style="font-size: 0.875rem; color: #666;">{% if is_super_admin %}Super Admin{% else %}Basic User{% endif %}</div>
+                                        </div>
+                                    </div>
+                                    <div style="background: #f8f9fa; padding: 0.75rem; border-radius: 6px; font-size: 0.875rem;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                            <span style="color: #666;">Status:</span>
+                                            <span style="color: #28a745; font-weight: 500;">{% if is_super_admin %}Active Admin{% else %}Active User{% endif %}</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                            <span style="color: #666;">Access Level:</span>
+                                            <span style="color: #007bff; font-weight: 500;">{% if is_super_admin %}Full Access{% else %}Limited Access{% endif %}</span>
+                                        </div>
+                                        <div style="display: flex; justify-content: space-between;">
+                                            <span style="color: #666;">Last Login:</span>
+                                            <span style="color: #333; font-weight: 500;">Today</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div style="padding: 0.5rem 0;">
+                                    <a href="#" onclick="showProfileDetails()" style="display: block; padding: 0.75rem 1rem; color: #333; text-decoration: none; transition: background 0.3s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='transparent'">
+                                        <svg style="width: 16px; height: 16px; margin-right: 0.5rem; vertical-align: middle;" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+                                        </svg>
+                                        View Profile Details
+                                    </a>
+                                    <a href="{% url 'user_login' %}" style="display: block; padding: 0.75rem 1rem; color: #333; text-decoration: none; transition: background 0.3s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='transparent'">
+                                        <svg style="width: 16px; height: 16px; margin-right: 0.5rem; vertical-align: middle;" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,19H5V5H19V19Z"/>
+                                        </svg>
+                                        User Dashboard
+                                    </a>
+                                    <a href="{% url 'admin_login_view' %}" style="display: block; padding: 0.75rem 1rem; color: #333; text-decoration: none; transition: background 0.3s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='transparent'">
+                                        <svg style="width: 16px; height: 16px; margin-right: 0.5rem; vertical-align: middle;" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.22,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.22,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.68 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+                                        </svg>
+                                        Admin Panel
+                                    </a>
+                                    <hr style="margin: 0.5rem 0; border-color: #e9ecef;">
+                                    <a href="/logout/" style="display: block; padding: 0.75rem 1rem; color: #dc3545; text-decoration: none; transition: background 0.3s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='transparent'">
+                                        <svg style="width: 16px; height: 16px; margin-right: 0.5rem; vertical-align: middle;" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z"/>
+                                        </svg>
+                                        Logout
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </nav>
@@ -155,6 +270,64 @@
         </div>
     </div>
     
+    <!-- Profile Details Modal -->
+    <div id="profileDetailsModal" class="modal" style="display: none; position: fixed; z-index: 2000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5);">
+        <div class="modal-content" style="background-color: #fefefe; margin: 5% auto; padding: 0; border: none; border-radius: 10px; width: 90%; max-width: 500px; box-shadow: 0 4px 20px rgba(0,0,0,0.3);">
+            <div class="modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 1.5rem; border-radius: 10px 10px 0 0; position: relative;">
+                <h2 style="margin: 0; font-size: 1.5rem;">Profile Details</h2>
+                <span class="close" onclick="closeProfileDetailsModal()" style="position: absolute; right: 1rem; top: 1rem; color: white; font-size: 28px; font-weight: bold; cursor: pointer; line-height: 1;">&times;</span>
+            </div>
+            <div class="modal-body" style="padding: 2rem;">
+                <div style="text-align: center; margin-bottom: 2rem;">
+                    <div class="profile-avatar-xl" style="width: 80px; height: 80px; background: #007bff; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 2rem; margin-bottom: 1rem;">
+                        {% if admin_username %}{{ admin_username|first|upper }}{% else %}U{% endif %}
+                    </div>
+                    <h3 style="margin: 0 0 0.5rem 0; color: #333;">{% if admin_username %}{{ admin_username }}{% else %}User{% endif %}</h3>
+                    <p style="margin: 0; color: #666; font-size: 1rem;">{% if is_super_admin %}Super Administrator{% else %}Basic User{% endif %}</p>
+                </div>
+                
+                <div class="profile-info" style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px;">
+                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e9ecef;">
+                        <span style="color: #666; font-weight: 500;">Username:</span>
+                        <span style="color: #333; font-weight: 600;">{% if admin_username %}{{ admin_username }}{% else %}user{% endif %}</span>
+                    </div>
+                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e9ecef;">
+                        <span style="color: #666; font-weight: 500;">Role:</span>
+                        <span style="color: {% if is_super_admin %}#dc3545{% else %}#007bff{% endif %}; font-weight: 600;">{% if is_super_admin %}Super Admin{% else %}Basic User{% endif %}</span>
+                    </div>
+                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e9ecef;">
+                        <span style="color: #666; font-weight: 500;">Access Level:</span>
+                        <span style="color: {% if is_super_admin %}#28a745{% else %}#ffc107{% endif %}; font-weight: 600;">{% if is_super_admin %}Full Access{% else %}Limited Access{% endif %}</span>
+                    </div>
+                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e9ecef;">
+                        <span style="color: #666; font-weight: 500;">Status:</span>
+                        <span style="color: #28a745; font-weight: 600; display: flex; align-items: center;"><span style="width: 8px; height: 8px; background: #28a745; border-radius: 50%; margin-right: 0.5rem;"></span>Active</span>
+                    </div>
+                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0; border-bottom: 1px solid #e9ecef;">
+                        <span style="color: #666; font-weight: 500;">Session:</span>
+                        <span style="color: #333; font-weight: 600;">Active</span>
+                    </div>
+                    <div class="info-row" style="display: flex; justify-content: space-between; align-items: center; padding: 0.75rem 0;">
+                        <span style="color: #666; font-weight: 500;">Last Login:</span>
+                        <span style="color: #333; font-weight: 600;">Today</span>
+                    </div>
+                </div>
+                
+                {% if is_super_admin %}
+                <div class="permissions-info" style="margin-top: 1.5rem; background: #e8f5e8; padding: 1rem; border-radius: 8px; border-left: 4px solid #28a745;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: #155724; font-size: 1rem;">Admin Permissions</h4>
+                    <p style="margin: 0; color: #155724; font-size: 0.875rem;">You have full administrative access to all system features including user management, settings, and data modification.</p>
+                </div>
+                {% else %}
+                <div class="permissions-info" style="margin-top: 1.5rem; background: #fff3cd; padding: 1rem; border-radius: 8px; border-left: 4px solid #ffc107;">
+                    <h4 style="margin: 0 0 0.5rem 0; color: #856404; font-size: 1rem;">User Permissions</h4>
+                    <p style="margin: 0; color: #856404; font-size: 0.875rem;">You have limited access to view student information, attendance records, and basic reports. Contact an administrator for additional permissions.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
     <!-- School Settings Popup -->
     <div id="schoolSettingsModal" class="modal" style="display: none;">
         <div class="modal-content">
@@ -163,7 +336,7 @@
                 <span class="close" onclick="closeSchoolSettingsPopup()">&times;</span>
             </div>
             <div class="modal-body">
-                <form id="schoolSettingsForm">
+                <form id="schoolSettingsForm" method="post" action="{% url 'school_settings' %}">
                     {% csrf_token %}
                     <div class="form-group">
                         <label>School Name</label>
@@ -203,22 +376,71 @@
         function toggleSidebar() {
             const sidebar = document.querySelector('.sidebar');
             const overlay = document.querySelector('.mobile-overlay');
-            sidebar.classList.toggle('open');
-            overlay.classList.toggle('active');
+            const body = document.body;
+            
+            if (sidebar && overlay) {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('active');
+                
+                // Prevent body scroll when sidebar is open on mobile
+                if (window.innerWidth <= 768) {
+                    if (sidebar.classList.contains('open')) {
+                        body.style.overflow = 'hidden';
+                    } else {
+                        body.style.overflow = '';
+                    }
+                }
+            }
         }
         
         function closeSidebar() {
             const sidebar = document.querySelector('.sidebar');
             const overlay = document.querySelector('.mobile-overlay');
-            sidebar.classList.remove('open');
-            overlay.classList.remove('active');
+            const body = document.body;
+            
+            if (sidebar && overlay) {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+                body.style.overflow = '';
+            }
         }
+        
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+            const body = document.body;
+            
+            if (window.innerWidth > 768) {
+                if (sidebar) sidebar.classList.remove('open');
+                if (overlay) overlay.classList.remove('active');
+                body.style.overflow = '';
+            }
+        });
+        
+        // Initialize sidebar state on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const sidebar = document.querySelector('.sidebar');
+            const overlay = document.querySelector('.mobile-overlay');
+            
+            // Ensure sidebar is properly positioned on load
+            if (sidebar && window.innerWidth <= 768) {
+                sidebar.classList.remove('open');
+            }
+            if (overlay) {
+                overlay.classList.remove('active');
+            }
+        });
         
         // Close modal when clicking outside
         window.onclick = function(event) {
-            const modal = document.getElementById('schoolSettingsModal');
-            if (event.target == modal) {
+            const schoolModal = document.getElementById('schoolSettingsModal');
+            const profileModal = document.getElementById('profileDetailsModal');
+            if (event.target == schoolModal) {
                 closeSchoolSettingsPopup();
+            }
+            if (event.target == profileModal) {
+                closeProfileDetailsModal();
             }
         }
         
@@ -229,6 +451,47 @@
                     closeSidebar();
                 }
             });
+        });
+        
+        // Profile dropdown functionality
+        function toggleProfileDropdown() {
+            const menu = document.getElementById('profileMenu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Close profile dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const menu = document.getElementById('profileMenu');
+            if (!dropdown.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+        
+        // Profile button hover effect
+        document.querySelector('.profile-btn').addEventListener('mouseenter', function() {
+            this.style.background = '#f8f9fa';
+        });
+        document.querySelector('.profile-btn').addEventListener('mouseleave', function() {
+            this.style.background = 'transparent';
+        });
+        
+        // Profile details modal functions
+        function showProfileDetails() {
+            document.getElementById('profileDetailsModal').style.display = 'block';
+            document.getElementById('profileMenu').style.display = 'none';
+        }
+        
+        function closeProfileDetailsModal() {
+            document.getElementById('profileDetailsModal').style.display = 'none';
+        }
+        
+        // Close profile modal when clicking outside
+        window.addEventListener('click', function(event) {
+            const modal = document.getElementById('profileDetailsModal');
+            if (event.target === modal) {
+                closeProfileDetailsModal();
+            }
         });
     </script>
     {% block extra_js %}{% endblock %}

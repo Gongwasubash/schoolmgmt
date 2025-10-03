@@ -1,0 +1,655 @@
+{% extends "base.html" %}
+
+{% block title %}{{ student.name }} - Student Dashboard{% endblock %}
+
+{% block content %}
+<div class="student-dashboard">
+    <div class="dashboard-header">
+        <div class="student-info">
+            <div class="student-photo">
+                <img src="{{ student.get_random_photo_url }}" alt="{{ student.name }}" onerror="this.src='/static/img/default-avatar.png'">
+            </div>
+            <div class="student-details">
+                <h1>{{ student.name }}</h1>
+                <p class="student-id">ID: STU{{ student.id|stringformat:"03d" }}</p>
+                <p class="student-class">{{ student.student_class }} - {{ student.section }}</p>
+                <p class="reg-number">Reg: {{ student.reg_number }}</p>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="dashboard-grid">
+        <div class="stats-cards">
+            <div class="stat-card">
+                <div class="stat-icon">📊</div>
+                <div class="stat-info">
+                    <h3>Overall Grade</h3>
+                    <p class="stat-value" id="overallGrade">Loading...</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📈</div>
+                <div class="stat-info">
+                    <h3>Total Exams</h3>
+                    <p class="stat-value" id="totalExams">Loading...</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">📚</div>
+                <div class="stat-info">
+                    <h3>Total Subjects</h3>
+                    <p class="stat-value" id="totalSubjects">Loading...</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🏆</div>
+                <div class="stat-info">
+                    <h3>Best Score</h3>
+                    <p class="stat-value" id="bestScore">Loading...</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="progress-chart">
+            <h3>Exam Performance Trend</h3>
+            <canvas id="progressChart" width="400" height="200"></canvas>
+        </div>
+
+        <div class="subject-performance">
+            <h3>Subject Performance</h3>
+            <div class="subjects-grid" id="subjectsGrid">
+                <div class="loading">Loading subject data...</div>
+            </div>
+        </div>
+
+        <div class="exam-comparison">
+            <h3>Exam Comparison</h3>
+            <canvas id="examChart" width="300" height="150"></canvas>
+        </div>
+
+        <div class="personal-info">
+            <h3>Personal Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Date of Birth</span>
+                    <span class="info-value">{{ student.dob|date:"F d, Y" }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Gender</span>
+                    <span class="info-value">{{ student.gender }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Religion</span>
+                    <span class="info-value">{{ student.religion }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Mobile</span>
+                    <span class="info-value">{{ student.mobile }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Address</span>
+                    <span class="info-value">{{ student.address1 }}, {{ student.city }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Session</span>
+                    <span class="info-value">{{ student.session }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="parent-info">
+            <h3>Parent Information</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <span class="info-label">Father's Name</span>
+                    <span class="info-value">{{ student.father_name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Father's Mobile</span>
+                    <span class="info-value">{{ student.father_mobile }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Mother's Name</span>
+                    <span class="info-value">{{ student.mother_name }}</span>
+                </div>
+                <div class="info-item">
+                    <span class="info-label">Mother's Mobile</span>
+                    <span class="info-value">{{ student.mother_mobile }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="grade-distribution">
+            <h3>Grade Distribution</h3>
+            <canvas id="gradeChart" width="300" height="150"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.student-dashboard {
+    padding: 2rem;
+    background: #f8fafc;
+    min-height: 100vh;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    margin-bottom: 2rem;
+}
+
+.student-info {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.student-photo {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid #4299e1;
+}
+
+.student-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.student-details h1 {
+    margin: 0;
+    font-size: 1.8rem;
+    color: #1a202c;
+}
+
+.student-details p {
+    margin: 0.25rem 0;
+    color: #718096;
+}
+
+.student-id {
+    background: #e6fffa;
+    color: #234e52;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+}
+
+.quick-actions {
+    display: flex;
+    gap: 1rem;
+}
+
+.action-btn {
+    padding: 0.75rem 1.5rem;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.action-btn.primary {
+    background: #48bb78;
+    color: white;
+}
+
+.action-btn.secondary {
+    background: #4299e1;
+    color: white;
+}
+
+.action-btn.tertiary {
+    background: #ed8936;
+    color: white;
+}
+
+.action-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.dashboard-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.exam-comparison, .grade-distribution {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.exam-comparison h3, .grade-distribution h3 {
+    margin: 0 0 1.5rem 0;
+    color: #1a202c;
+    font-size: 1.1rem;
+}
+
+.loading {
+    text-align: center;
+    color: #718096;
+    padding: 2rem;
+}
+
+.stats-cards {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    grid-column: 1 / -1;
+}
+
+@media (max-width: 768px) {
+    .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+}
+
+.stat-card {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.stat-icon {
+    font-size: 2rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f7fafc;
+    border-radius: 12px;
+}
+
+.stat-info h3 {
+    margin: 0;
+    font-size: 0.9rem;
+    color: #718096;
+    font-weight: 500;
+}
+
+.stat-value {
+    margin: 0.5rem 0 0 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a202c;
+}
+
+.progress-chart, .subject-performance, .personal-info, .parent-info, .attendance-chart {
+    background: white;
+    padding: 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.progress-chart h3, .subject-performance h3, .personal-info h3, .parent-info h3, .attendance-chart h3 {
+    margin: 0 0 1.5rem 0;
+    color: #1a202c;
+    font-size: 1.1rem;
+}
+
+.subjects-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.subject-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.subject-name {
+    min-width: 120px;
+    font-weight: 500;
+    color: #4a5568;
+}
+
+.progress-bar {
+    flex: 1;
+    height: 8px;
+    background: #e2e8f0;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #48bb78, #38a169);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.subject-score {
+    min-width: 40px;
+    text-align: right;
+    font-weight: 600;
+    color: #1a202c;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #718096;
+}
+
+.info-value {
+    font-weight: 600;
+    color: #1a202c;
+}
+
+@media (max-width: 768px) {
+    .student-dashboard {
+        padding: 1rem;
+    }
+    
+    .dashboard-header {
+        flex-direction: column;
+        gap: 1.5rem;
+        text-align: center;
+        padding: 1.5rem;
+    }
+    
+    .stats-cards {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .dashboard-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .quick-actions {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.5rem;
+    }
+    
+    .action-btn {
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-cards {
+        grid-template-columns: 1fr;
+    }
+    
+    .student-info {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+    }
+    
+    .student-photo {
+        width: 60px;
+        height: 60px;
+    }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+// Load real student data
+fetch(`/api/student-marksheet-data/{{ student.id }}/`)
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            renderCharts(data);
+            renderSubjects(data.subject_averages);
+        } else {
+            console.error('Error loading data:', data.error);
+            renderDefaultCharts();
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        renderDefaultCharts();
+    });
+
+function renderCharts(data) {
+    // Update stats cards with real data
+    updateStatsCards(data);
+    
+    // Progress Chart - Exam Performance Trend
+    const progressCtx = document.getElementById('progressChart').getContext('2d');
+    const examLabels = data.progression_data.map(e => e.exam);
+    const examPercentages = data.progression_data.map(e => e.percentage);
+    
+    new Chart(progressCtx, {
+        type: 'line',
+        data: {
+            labels: examLabels,
+            datasets: [{
+                label: 'Performance %',
+                data: examPercentages,
+                borderColor: '#48bb78',
+                backgroundColor: 'rgba(72, 187, 120, 0.1)',
+                borderWidth: 3,
+                pointBackgroundColor: '#48bb78',
+                pointBorderColor: '#ffffff',
+                pointBorderWidth: 2,
+                pointRadius: 6,
+                pointHoverRadius: 8,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    callbacks: {
+                        label: function(context) {
+                            return `Score: ${context.parsed.y.toFixed(1)}%`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: { color: 'rgba(0,0,0,0.1)' },
+                    ticks: { callback: function(value) { return value + '%'; } }
+                },
+                x: {
+                    grid: { display: false }
+                }
+            }
+        }
+    });
+
+    // Exam Comparison Chart - Same as progress but as bars
+    const examCtx = document.getElementById('examChart').getContext('2d');
+    new Chart(examCtx, {
+        type: 'bar',
+        data: {
+            labels: examLabels,
+            datasets: [{
+                data: examPercentages,
+                backgroundColor: ['#48bb78', '#4299e1', '#ed8936', '#9f7aea', '#f56565'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, max: 100 } }
+        }
+    });
+
+    // Grade Distribution Chart
+    const gradeCtx = document.getElementById('gradeChart').getContext('2d');
+    const grades = calculateGradeDistribution(data.subject_averages);
+    new Chart(gradeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(grades),
+            datasets: [{
+                data: Object.values(grades),
+                backgroundColor: ['#48bb78', '#4299e1', '#ed8936', '#f56565'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+}
+
+function updateStatsCards(data) {
+    // Calculate overall grade from average percentage
+    const avgPercentage = data.progression_data.length > 0 ? 
+        data.progression_data.reduce((sum, exam) => sum + exam.percentage, 0) / data.progression_data.length : 0;
+    
+    let overallGrade = 'N/A';
+    if (avgPercentage >= 90) overallGrade = 'A+';
+    else if (avgPercentage >= 80) overallGrade = 'A';
+    else if (avgPercentage >= 70) overallGrade = 'B+';
+    else if (avgPercentage >= 60) overallGrade = 'B';
+    else if (avgPercentage >= 50) overallGrade = 'C+';
+    else if (avgPercentage >= 40) overallGrade = 'C';
+    else if (avgPercentage >= 35) overallGrade = 'D';
+    else if (avgPercentage > 0) overallGrade = 'F';
+    
+    // Find best score
+    const bestScore = data.progression_data.length > 0 ? 
+        Math.max(...data.progression_data.map(e => e.percentage)) : 0;
+    
+    // Update DOM elements
+    document.getElementById('overallGrade').textContent = overallGrade;
+    document.getElementById('totalExams').textContent = data.total_exams || 0;
+    document.getElementById('totalSubjects').textContent = data.total_subjects || 0;
+    document.getElementById('bestScore').textContent = bestScore > 0 ? `${bestScore.toFixed(1)}%` : 'N/A';
+}
+
+function renderSubjects(subjects) {
+    const grid = document.getElementById('subjectsGrid');
+    grid.innerHTML = '';
+    
+    subjects.forEach(subject => {
+        const item = document.createElement('div');
+        item.className = 'subject-item';
+        item.innerHTML = `
+            <span class="subject-name">${subject.subject}</span>
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: ${subject.average}%"></div>
+            </div>
+            <span class="subject-score">${subject.average}%</span>
+        `;
+        grid.appendChild(item);
+    });
+}
+
+function calculateGradeDistribution(subjects) {
+    const grades = { 'A': 0, 'B': 0, 'C': 0, 'D': 0 };
+    subjects.forEach(subject => {
+        if (subject.average >= 80) grades['A']++;
+        else if (subject.average >= 70) grades['B']++;
+        else if (subject.average >= 60) grades['C']++;
+        else grades['D']++;
+    });
+    return grades;
+}
+
+function renderDefaultCharts() {
+    // Update stats cards with no data
+    document.getElementById('overallGrade').textContent = 'N/A';
+    document.getElementById('totalExams').textContent = '0';
+    document.getElementById('totalSubjects').textContent = '0';
+    document.getElementById('bestScore').textContent = 'N/A';
+    
+    // Update subjects grid
+    document.getElementById('subjectsGrid').innerHTML = '<div class="loading">No subject data available</div>';
+    
+    const progressCtx = document.getElementById('progressChart').getContext('2d');
+    new Chart(progressCtx, {
+        type: 'line',
+        data: {
+            labels: ['No Data'],
+            datasets: [{ label: 'Performance', data: [0], borderColor: '#4299e1' }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+    
+    const examCtx = document.getElementById('examChart').getContext('2d');
+    new Chart(examCtx, {
+        type: 'bar',
+        data: {
+            labels: ['No Data'],
+            datasets: [{ data: [0], backgroundColor: '#4299e1' }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+    
+    const gradeCtx = document.getElementById('gradeChart').getContext('2d');
+    new Chart(gradeCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['No Data'],
+            datasets: [{ data: [1], backgroundColor: ['#e2e8f0'] }]
+        },
+        options: { responsive: true, plugins: { legend: { display: false } } }
+    });
+}
+</script>
+{% endblock %}

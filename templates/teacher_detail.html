@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block title %}Teacher Details{% endblock %}
+
+{% block content %}
+<div class="teacher-detail-container">
+    <div class="teacher-detail-card">
+        <div class="teacher-header">
+            <h4>Teacher Details</h4>
+            <a href="{% url 'teachers' %}" class="btn-back">← Back to Teachers</a>
+        </div>
+        
+        <div class="teacher-info">
+            <div class="teacher-photo">
+                {% if teacher.photo %}
+                    <img src="{{ teacher.photo.url }}" alt="{{ teacher.name }}">
+                {% else %}
+                    <div class="photo-placeholder">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+                        </svg>
+                    </div>
+                {% endif %}
+            </div>
+            
+            <div class="teacher-details">
+                <h3>{{ teacher.name }}</h3>
+                <p class="designation">{{ teacher.designation }}</p>
+                
+                <div class="detail-grid">
+                    <div class="detail-item">
+                        <label>Phone:</label>
+                        <span>{{ teacher.phone_number }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Email:</label>
+                        <span>{{ teacher.email }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Address:</label>
+                        <span>{{ teacher.address }}</span>
+                    </div>
+                    <div class="detail-item">
+                        <label>Assigned Classes:</label>
+                        <div class="assignments-list">
+                            {% for assignment in assignments %}
+                                <div class="assignment-item">
+                                    <span class="class-badge">{{ assignment.class_name }}</span>
+                                    <span class="subject-badge">{{ assignment.subject.name }}</span>
+                                </div>
+                            {% empty %}
+                                <span class="no-assignments">No assignments</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="detail-item">
+                        <label>Qualification:</label>
+                        <span>{{ teacher.qualification|default:"Not specified" }}</span>
+                    </div>
+                </div>
+                
+                <div class="action-buttons">
+                    <a href="{% url 'teacher_edit' teacher.id %}" class="btn btn-edit">Edit Teacher</a>
+                    <button onclick="deleteTeacher({{ teacher.id }})" class="btn btn-delete">Delete Teacher</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.teacher-detail-container {
+    padding: 2rem;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.teacher-detail-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.teacher-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.teacher-header h4 {
+    margin: 0;
+    font-size: 1.25rem;
+}
+
+.btn-back {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background 0.2s;
+}
+
+.btn-back:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.teacher-info {
+    padding: 2rem;
+    display: flex;
+    gap: 2rem;
+}
+
+.teacher-photo {
+    flex-shrink: 0;
+}
+
+.teacher-photo img {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid #f3f4f6;
+}
+
+.photo-placeholder {
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: #f3f4f6;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+}
+
+.photo-placeholder svg {
+    width: 60px;
+    height: 60px;
+}
+
+.teacher-details {
+    flex: 1;
+}
+
+.teacher-details h3 {
+    margin: 0 0 0.5rem 0;
+    font-size: 1.5rem;
+    color: #1f2937;
+}
+
+.designation {
+    color: #6b7280;
+    font-size: 1.1rem;
+    margin-bottom: 1.5rem;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.detail-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.detail-item label {
+    font-weight: 600;
+    color: #374151;
+    font-size: 0.875rem;
+}
+
+.detail-item span {
+    color: #6b7280;
+}
+
+.assignments-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.assignment-item {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.class-badge {
+    background: #f3e8ff;
+    color: #7c3aed;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.subject-badge {
+    background: #ecfdf5;
+    color: #059669;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.no-assignments {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 1rem;
+}
+
+.btn {
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: 500;
+    border: none;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-edit {
+    background: #3b82f6;
+    color: white;
+}
+
+.btn-edit:hover {
+    background: #2563eb;
+}
+
+.btn-delete {
+    background: #ef4444;
+    color: white;
+}
+
+.btn-delete:hover {
+    background: #dc2626;
+}
+
+@media (max-width: 768px) {
+    .teacher-info {
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    
+    .detail-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons {
+        justify-content: center;
+    }
+}
+</style>
+
+<script>
+function deleteTeacher(id) {
+    if (confirm('Are you sure you want to delete this teacher?')) {
+        fetch(`/teacher/${id}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                window.location.href = '/teachers/';
+            } else {
+                alert('Error deleting teacher');
+            }
+        });
+    }
+}
+</script>
+{% csrf_token %}
+{% endblock %}

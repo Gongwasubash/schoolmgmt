@@ -10,6 +10,21 @@
             <p>{{ students|length }} students enrolled</p>
         </div>
         <div class="header-actions">
+            <div class="filters">
+                <select id="classFilter" onchange="filterStudents()">
+                    <option value="">All Classes</option>
+                    {% for class_name in classes %}
+                    <option value="{{ class_name }}">{{ class_name }}</option>
+                    {% endfor %}
+                </select>
+                <select id="sectionFilter" onchange="filterStudents()">
+                    <option value="">All Sections</option>
+                    <option value="A">A</option>
+                    <option value="B">B</option>
+                    <option value="C">C</option>
+                    <option value="D">D</option>
+                </select>
+            </div>
             <div class="search-box">
                 <input type="text" id="searchInput" placeholder="Search students...">
                 <span class="search-icon">🔍</span>
@@ -17,7 +32,7 @@
             <button class="btn btn-outline" onclick="downloadCSV()">📥 Export</button>
             <input type="file" id="csvFile" accept=".csv" style="display: none;" onchange="uploadCSV()">
             <button class="btn btn-outline" onclick="document.getElementById('csvFile').click()">📤 Import</button>
-            <button class="btn btn-primary" onclick="window.location.href='{% url 'students' %}'">➕ Add Student</button>
+            <button class="btn btn-primary" onclick="window.location.href='/student-admission/'">➕ Add Student</button>
         </div>
     </div>
 
@@ -52,10 +67,10 @@
                     <td>
                         <div class="action-buttons">
                             <button class="action-btn view" onclick="viewStudent({{ student.id }})" title="View">👁️</button>
-                            <button class="action-btn print" onclick="printStudent({{ student.id }})" title="Print">🖨️</button>
-                            <button class="action-btn fee" onclick="feeStudent({{ student.id }})" title="Fee">💰</button>
+                            {% if request.session.is_super_admin or request.session.can_edit_students %}
                             <button class="action-btn edit" onclick="editStudent({{ student.id }})" title="Edit">✏️</button>
                             <button class="action-btn delete" onclick="deleteStudent({{ student.id }})" title="Delete">🗑️</button>
+                            {% endif %}
                         </div>
                     </td>
                 </tr>
@@ -119,6 +134,20 @@
     display: flex;
     gap: 1rem;
     align-items: center;
+}
+
+.filters {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.filters select {
+    padding: 0.75rem;
+    border: 2px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    background: white;
+    cursor: pointer;
 }
 
 .search-box {
@@ -364,16 +393,27 @@
 
 {% block extra_js %}
 <script>
-// Search functionality
-document.getElementById('searchInput').addEventListener('keyup', function() {
-    const searchTerm = this.value.toLowerCase();
+// Search and filter functionality
+function filterStudents() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const classFilter = document.getElementById('classFilter').value;
+    const sectionFilter = document.getElementById('sectionFilter').value;
     const rows = document.querySelectorAll('#studentTable tbody tr');
     
     rows.forEach(row => {
         const text = row.textContent.toLowerCase();
-        row.style.display = text.includes(searchTerm) ? '' : 'none';
+        const studentClass = row.cells[5].textContent.trim();
+        const studentSection = row.cells[6].textContent.trim();
+        
+        const matchesSearch = text.includes(searchTerm);
+        const matchesClass = !classFilter || studentClass === classFilter;
+        const matchesSection = !sectionFilter || studentSection === sectionFilter;
+        
+        row.style.display = (matchesSearch && matchesClass && matchesSection) ? '' : 'none';
     });
-});
+}
+
+document.getElementById('searchInput').addEventListener('keyup', filterStudents);
 
 // Sort functionality
 let sortDirection = {};

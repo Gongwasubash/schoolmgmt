@@ -1,0 +1,451 @@
+{% extends 'base_basic_sidebar.html' %}
+
+{% block title %}Teachers - {{ school_info.school_name }}{% endblock %}
+
+{% block content %}
+<div class="teachers-container">
+    <div class="teachers-card">
+        <div class="teachers-header">
+            <h4>Teachers Management</h4>
+            <div class="filter-section">
+                {% csrf_token %}
+                <select id="classFilter" onchange="filterByClass()">
+                    <option value="">All Classes</option>
+                    {% for class_name in all_classes %}
+                        <option value="{{ class_name }}" {% if class_name == selected_class %}selected{% endif %}>{{ class_name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="teachers-body">
+            <div class="table-responsive">
+                <table class="teachers-table">
+                    <thead>
+                        <tr>
+                            <th>S.N.</th>
+                            <th>Name</th>
+                            <th>Designation</th>
+                            <th class="hide-mobile">Class</th>
+                            <th class="hide-mobile">Subject</th>
+                            <th class="hide-tablet">Phone</th>
+                            <th class="hide-tablet">Email</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for teacher in teachers %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            <td>
+                                <div class="teacher-info">
+                                    {% if teacher.photo %}
+                                        <img src="{{ teacher.photo.url }}" alt="{{ teacher.name }}" class="teacher-avatar">
+                                    {% else %}
+                                        <div class="teacher-avatar-placeholder">
+                                            <svg viewBox="0 0 24 24" fill="currentColor">
+                                                <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
+                                            </svg>
+                                        </div>
+                                    {% endif %}
+                                    <span class="teacher-name">{{ teacher.name }}</span>
+                                </div>
+                            </td>
+                            <td><span class="designation-badge">{{ teacher.designation }}</span></td>
+                            <td class="hide-mobile">
+                                {% for assignment in teacher.assignments %}
+                                    <span class="class-badge">{{ assignment.class_name }}</span>
+                                {% empty %}
+                                    <span class="text-muted">-</span>
+                                {% endfor %}
+                            </td>
+                            <td class="hide-mobile">
+                                {% for assignment in teacher.assignments %}
+                                    <span class="subject-badge">{{ assignment.subject.name }}</span>
+                                {% empty %}
+                                    <span class="text-muted">-</span>
+                                {% endfor %}
+                            </td>
+                            <td class="hide-tablet">{{ teacher.phone_number }}</td>
+                            <td class="hide-tablet">{{ teacher.email|truncatewords:2 }}</td>
+                            <td>
+                                {% if teacher.is_active %}
+                                    <span class="status-badge active">Active</span>
+                                {% else %}
+                                    <span class="status-badge inactive">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="action-buttons">
+                                    <button class="btn-action btn-view" onclick="viewTeacher({{ teacher.id }})" title="View Details">
+                                        👁️
+                                    </button>
+                                    <button class="btn-action btn-edit" onclick="editTeacher({{ teacher.id }})" title="Edit Teacher">
+                                        ✏️
+                                    </button>
+                                    <button class="btn-action btn-assign" onclick="assignTeacher({{ teacher.id }})" title="Assign Classes">
+                                        ✅
+                                    </button>
+                                    <button class="btn-action btn-delete" onclick="deleteTeacher({{ teacher.id }})" title="Delete Teacher">
+                                        🗑️
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="empty-state">
+                                <div class="empty-content">
+                                    <svg viewBox="0 0 24 24" fill="currentColor">
+                                        <path d="M16,4C16.88,4 17.67,4.38 18.18,5H20C20.55,5 21,5.45 21,6C21,6.55 20.55,7 20,7H19V19C19,20.1 18.1,21 17,21H7C5.9,21 5,20.1 5,19V7H4C3.45,7 3,6.55 3,6C3,5.45 3.45,5 4,5H5.82C6.33,4.38 7.12,4 8,4H16M8,6V7H16V6H8M7,9V19H17V9H7M9,11H11V17H9V11M13,11H15V17H13V11Z"/>
+                                    </svg>
+                                    <p>No teachers found</p>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<style>
+.teachers-container {
+    padding: 1.5rem;
+    max-width: 100%;
+}
+
+.teachers-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    overflow: hidden;
+}
+
+.teachers-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.teachers-header h4 {
+    margin: 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+.filter-section select {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    background: white;
+    color: #374151;
+    font-size: 0.875rem;
+    min-width: 150px;
+    cursor: pointer;
+}
+
+.filter-section select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+}
+
+.teachers-body {
+    padding: 0;
+}
+
+.table-responsive {
+    overflow-x: auto;
+}
+
+.teachers-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0;
+}
+
+.teachers-table th {
+    background: #f8f9fa;
+    padding: 1rem;
+    text-align: left;
+    font-weight: 600;
+    color: #374151;
+    border-bottom: 2px solid #e5e7eb;
+    white-space: nowrap;
+}
+
+.teachers-table td {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+    vertical-align: middle;
+}
+
+.teacher-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.teacher-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.teacher-avatar-placeholder {
+    width: 40px;
+    height: 40px;
+    background: #e5e7eb;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #9ca3af;
+}
+
+.teacher-avatar-placeholder svg {
+    width: 20px;
+    height: 20px;
+}
+
+.teacher-name {
+    font-weight: 500;
+    color: #1f2937;
+}
+
+.designation-badge {
+    background: #dbeafe;
+    color: #1e40af;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.class-badge {
+    background: #f3e8ff;
+    color: #7c3aed;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.subject-badge {
+    background: #ecfdf5;
+    color: #059669;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    display: inline-block;
+    margin: 0.1rem;
+}
+
+.class-badge {
+    background: #f3e8ff;
+    color: #7c3aed;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    display: inline-block;
+    margin: 0.1rem;
+}
+
+.subjects-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+    max-width: 300px;
+}
+
+.text-muted {
+    color: #9ca3af;
+    font-style: italic;
+}
+
+.status-badge {
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.status-badge.active {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.status-badge.inactive {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.btn-action {
+    width: 32px;
+    height: 32px;
+    border: none;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 14px;
+}
+
+.btn-view {
+    background: #eff6ff;
+    color: #2563eb;
+}
+
+.btn-view:hover {
+    background: #dbeafe;
+    transform: scale(1.1);
+}
+
+.btn-edit {
+    background: #fef3c7;
+    color: #d97706;
+}
+
+.btn-edit:hover {
+    background: #fde68a;
+    transform: scale(1.1);
+}
+
+.btn-assign {
+    background: #f0f9ff;
+    color: #0369a1;
+}
+
+.btn-assign:hover {
+    background: #e0f2fe;
+    transform: scale(1.1);
+}
+
+.btn-delete {
+    background: #fef2f2;
+    color: #dc2626;
+}
+
+.btn-delete:hover {
+    background: #fee2e2;
+    transform: scale(1.1);
+}
+
+.empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+}
+
+.empty-content svg {
+    width: 48px;
+    height: 48px;
+    color: #9ca3af;
+    margin-bottom: 1rem;
+}
+
+.empty-content p {
+    color: #6b7280;
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .teachers-container {
+        padding: 1rem;
+    }
+    
+    .teachers-header {
+        padding: 1rem;
+    }
+    
+    .teachers-table th,
+    .teachers-table td {
+        padding: 0.75rem 0.5rem;
+    }
+    
+    .hide-mobile {
+        display: none;
+    }
+    
+    .teacher-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+    
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}
+
+@media (max-width: 1024px) {
+    .hide-tablet {
+        display: none;
+    }
+}
+</style>
+
+<script>
+function viewTeacher(id) {
+    window.location.href = `/teacher/${id}/view/`;
+}
+
+function editTeacher(id) {
+    window.location.href = `/teacher/${id}/edit/`;
+}
+
+function assignTeacher(id) {
+    window.location.href = `/teacher/${id}/assign/`;
+}
+
+function deleteTeacher(id) {
+    if (confirm('Are you sure you want to delete this teacher?')) {
+        fetch(`/teacher/${id}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        }).then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Error deleting teacher');
+            }
+        });
+    }
+}
+
+function filterByClass() {
+    const classFilter = document.getElementById('classFilter').value;
+    const currentUrl = new URL(window.location);
+    
+    if (classFilter) {
+        currentUrl.searchParams.set('class', classFilter);
+    } else {
+        currentUrl.searchParams.delete('class');
+    }
+    
+    window.location.href = currentUrl.toString();
+}
+
+
+</script>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <title>{% block title %}School Management{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .layout-no-sidebar {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .main-content-full {
+            flex: 1;
+            width: 100%;
+        }
+        .content {
+            padding: 0;
+            margin: 0;
+        }
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="layout-no-sidebar">
+        <div class="main-content-full">
+            <!-- Navbar -->
+            <nav class="navbar" style="background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); padding: 1rem 0; border-bottom: 1px solid #e9ecef; position: sticky; top: 0; z-index: 1000;">
+                <div class="container" style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; display: flex; justify-content: space-between; align-items: center;">
+                    <div style="display: flex; align-items: center;">
+                        <img src="{% if school_info.logo %}{{ school_info.logo.url }}{% else %}{% static 'img/Everest-Crest-Square.png' %}{% endif %}" alt="{{ school_info.school_name }}" style="width: 40px; height: 40px; object-fit: contain; margin-right: 10px;">
+                        <h1 style="font-size: 1.5rem; margin: 0; color: #333;">{{ school_info.school_name }}</h1>
+                    </div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
+                        <div class="profile-dropdown" style="position: relative;">
+                            <button class="profile-btn" onclick="toggleProfileDropdown()" style="background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 5px; transition: background 0.3s;">
+                                <div class="profile-avatar" style="width: 32px; height: 32px; background: #007bff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
+                                    {% if admin_username %}{{ admin_username|first|upper }}{% else %}U{% endif %}
+                                </div>
+                                <span style="color: #333; font-weight: 500;">{% if admin_username %}{{ admin_username }}{% else %}User{% endif %}</span>
+                                <svg style="width: 16px; height: 16px; color: #666;" viewBox="0 0 24 24" fill="currentColor">
+                                    <path d="M7,10L12,15L17,10H7Z"/>
+                                </svg>
+                            </button>
+                            <div class="profile-menu" id="profileMenu" style="position: absolute; top: 100%; right: 0; background: white; border: 1px solid #e9ecef; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); min-width: 200px; z-index: 1001; display: none;">
+                                <div style="padding: 0.5rem 0;">
+                                    <a href="/logout/" style="display: block; padding: 0.75rem 1rem; color: #dc3545; text-decoration: none; transition: background 0.3s;" onmouseover="this.style.background='#f8f9fa'" onmouseout="this.style.background='transparent'">
+                                        <svg style="width: 16px; height: 16px; margin-right: 0.5rem; vertical-align: middle;" viewBox="0 0 24 24" fill="currentColor">
+                                            <path d="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z"/>
+                                        </svg>
+                                        Logout
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            
+            <main class="content">
+                {% block content %}{% endblock %}
+            </main>
+            
+            <!-- Footer -->
+            <footer style="background: #f8f9fa; padding: 2rem 0; margin-top: 2rem; border-top: 1px solid #e9ecef;">
+                <div style="max-width: 1200px; margin: 0 auto; padding: 0 1rem; text-align: center;">
+                    <p style="margin: 0; color: #666;">&copy; 2025 {{ school_info.school_name }}. All rights reserved.</p>
+                </div>
+            </footer>
+        </div>
+    </div>
+    
+    <script>
+        function toggleProfileDropdown() {
+            const menu = document.getElementById('profileMenu');
+            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+        }
+        
+        // Close profile dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const menu = document.getElementById('profileMenu');
+            if (!dropdown.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        });
+        
+        // Profile button hover effect
+        document.querySelector('.profile-btn').addEventListener('mouseenter', function() {
+            this.style.background = '#f8f9fa';
+        });
+        document.querySelector('.profile-btn').addEventListener('mouseleave', function() {
+            this.style.background = 'transparent';
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

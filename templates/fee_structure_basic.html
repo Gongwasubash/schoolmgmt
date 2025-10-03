@@ -1,0 +1,156 @@
+{% extends "base_basic_sidebar.html" %}
+{% load static %}
+
+{% block title %}Fee Structure{% endblock %}
+
+{% block content %}
+<div class="fee-structure-dashboard">
+    <div class="dashboard-header">
+        <h1>💰 Fee Structure</h1>
+        <p>View fee structure for all classes</p>
+    </div>
+
+    <div class="fee-structure-section">
+        <h3>Fee Structure by Class</h3>
+        <div class="fee-table-container">
+            <table class="fee-table">
+                <thead>
+                    <tr>
+                        <th>Class</th>
+                        <th>Admission Fee</th>
+                        <th>Monthly Fee</th>
+                        <th>Tuition Fee</th>
+                        <th>Examination Fee</th>
+                        <th>Library Fee</th>
+                        <th>Sports Fee</th>
+                        <th>Laboratory Fee</th>
+                        <th>Computer Fee</th>
+                        <th>Transportation Fee</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fee_structure in fee_structures %}
+                    <tr>
+                        <td>{{ fee_structure.class_name }}</td>
+                        <td>Rs.{{ fee_structure.admission_fee|floatformat:0 }}</td>
+                        <td>Rs.{{ fee_structure.monthly_fee|floatformat:0 }}</td>
+                        <td>Rs.{{ fee_structure.tuition_fee|floatformat:0 }}</td>
+                        <td>Rs.{{ fee_structure.examination_fee|floatformat:0 }}</td>
+                        <td>Rs.{{ fee_structure.library_fee|floatformat:0 }}</td>
+                        <td>Rs.{{ fee_structure.sports_fee|floatformat:0 }}</td>
+                        <td>Rs.{{ fee_structure.laboratory_fee|floatformat:0 }}</td>
+                        <td>Rs.{{ fee_structure.computer_fee|floatformat:0 }}</td>
+                        <td>Rs.{{ fee_structure.transportation_fee|floatformat:0 }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="10" style="text-align: center; color: #666;">No fee structure available</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+.fee-structure-dashboard {
+    background: #f5f5f5;
+    min-height: 100vh;
+    padding: 2rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dashboard-header {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    text-align: center;
+}
+
+.dashboard-header h1 {
+    color: #333;
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.dashboard-header p {
+    color: #666;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.fee-structure-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.fee-structure-section h3 {
+    color: #333;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+.fee-table-container {
+    overflow-x: auto;
+}
+
+.fee-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.fee-table th {
+    background: #f8f9fa;
+    padding: 12px 8px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.fee-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #dee2e6;
+    white-space: nowrap;
+}
+
+.fee-table tr:hover {
+    background: #f8f9fa;
+}
+
+@media (max-width: 768px) {
+    .fee-structure-dashboard {
+        padding: 1rem;
+    }
+    
+    .dashboard-header {
+        padding: 1.5rem;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+    
+    .fee-structure-section {
+        padding: 1rem;
+    }
+    
+    .fee-table th,
+    .fee-table td {
+        padding: 8px 4px;
+        font-size: 0.875rem;
+    }
+}
+</style>
+{% endblock %}

@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Marksheet Dashboard{% endblock %}
@@ -106,7 +106,7 @@
 
 .actions-grid {
     display: grid;
-    grid-template-columns: 1fr 2fr;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
     gap: 2rem;
     margin-bottom: 2rem;
     align-items: start;
@@ -578,7 +578,7 @@
     margin-bottom: 1rem;
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1200px) {
     .actions-grid {
         grid-template-columns: 1fr;
         gap: 1.5rem;
@@ -591,21 +591,63 @@
     }
     
     .stats-grid {
-        grid-template-columns: 1fr;
-    }
-    
-    .actions-grid {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
         gap: 1rem;
     }
     
     .dashboard-header {
         padding: 1.5rem;
+        flex-direction: column;
         text-align: center;
+        gap: 1rem;
     }
     
     .dashboard-header h1 {
         font-size: 1.5rem;
+    }
+    
+    .form-row {
+        grid-template-columns: 1fr;
+    }
+    
+    .checkbox-group {
+        grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        gap: 0.5rem;
+    }
+    
+    .advanced-table {
+        font-size: 0.875rem;
+    }
+    
+    .advanced-table th,
+    .advanced-table td {
+        padding: 8px 4px;
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .stat-card {
+        padding: 1.5rem;
+    }
+    
+    .checkbox-group {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .section-controls {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.5rem;
+    }
+    
+    .section-controls button,
+    .section-controls select,
+    .section-controls input {
+        width: 100%;
     }
 }
 </style>
@@ -650,6 +692,7 @@
         <div class="action-card" data-category="subject">
             <h3>Add New Subject</h3>
             <form id="subjectForm">
+                {% csrf_token %}
                 <div class="form-group">
                     <label>Subject Name</label>
                     <input type="text" name="name" required>
@@ -667,6 +710,7 @@
                         {% endfor %}
                     </select>
                 </div>
+
                 <div class="form-group">
                     <label>Max Marks</label>
                     <input type="number" name="max_marks" value="100" required>
@@ -682,6 +726,7 @@
         <div class="action-card exam-card" data-category="exam">
             <h3>Create New Exam</h3>
             <form id="examForm">
+                {% csrf_token %}
                 <div class="form-row">
                     <div class="form-group">
                         <label>Exam Name</label>
@@ -726,56 +771,7 @@
         </div>
     </div>
 
-    <div class="marks-entry-section" data-category="marks">
-        <h3>Enter Student Marks</h3>
-        <div class="section-controls">
-            <button class="btn btn-sm" onclick="toggleSection('marks-entry')">Toggle</button>
-            <button class="btn btn-sm" onclick="clearMarksForm()">Clear Form</button>
-        </div>
-        <form id="marksForm">
-            <div class="marks-form">
-                <div class="form-group">
-                    <label>Class</label>
-                    <select name="class_filter" id="classFilter">
-                        <option value="">All Classes</option>
-                        {% for class_name in available_classes %}
-                        <option value="{{ class_name }}">{{ class_name }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Student</label>
-                    <select name="student_id" id="studentSelect" required>
-                        <option value="">Select Student</option>
-                        <!-- Will be populated via JavaScript -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Exam</label>
-                    <select name="exam_id" id="examSelect" required>
-                        <option value="">Select Exam</option>
-                        <!-- Will be populated via JavaScript -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Subject</label>
-                    <select name="subject_id" id="subjectSelect" required>
-                        <option value="">Select Subject</option>
-                        <!-- Will be populated via JavaScript -->
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Marks Obtained</label>
-                    <input type="number" name="marks_obtained" min="0" required>
-                </div>
-                <div class="form-group">
-                    <label>Remarks</label>
-                    <input type="text" name="remarks">
-                </div>
-            </div>
-            <button type="submit" class="btn">Enter Marks</button>
-        </form>
-    </div>
+
 
 
 
@@ -822,23 +818,7 @@
 
     <div class="recent-section" data-category="subject">
         <h3>Subjects</h3>
-        <div class="section-controls">
-            <select id="bulkEditClassSelect" onchange="enableBulkEdit()">
-                <option value="">Select Class to Edit All</option>
-                <option value="All Subjects">All Subjects</option>
-                {% for class_name in available_classes %}
-                <option value="{{ class_name }}">{{ class_name }}</option>
-                {% endfor %}
-            </select>
-            <button class="btn btn-sm" id="bulkEditBtn" onclick="bulkEditSubjects()" style="display: none;">Edit Selected Class</button>
-            <button class="btn btn-sm" onclick="addBulkSubjects()">Bulk Add</button>
-            <button class="btn btn-sm" onclick="exportSubjects()">Export CSV</button>
-            <button class="btn btn-sm" onclick="exportSubjectsJSON()">Export JSON</button>
-            <input type="file" id="importFile" accept=".csv,.json" style="display: none;" onchange="importSubjects(this)">
-            <button class="btn btn-sm" onclick="document.getElementById('importFile').click()">Import</button>
-            <button class="btn btn-sm btn-danger" id="bulkDeleteBtn" onclick="toggleBulkDelete()" style="display: none;">Bulk Delete</button>
-            <button class="btn btn-sm" onclick="showBulkDeleteOptions()">Delete Options</button>
-        </div>
+
         <div class="students-container">
             <div class="table-controls">
                 <input type="text" id="subjectSearch" placeholder="Search subjects..." class="search-input">

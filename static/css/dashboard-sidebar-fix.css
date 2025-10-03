@@ -1,6 +1,8 @@
 /* Global Sidebar Fix - Override All Existing Styles */
 .layout {
     display: flex !important;
+    min-height: 100vh !important;
+    position: relative !important;
 }
 
 .sidebar {
@@ -13,10 +15,31 @@
     color: white !important;
     z-index: 1000 !important;
     overflow-y: auto !important;
+    overflow-x: hidden !important;
     transform: translateX(0) !important;
     box-shadow: 4px 0 30px rgba(0, 0, 0, 0.15) !important;
     backdrop-filter: blur(20px) !important;
     border-right: 1px solid rgba(255, 255, 255, 0.1) !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent !important;
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 6px !important;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: transparent !important;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3) !important;
+    border-radius: 3px !important;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5) !important;
 }
 
 .main-content {
@@ -25,6 +48,7 @@
     min-height: 100vh !important;
     display: flex !important;
     flex-direction: column !important;
+    transition: margin-left 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 .modern-dashboard {
@@ -90,10 +114,44 @@
     color: currentColor !important;
 }
 
+/* Mobile Overlay */
+.mobile-overlay {
+    display: none !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: rgba(0,0,0,0.5) !important;
+    z-index: 999 !important;
+    opacity: 0 !important;
+    transition: opacity 0.3s ease !important;
+}
+
+.mobile-overlay.active {
+    display: block !important;
+    opacity: 1 !important;
+}
+
+/* Tablet Responsive */
+@media (max-width: 1024px) {
+    .sidebar {
+        width: 260px !important;
+    }
+    
+    .main-content {
+        margin-left: 260px !important;
+        width: calc(100% - 260px) !important;
+    }
+}
+
+/* Mobile Responsive */
 @media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%) !important;
         width: 280px !important;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+        z-index: 1001 !important;
     }
     
     .sidebar.open {
@@ -106,17 +164,114 @@
     }
     
     .mobile-overlay {
-        display: none !important;
-        position: fixed !important;
-        top: 0 !important;
-        left: 0 !important;
-        width: 100% !important;
-        height: 100% !important;
-        background: rgba(0,0,0,0.5) !important;
-        z-index: 999 !important;
+        display: block !important;
+        z-index: 1000 !important;
     }
     
     .mobile-overlay.active {
         display: block !important;
+        opacity: 1 !important;
     }
+    
+    /* Navbar adjustments for mobile */
+    .navbar {
+        padding: 0.75rem 0 !important;
+        position: relative !important;
+        z-index: 999 !important;
+    }
+    
+    .navbar .container {
+        padding: 0 0.75rem !important;
+    }
+    
+    .navbar h1 {
+        font-size: 1.25rem !important;
+    }
+    
+    /* Content padding for mobile */
+    .content {
+        padding: 1rem !important;
+    }
+    
+    .modern-dashboard {
+        padding: 1rem !important;
+    }
+    
+    /* Prevent body scroll when sidebar is open */
+    body.sidebar-open {
+        overflow: hidden !important;
+    }
+}
+
+/* Small Mobile */
+@media (max-width: 480px) {
+    .sidebar {
+        width: 100% !important;
+    }
+    
+    .sidebar-header {
+        padding: 1rem !important;
+    }
+    
+    .sidebar-header h2 {
+        font-size: 1.25rem !important;
+    }
+    
+    .nav-item {
+        padding: 1rem 1.25rem !important;
+        margin: 0.125rem 0.75rem !important;
+    }
+    
+    .navbar .container {
+        padding: 0 0.5rem !important;
+    }
+    
+    .navbar h1 {
+        font-size: 1.125rem !important;
+    }
+    
+    .content {
+        padding: 0.75rem !important;
+    }
+    
+    .modern-dashboard {
+        padding: 0.75rem !important;
+    }
+}
+
+/* Menu Toggle Button Styling */
+.menu-toggle {
+    display: none !important;
+    background: none !important;
+    border: none !important;
+    cursor: pointer !important;
+    padding: 0.5rem !important;
+    border-radius: 8px !important;
+    transition: all 0.2s !important;
+}
+
+.menu-toggle:hover {
+    background: rgba(0, 0, 0, 0.05) !important;
+}
+
+.menu-toggle svg {
+    width: 24px !important;
+    height: 24px !important;
+    color: #374151 !important;
+}
+
+@media (max-width: 768px) {
+    .menu-toggle {
+        display: block !important;
+    }
+}
+
+/* Fix for navbar positioning */
+.navbar {
+    background: rgba(255,255,255,0.95) !important;
+    backdrop-filter: blur(10px) !important;
+    border-bottom: 1px solid #e9ecef !important;
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 1000 !important;
 }

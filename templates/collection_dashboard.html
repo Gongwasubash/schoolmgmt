@@ -10,40 +10,41 @@
     </div>
 
     <div class="collection-cards">
-        <div class="collection-card today">
+        <a href="{% url 'collection_details' 'today' %}" class="collection-card today">
             <div class="card-icon">Rs</div>
             <div class="card-content">
                 <h3>Rs {{ todays_collection|floatformat:0 }}</h3>
                 <p>Total collected today</p>
+                <small>Click to view details</small>
             </div>
-        </div>
+        </a>
 
-        <div class="collection-card weekly">
+        <a href="{% url 'weekly_collection_details' %}" class="collection-card weekly">
             <div class="card-icon">📊</div>
             <div class="card-content">
                 <h3>Rs {{ weekly_collection|floatformat:0 }}</h3>
                 <p>Weekly Collection</p>
-                <small>This week's total</small>
+                <small>This week's total - Click to view details</small>
             </div>
-        </div>
+        </a>
 
-        <div class="collection-card monthly">
+        <a href="{% url 'monthly_collection_details' %}" class="collection-card monthly">
             <div class="card-icon">📈</div>
             <div class="card-content">
                 <h3>Rs {{ monthly_collection|floatformat:0 }}</h3>
                 <p>Monthly Collection</p>
-                <small>This month's total</small>
+                <small>This month's total - Click to view details</small>
             </div>
-        </div>
+        </a>
 
-        <div class="collection-card yearly">
+        <a href="{% url 'yearly_collection_details' %}" class="collection-card yearly">
             <div class="card-icon">🏆</div>
             <div class="card-content">
                 <h3>Rs {{ yearly_collection|floatformat:0 }}</h3>
                 <p>Yearly Collection</p>
-                <small>This year's total</small>
+                <small>This year's total - Click to view details</small>
             </div>
-        </div>
+        </a>
     </div>
 </div>
 
@@ -87,6 +88,9 @@
     gap: 20px;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
     border-left: 5px solid;
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
 }
 
 .collection-card:hover {

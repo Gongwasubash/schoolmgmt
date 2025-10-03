@@ -1,0 +1,293 @@
+{% extends "base_basic_sidebar.html" %}
+{% load static %}
+
+{% block title %}Marksheet Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+.marksheet-dashboard {
+    background: #f5f5f5;
+    min-height: 100vh;
+    padding: 2rem;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dashboard-header {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    margin-bottom: 2rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.dashboard-header h1 {
+    color: #333;
+    font-size: 2rem;
+    font-weight: 600;
+    margin: 0;
+}
+
+.dashboard-header p {
+    color: #666;
+    font-size: 1rem;
+    margin: 0;
+}
+
+.stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.stat-card {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+}
+
+.stat-card.exams .stat-icon { background: #007bff; }
+.stat-card.subjects .stat-icon { background: #28a745; }
+.stat-card.marksheets .stat-icon { background: #ffc107; }
+
+.stat-content h3 {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #333;
+    margin: 0;
+}
+
+.stat-content p {
+    color: #666;
+    margin: 0;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.actions-grid {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+    align-items: start;
+}
+
+.action-card {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    height: fit-content;
+    overflow: hidden;
+}
+
+.action-card h3 {
+    background: #f8f9fa;
+    color: #333;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin: 0;
+    padding: 1.5rem 2rem;
+    border-bottom: 1px solid #e9ecef;
+}
+
+.action-card form {
+    padding: 2rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-group label {
+    display: block;
+    color: #333;
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+}
+
+.form-group input, .form-group select {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    font-size: 0.875rem;
+}
+
+.btn {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+.btn:hover {
+    background: #0056b3;
+}
+
+.btn-success {
+    background: #28a745;
+}
+
+.btn-success:hover {
+    background: #218838;
+}
+
+.recent-section {
+    background: white;
+    padding: 2rem;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.recent-section h3 {
+    color: #333;
+    font-size: 1.25rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+}
+
+@media (max-width: 1024px) {
+    .actions-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .marksheet-dashboard {
+        padding: 1rem;
+    }
+    
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .actions-grid {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+    
+    .dashboard-header {
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 1.5rem;
+    }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="marksheet-dashboard">
+    <div class="dashboard-header">
+        <h1>📊 Marksheet Dashboard</h1>
+        <p>Manage exams, subjects, and student marksheets</p>
+        
+        <!-- Debug info - remove after testing -->
+        {% if debug_session_info %}
+        <div style="background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px;">
+            <strong>Debug Info:</strong> 
+            Template: {{ debug_session_info.template_name }} | 
+            Basic User: {{ debug_session_info.is_basic_user }} | 
+            Can Create: {{ debug_session_info.can_create_users }} | 
+            Can Delete: {{ debug_session_info.can_delete_users }} | 
+            Super Admin: {{ debug_session_info.is_super_admin }}
+        </div>
+        {% endif %}
+    </div>
+
+    <div class="stats-grid">
+        <div class="stat-card exams">
+            <div class="stat-icon">📝</div>
+            <div class="stat-content">
+                <h3>{{ total_exams }}</h3>
+                <p>Total Exams</p>
+            </div>
+        </div>
+        
+        <div class="stat-card subjects">
+            <div class="stat-icon">📚</div>
+            <div class="stat-content">
+                <h3>{{ total_subjects }}</h3>
+                <p>Total Subjects</p>
+            </div>
+        </div>
+        
+        <div class="stat-card marksheets">
+            <div class="stat-icon">🎓</div>
+            <div class="stat-content">
+                <h3>{{ total_marksheets }}</h3>
+                <p>Total Marksheets</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="recent-section">
+        <h3>Recent Exams</h3>
+        <ul class="exam-list">
+            {% regroup recent_exams by name as grouped_exams %}
+            {% for exam_group in grouped_exams %}
+            <li class="exam-item">
+                <div class="exam-info">
+                    <h4>{{ exam_group.grouper }}</h4>
+                    <p>
+                        {% if exam_group.list|length == 1 %}
+                            {{ exam_group.list.0.class_name }} - {{ exam_group.list.0.exam_date }}
+                        {% else %}
+                            {% if exam_group.list.0.class_name == "All Classes" %}
+                                All Classes - {{ exam_group.list.0.exam_date }}
+                            {% else %}
+                                Multiple Classes - {{ exam_group.list.0.exam_date }}
+                            {% endif %}
+                        {% endif %}
+                    </p>
+                </div>
+            </li>
+            {% empty %}
+            <li class="exam-item">
+                <p>No exams created yet</p>
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
