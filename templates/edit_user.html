@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}Edit User - School Management{% endblock %}
+
+{% block content %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+<div class="container" style="max-width: 800px; margin: 2rem auto; padding: 0 1rem;">
+    <div class="card" style="background: white; padding: 2rem; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+        <div class="header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; border-bottom: 1px solid #eee; padding-bottom: 1rem;">
+            <h2 style="margin: 0; color: #333;">Edit User: {{ user.username }}</h2>
+            <a href="{% url 'user_management' %}" class="btn" style="background: #6c757d; color: white; padding: 0.5rem 1rem; text-decoration: none; border-radius: 5px;">← Back</a>
+        </div>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" style="padding: 1rem; margin-bottom: 1rem; border-radius: 5px; {% if message.tags == 'error' %}background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% else %}background: #d4edda; color: #155724; border: 1px solid #c3e6cb;{% endif %}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="post" style="display: grid; gap: 1.5rem;">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Username:</label>
+                <input type="text" name="username" value="{{ user.username }}" required style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
+            </div>
+            
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Password (leave blank to keep current):</label>
+                <input type="password" name="password" placeholder="Enter new password or leave blank" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
+            </div>
+            
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Link to Teacher (Optional):</label>
+                <select name="teacher_id" id="teacher_id" onchange="updateClassTeacherOptions()" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
+                    <option value="">-- Select Teacher --</option>
+                    {% if user.teacher %}
+                        <option value="{{ user.teacher.id }}" selected data-current-class="{{ user.teacher.class_teacher_for }}">{{ user.teacher.name }} ({{ user.teacher.designation }}) - Current</option>
+                    {% endif %}
+                    {% for teacher in teachers %}
+                        <option value="{{ teacher.id }}" data-current-class="{{ teacher.class_teacher_for }}">{{ teacher.name }} ({{ teacher.designation }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="form-group" id="classTeacherSection" style="{% if not user.teacher %}display: none;{% endif %}">
+                <label style="display: block; margin-bottom: 0.5rem; font-weight: bold;">Assign as Class Teacher for:</label>
+                <select name="class_teacher_for" id="class_teacher_for" style="width: 100%; padding: 0.75rem; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box;">
+                    <option value="">-- Select Class --</option>
+                    <option value="Nursery" {% if user.teacher.class_teacher_for == 'Nursery' %}selected{% endif %}>Nursery</option>
+                    <option value="LKG" {% if user.teacher.class_teacher_for == 'LKG' %}selected{% endif %}>LKG</option>
+                    <option value="UKG" {% if user.teacher.class_teacher_for == 'UKG' %}selected{% endif %}>UKG</option>
+                    <option value="One" {% if user.teacher.class_teacher_for == 'One' %}selected{% endif %}>One</option>
+                    <option value="Two" {% if user.teacher.class_teacher_for == 'Two' %}selected{% endif %}>Two</option>
+                    <option value="Three" {% if user.teacher.class_teacher_for == 'Three' %}selected{% endif %}>Three</option>
+                    <option value="Four" {% if user.teacher.class_teacher_for == 'Four' %}selected{% endif %}>Four</option>
+                    <option value="Five" {% if user.teacher.class_teacher_for == 'Five' %}selected{% endif %}>Five</option>
+                    <option value="Six" {% if user.teacher.class_teacher_for == 'Six' %}selected{% endif %}>Six</option>
+                    <option value="Seven" {% if user.teacher.class_teacher_for == 'Seven' %}selected{% endif %}>Seven</option>
+                    <option value="Eight" {% if user.teacher.class_teacher_for == 'Eight' %}selected{% endif %}>Eight</option>
+                    <option value="Nine" {% if user.teacher.class_teacher_for == 'Nine' %}selected{% endif %}>Nine</option>
+                    <option value="Ten" {% if user.teacher.class_teacher_for == 'Ten' %}selected{% endif %}>Ten</option>
+                    <option value="Eleven" {% if user.teacher.class_teacher_for == 'Eleven' %}selected{% endif %}>Eleven</option>
+                    <option value="Twelve" {% if user.teacher.class_teacher_for == 'Twelve' %}selected{% endif %}>Twelve</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 1rem; font-weight: bold;">Permissions & Status:</label>
+                
+                <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+                    <input type="checkbox" id="is_active" name="is_active" {% if user.is_active %}checked{% endif %} style="margin-right: 0.5rem;">
+                    <label for="is_active" style="margin: 0;">Active User</label>
+                </div>
+                
+                <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+                    <input type="checkbox" id="is_super_admin" name="is_super_admin" {% if user.is_super_admin %}checked{% endif %} style="margin-right: 0.5rem;">
+                    <label for="is_super_admin" style="margin: 0;">Super Admin (Full Access)</label>
+                </div>
+                
+                <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+                    <input type="checkbox" id="can_create_users" name="can_create_users" {% if user.can_create_users %}checked{% endif %} style="margin-right: 0.5rem;">
+                    <label for="can_create_users" style="margin: 0;">Can Create Users</label>
+                </div>
+                
+                <div style="display: flex; align-items: center; margin-bottom: 0.75rem;">
+                    <input type="checkbox" id="can_delete_users" name="can_delete_users" {% if user.can_delete_users %}checked{% endif %} style="margin-right: 0.5rem;">
+                    <label for="can_delete_users" style="margin: 0;">Can Delete Users</label>
+                </div>
+                
+
+                
+
+            </div>
+            
+            <div class="form-group">
+                <label style="display: block; margin-bottom: 1rem; font-weight: bold;">Sidebar Menu Permissions:</label>
+                
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_dashboard" name="can_view_dashboard" {% if user.can_view_dashboard %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_dashboard" style="margin: 0;">Dashboard</label>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_students" name="can_view_students" {% if user.can_view_students %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_students" style="margin: 0;">Students</label>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_teachers" name="can_view_teachers" {% if user.can_view_teachers %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_teachers" style="margin: 0;">Teachers</label>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_reports" name="can_view_reports" {% if user.can_view_reports %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_reports" style="margin: 0;">Reports</label>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_marksheet" name="can_view_marksheet" {% if user.can_view_marksheet %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_marksheet" style="margin: 0;">Marksheet</label>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_fee_structure" name="can_view_fee_structure" {% if user.can_view_fee_structure %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_fee_structure" style="margin: 0;">Fee Structure</label>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_fee_receipt" name="can_view_fee_receipt" {% if user.can_view_fee_receipt %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_fee_receipt" style="margin: 0;">Fee Receipt</label>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_daily_expenses" name="can_view_daily_expenses" {% if user.can_view_daily_expenses %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_daily_expenses" style="margin: 0;">Daily Expenses</label>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_school_settings" name="can_view_school_settings" {% if user.can_view_school_settings %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_school_settings" style="margin: 0;">School Settings</label>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_website_settings" name="can_view_website_settings" {% if user.can_view_website_settings %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_website_settings" style="margin: 0;">Website Settings</label>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_user_management" name="can_view_user_management" {% if user.can_view_user_management %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_user_management" style="margin: 0;">User Management</label>
+                    </div>
+                    
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" id="can_view_attendance" name="can_view_attendance" {% if user.can_view_attendance %}checked{% endif %} style="margin-right: 0.5rem;">
+                        <label for="can_view_attendance" style="margin: 0;">Student Attendance</label>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="display: flex; gap: 1rem; margin-top: 1rem;">
+                <button type="submit" style="background: #007bff; color: white; padding: 0.75rem 1.5rem; border: none; border-radius: 5px; cursor: pointer; flex: 1;">Update User</button>
+                <a href="{% url 'user_management' %}" style="background: #6c757d; color: white; padding: 0.75rem 1.5rem; text-decoration: none; border-radius: 5px; text-align: center; flex: 1;">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function updateClassTeacherOptions() {
+    const teacherSelect = document.getElementById('teacher_id');
+    const classTeacherSection = document.getElementById('classTeacherSection');
+    const classTeacherSelect = document.getElementById('class_teacher_for');
+    
+    if (teacherSelect.value) {
+        classTeacherSection.style.display = 'block';
+        
+        // Get current class teacher assignment for selected teacher
+        const selectedOption = teacherSelect.options[teacherSelect.selectedIndex];
+        const currentClass = selectedOption.getAttribute('data-current-class');
+        
+        if (currentClass) {
+            classTeacherSelect.value = currentClass;
+        } else {
+            classTeacherSelect.value = '';
+        }
+    } else {
+        classTeacherSection.style.display = 'none';
+        classTeacherSelect.value = '';
+    }
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateClassTeacherOptions();
+});
+</script>
+{% endblock %}

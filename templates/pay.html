@@ -1,10 +1,12 @@
-{% extends "base.html" %}
+{% extends "base_basic_sidebar.html" %}
 
 {% block title %}Fee Payment{% endblock %}
 
 {% block content %}
-{% csrf_token %}
 <div class="container">
+    <form style="display: none;">
+        {% csrf_token %}
+    </form>
     <header class="header">
         <h1>Fee Payment</h1>
         <span class="session">2025-26</span>

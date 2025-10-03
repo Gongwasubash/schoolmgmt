@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}User Management - School Management{% endblock %}
+
+{% block extra_css %}
+<style>
+    .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; margin: 5px; }
+    .btn:hover { background: #0056b3; }
+    .btn-danger { background: #dc3545; }
+    .btn-danger:hover { background: #c82333; }
+    .btn-success { background: #28a745; }
+    .btn-success:hover { background: #218838; }
+    .permission-badge { background: #28a745; color: white; padding: 2px 6px; border-radius: 3px; font-size: 11px; margin: 1px; }
+    .status-active { color: #28a745; font-weight: bold; }
+    .status-inactive { color: #dc3545; font-weight: bold; }
+</style>
+{% endblock %}
+
+{% block content %}
+<meta name="csrf-token" content="{{ csrf_token }}">
+<div class="container" style="max-width: 1200px; margin: 2rem auto; padding: 0 1rem;">
+    <div class="header" style="background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <h1>User Management</h1>
+        {% if can_create %}
+            <a href="{% url 'create_user' %}" class="btn btn-success">+ Create New User</a>
+        {% endif %}
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}" style="padding: 1rem; margin-bottom: 1rem; border-radius: 5px; {% if message.tags == 'error' %}background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb;{% else %}background: #d4edda; color: #155724; border: 1px solid #c3e6cb;{% endif %}">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <div style="background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <table style="width: 100%; border-collapse: collapse;">
+            <thead>
+                <tr>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background: #f8f9fa; font-weight: bold;">Username</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background: #f8f9fa; font-weight: bold;">Name</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background: #f8f9fa; font-weight: bold;">Designation</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background: #f8f9fa; font-weight: bold;">Permissions</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background: #f8f9fa; font-weight: bold;">Status</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background: #f8f9fa; font-weight: bold;">Created</th>
+                    <th style="padding: 12px; text-align: left; border-bottom: 1px solid #ddd; background: #f8f9fa; font-weight: bold;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for user in users %}
+                <tr>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;"><strong>{{ user.username }}</strong></td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;">{{ user.teacher.name|default:"System Admin" }}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;">
+                        {{ user.teacher.designation|default:"System" }}
+                        {% if user.teacher.class_teacher_for %}
+                            <br><small style="color: #007bff; font-weight: bold;">Class Teacher - {{ user.teacher.class_teacher_for }}</small>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;">
+                        {% if user.is_super_admin %}
+                            <span class="permission-badge">Super Admin</span>
+                        {% endif %}
+                        {% if user.can_create_users %}
+                            <span class="permission-badge">Create</span>
+                        {% endif %}
+                        {% if user.can_delete_users %}
+                            <span class="permission-badge">Delete</span>
+                        {% endif %}
+                        <br>
+                        <small style="color: #666; font-size: 10px;">
+                            {% if user.can_view_dashboard %}Dashboard {% endif %}
+                            {% if user.can_view_students %}Students {% endif %}
+                            {% if user.can_view_teachers %}Teachers {% endif %}
+                            {% if user.can_view_reports %}Reports {% endif %}
+                            {% if user.can_view_marksheet %}Marksheet {% endif %}
+                            {% if user.can_view_fee_structure %}Fee Structure {% endif %}
+                            {% if user.can_view_fee_receipt %}Fee Receipt {% endif %}
+                            {% if user.can_view_daily_expenses %}Daily Expenses {% endif %}
+                            {% if user.can_view_school_settings %}School Settings {% endif %}
+                            {% if user.can_view_website_settings %}Website Settings {% endif %}
+                            {% if user.can_view_user_management %}User Management {% endif %}
+                        </small>
+                    </td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;">
+                        {% if user.is_active %}
+                            <span class="status-active">Active</span>
+                        {% else %}
+                            <span class="status-inactive">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;">{{ user.created_at|date:"M d, Y" }}</td>
+                    <td style="padding: 12px; border-bottom: 1px solid #ddd;">
+                        {% if can_create %}
+                            <a href="{% url 'edit_user' user.id %}" class="btn" style="background: #ffc107; color: #212529; padding: 5px 10px; font-size: 12px; text-decoration: none; margin-right: 5px;">Edit</a>
+                        {% endif %}
+                        {% if not user.is_super_admin %}
+                            <button onclick="enableAllPermissions({{ user.id }}, '{{ user.username }}')" class="btn btn-success" style="padding: 5px 10px; font-size: 12px; margin-right: 5px;">Enable All</button>
+                        {% endif %}
+                        {% if can_delete and user.username != 'superadmin' %}
+                            <button onclick="deleteUser({{ user.id }}, '{{ user.username }}')" class="btn btn-danger" style="padding: 5px 10px; font-size: 12px;">Delete</button>
+                        {% elif user.username == 'superadmin' %}
+                            <span style="color: #666; font-size: 12px;">Protected</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="7" style="padding: 20px; text-align: center; color: #666;">No users found</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function deleteUser(userId, username) {
+        if (confirm(`Are you sure you want to delete user "${username}"?`)) {
+            fetch(`/admin/delete-user/${userId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            });
+        }
+    }
+    
+    function enableAllPermissions(userId, username) {
+        if (confirm(`Enable all sidebar menu permissions for user "${username}"?`)) {
+            fetch(`/admin/enable-all-permissions/${userId}/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name=csrf-token]').getAttribute('content'),
+                    'Content-Type': 'application/json',
+                },
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            });
+        }
+    }
+</script>
+
+{% csrf_token %}
+{% endblock %}

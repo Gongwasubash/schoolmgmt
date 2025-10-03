@@ -26,12 +26,43 @@
                 margin: 0 !important; 
                 box-shadow: none !important;
                 width: 100% !important;
-                padding: 0 !important;
+                padding: 15mm !important;
                 page-break-after: always;
+                background: white !important;
+                border-radius: 0 !important;
             }
             body { 
                 background: white !important;
                 font-size: 10px !important;
+            }
+            .header {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+                color: white !important;
+                margin: -15mm -15mm 6mm -15mm !important;
+                padding: 8mm !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            .marks-table th {
+                background: linear-gradient(135deg, #3498db 0%, #2980b9 100%) !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            .summary-box {
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            .grading-scale {
+                background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
+            }
+            .grading-table th {
+                background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%) !important;
+                color: white !important;
+                -webkit-print-color-adjust: exact !important;
+                color-adjust: exact !important;
             }
         }
 
@@ -556,13 +587,13 @@
             <table class="marks-table">
                 <thead>
                     <tr>
-                        <th rowspan="2">📖 Subject</th>
+                        <th rowspan="3">📖 Subject</th>
                         <th colspan="2">Full Marks</th>
                         <th colspan="2">Pass Marks</th>
                         <th colspan="2">Obtained Marks</th>
-                        <th rowspan="2">🏆 Grade</th>
-                        <th rowspan="2">📊 GPA</th>
-                        <th rowspan="2">💬 Remarks</th>
+                        <th rowspan="3">🏆 Grade</th>
+                        <th rowspan="3">📊 GPA</th>
+                        <th rowspan="3">💬 Remarks</th>
                     </tr>
                     <tr>
                         <th>Theory</th>
@@ -571,6 +602,9 @@
                         <th>Practical</th>
                         <th>Theory</th>
                         <th>Practical</th>
+                    </tr>
+                    <tr>
+                        <th colspan="10" style="background: #f8f9fa; color: #333; font-size: 11px; padding: 2mm;">ATTENDANCE RECORD - Total: {{ data.total_school_days|default:"200" }} | Present: {{ data.student_present_days|default:"165" }} | Leave: {{ data.student_leave_days|default:"15" }} | Absent: {{ data.student_absent_days|default:"20" }}</th>
                     </tr>
                 </thead>
                 <tbody>

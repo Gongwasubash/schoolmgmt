@@ -1,0 +1,124 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}User Dashboard{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .user-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        .user-sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 1rem;
+        }
+        .user-sidebar h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #ecf0f1;
+        }
+        .user-nav-item {
+            display: block;
+            padding: 0.75rem 1rem;
+            color: #bdc3c7;
+            text-decoration: none;
+            border-radius: 5px;
+            margin-bottom: 0.5rem;
+            transition: all 0.3s;
+        }
+        .user-nav-item:hover, .user-nav-item.active {
+            background: #34495e;
+            color: white;
+        }
+        .user-main-content {
+            flex: 1;
+            background: #ecf0f1;
+        }
+        .user-navbar {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .user-content {
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="user-layout">
+        <aside class="user-sidebar">
+            <h2>User Panel</h2>
+            <nav>
+                <a href="{% url 'user_dashboard' %}" class="user-nav-item{% if request.resolver_match.url_name == 'user_dashboard' %} active{% endif %}">
+                    🏠 Dashboard
+                </a>
+                {% if user_permissions.can_view_students %}
+                <a href="{% url 'students' %}" class="user-nav-item">
+                    👥 Students
+                </a>
+                {% endif %}
+                {% if user_permissions.can_view_teachers %}
+                <a href="{% url 'teachers' %}" class="user-nav-item">
+                    👨🏫 Teachers
+                </a>
+                {% endif %}
+                {% if user_permissions.can_view_reports %}
+                <a href="{% url 'reports' %}" class="user-nav-item">
+                    📊 Reports
+                </a>
+                {% endif %}
+                {% if user_permissions.can_view_marksheet %}
+                <a href="{% url 'marksheet_system' %}" class="user-nav-item">
+                    📋 Marksheet
+                </a>
+                {% endif %}
+                {% if user_permissions.can_view_fees %}
+                <a href="{% url 'fees' %}" class="user-nav-item">
+                    💳 Fee Structure
+                </a>
+                {% endif %}
+                {% if user_permissions.can_view_receipts %}
+                <a href="{% url 'fee_receipt_book' %}" class="user-nav-item">
+                    🧾 Fee Receipt
+                </a>
+                {% endif %}
+                {% if user_permissions.can_view_expenses %}
+                <a href="{% url 'student_daily_exp' %}" class="user-nav-item">
+                    💰 Daily Expenses
+                </a>
+                {% endif %}
+                {% if user_permissions.can_view_settings %}
+                <a href="{% url 'school_settings' %}" class="user-nav-item">
+                    ⚙️ Settings
+                </a>
+                {% endif %}
+            </nav>
+        </aside>
+        
+        <div class="user-main-content">
+            <nav class="user-navbar">
+                <h1>{{ school_info.school_name }}</h1>
+                <div>
+                    <span>Welcome, {{ user_info.username }}</span>
+                    <a href="{% url 'user_logout' %}" style="margin-left: 1rem; color: #e74c3c;">Logout</a>
+                </div>
+            </nav>
+            
+            <main class="user-content">
+                {% block content %}{% endblock %}
+            </main>
+        </div>
+    </div>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

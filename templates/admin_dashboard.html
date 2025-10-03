@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Dashboard - School Management</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f4f4f4; }
+        .header { background: white; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn { background: #007bff; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; text-decoration: none; display: inline-block; }
+        .btn:hover { background: #0056b3; }
+        .btn-danger { background: #dc3545; }
+        .btn-danger:hover { background: #c82333; }
+        .stats { font-size: 24px; font-weight: bold; color: #007bff; }
+        .permission-badge { background: #28a745; color: white; padding: 3px 8px; border-radius: 3px; font-size: 12px; margin: 2px; }
+        .alert { padding: 10px; margin-bottom: 20px; border-radius: 5px; }
+        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Admin Dashboard</h1>
+        <p>Welcome, <strong>{{ admin_username }}</strong></p>
+        <div>
+            {% if is_super_admin %}
+                <span class="permission-badge">Super Admin</span>
+            {% endif %}
+            {% if can_create_users %}
+                <span class="permission-badge">Create Users</span>
+            {% endif %}
+            {% if can_delete_users %}
+                <span class="permission-badge">Delete Users</span>
+            {% endif %}
+        </div>
+        <div style="margin-top: 10px;">
+            <a href="{% url 'admin_logout_view' %}" class="btn btn-danger">Logout</a>
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+        {% endfor %}
+    {% endif %}
+    
+    <div class="dashboard-grid">
+        <div class="card">
+            <h3>System Statistics</h3>
+            <p>Total Active Users: <span class="stats">{{ total_users }}</span></p>
+            <p>Total Teachers: <span class="stats">{{ total_teachers }}</span></p>
+        </div>
+        
+        {% if is_super_admin or can_create_users or can_delete_users %}
+        <div class="card">
+            <h3>User Management</h3>
+            <p>Manage system users and permissions</p>
+            <a href="{% url 'user_management' %}" class="btn">Manage Users</a>
+        </div>
+        {% endif %}
+        
+        <div class="card">
+            <h3>School Management</h3>
+            <p>Access main school system</p>
+            <a href="/" class="btn">Go to School System</a>
+        </div>
+    </div>
+</body>
+</html>

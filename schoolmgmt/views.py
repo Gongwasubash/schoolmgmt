@@ -5,7 +5,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, WelcomeSection, ContactEnquiry, StudentAttendance
+from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, WelcomeSection, ContactEnquiry, StudentAttendance, Teacher, TeacherClassSubject
+from .decorators import permission_required
 from django.db import models
 from django.db.models import F, Q
 import json
@@ -51,8 +52,13 @@ def format_nepali_datetime_for_display(english_datetime):
     except:
         return str(english_datetime)
 
+@permission_required('can_view_dashboard')
 def dashboard(request):
     """Original dashboard view - accessible via /dashboard/ URL"""
+    # Check if user has dashboard permission or is super admin
+    if not (request.session.get('is_super_admin') or request.session.get('can_view_dashboard')):
+        return redirect('home')
+    
     # Get student statistics
     total_students = Student.objects.count()
     boys_count = Student.objects.filter(gender='Boy').count()
@@ -70,19 +76,14 @@ def dashboard(request):
     week_start = today - timedelta(days=6)
     weekly_collection = FeePayment.objects.filter(payment_date__range=[week_start, today]).aggregate(total=Sum('payment_amount'))['total'] or 0
     
-    # Get monthly collection (current month) - total collection for current month
+    # Get monthly collection (last 30 days) - total collection for last 30 days
+    thirty_days_ago = today - timedelta(days=29)  # 30 days including today
     monthly_payments = FeePayment.objects.filter(
-        payment_date__year=today.year, 
-        payment_date__month=today.month
+        payment_date__range=[thirty_days_ago, today]
     )
     monthly_collection = monthly_payments.aggregate(total=Sum('payment_amount'))['total']
     if monthly_collection is None:
         monthly_collection = Decimal('0')
-    
-    # If no data for current month, show total payments for current month from all years
-    if monthly_collection == 0:
-        all_monthly_payments = FeePayment.objects.filter(payment_date__month=today.month)
-        monthly_collection = all_monthly_payments.aggregate(total=Sum('payment_amount'))['total'] or Decimal('0')
     
     # Get yearly collection (current year)
     yearly_collection = FeePayment.objects.filter(payment_date__year=today.year).aggregate(total=Sum('payment_amount'))['total'] or 0
@@ -136,6 +137,7 @@ def dashboard(request):
     
     return render(request, 'index.html', context)
 
+
 def home(request):
     # Lincoln School Homepage - Modern website homepage
     # Get hero slider images
@@ -160,19 +162,14 @@ def home(request):
     week_start = today - timedelta(days=6)
     weekly_collection = FeePayment.objects.filter(payment_date__range=[week_start, today]).aggregate(total=Sum('payment_amount'))['total'] or 0
     
-    # Monthly collection calculation - total collection for current month
+    # Monthly collection calculation - total collection for last 30 days
+    thirty_days_ago = today - timedelta(days=29)  # 30 days including today
     monthly_payments = FeePayment.objects.filter(
-        payment_date__year=today.year, 
-        payment_date__month=today.month
+        payment_date__range=[thirty_days_ago, today]
     )
     monthly_collection = monthly_payments.aggregate(total=Sum('payment_amount'))['total']
     if monthly_collection is None:
         monthly_collection = Decimal('0')
-    
-    # If no data for current month, show total payments for current month from all years
-    if monthly_collection == 0:
-        all_monthly_payments = FeePayment.objects.filter(payment_date__month=today.month)
-        monthly_collection = all_monthly_payments.aggregate(total=Sum('payment_amount'))['total'] or Decimal('0')
     yearly_collection = FeePayment.objects.filter(payment_date__year=today.year).aggregate(total=Sum('payment_amount'))['total'] or 0
     
     # Get today's attendance statistics
@@ -223,29 +220,26 @@ def home(request):
     # Render the school homepage with dynamic school data
     return render(request, 'school_homepage.html', context)
 
-def students(request):
+from .decorators import permission_required
+
+@permission_required('can_view_students')
+def student_admission(request):
     if request.method == 'POST':
         try:
-            # Use current Nepali session for new students
             session_name = get_current_nepali_year_session()
-            
-            # Also create/update Session model for compatibility
             current_session, created = Session.objects.get_or_create(
                 name=session_name,
                 defaults={
-                    'start_date': date.today().replace(month=4, day=1),  # Approximate Baisakh 1
-                    'end_date': date.today().replace(year=date.today().year+1, month=3, day=31),  # Approximate Chaitra end
+                    'start_date': date.today().replace(month=4, day=1),
+                    'end_date': date.today().replace(year=date.today().year+1, month=3, day=31),
                     'is_active': True
                 }
             )
-            
-            # Ensure only one active session
             if created or not current_session.is_active:
                 Session.objects.exclude(id=current_session.id).update(is_active=False)
                 current_session.is_active = True
                 current_session.save()
             
-            # Create new student from form data
             student = Student(
                 name=request.POST.get('name'),
                 student_class=request.POST.get('class'),
@@ -284,15 +278,12 @@ def students(request):
             )
             student.save()
             messages.success(request, 'Student admission submitted successfully!')
-            return redirect('studentlist')
+            return redirect('students')
         except Exception as e:
             messages.error(request, f'Error submitting admission: {str(e)}')
     
-    # Get available sessions for the form
     sessions = Session.objects.all().order_by('-start_date')
     current_session = Session.get_current_session()
-    
-    # Get available classes from Student model and database
     classes = list(Student.objects.values_list('student_class', flat=True).distinct().order_by('student_class'))
     
     context = {
@@ -302,6 +293,41 @@ def students(request):
         'classes': classes
     }
     return render(request, 'students.html', context)
+
+def students(request):
+    # Get session filter from request
+    session_filter = request.GET.get('session', '')
+    
+    # Get current active session
+    current_session = Session.get_current_session()
+    
+    # If no session filter specified, use current active session
+    if not session_filter and current_session:
+        session_filter = current_session.name
+    
+    if session_filter:
+        students = Student.objects.filter(session=session_filter)
+    else:
+        students = Student.objects.all()
+    
+    # Get all available sessions for filter dropdown
+    sessions = Session.objects.all().order_by('-start_date')
+    
+    # Get unique classes from students
+    classes = Student.objects.values_list('student_class', flat=True).distinct().order_by('student_class')
+    
+    context = {
+        'students': students,
+        'sessions': sessions,
+        'current_session': current_session,
+        'selected_session': session_filter,
+        'classes': classes
+    }
+    return render(request, 'studentlist.html', context)
+
+def student_detail(request, student_id):
+    student = get_object_or_404(Student, id=student_id)
+    return render(request, 'student_dashboard.html', {'student': student})
 
 def studentlist(request):
     # Get session filter from request
@@ -330,12 +356,151 @@ def studentlist(request):
     }
     return render(request, 'studentlist.html', context)
 
+@permission_required('can_view_teachers')
 def teachers(request):
-    return render(request, 'teachers.html')
+    if request.method == 'POST':
+        try:
+            # Handle teacher creation
+            teacher = Teacher.objects.create(
+                name=request.POST.get('name'),
+                designation=request.POST.get('designation'),
+                phone_number=request.POST.get('phone_number'),
+                email=request.POST.get('email'),
+                address=request.POST.get('address'),
+                gender=request.POST.get('gender', 'Male'),
+                joining_date=request.POST.get('joining_date'),
+                qualification=request.POST.get('qualification', ''),
+                is_active=request.POST.get('is_active') == 'true'
+            )
+            
+            # Handle photo upload
+            if 'photo' in request.FILES:
+                teacher.photo = request.FILES['photo']
+                teacher.save()
+            
+            # Handle class and subject assignments if provided
+            from .forms import TeacherAssignmentForm
+            assignment_form = TeacherAssignmentForm(request.POST, teacher=teacher)
+            if assignment_form.is_valid():
+                assignments_data = assignment_form.get_assignments_data()
+                if assignments_data:
+                    teacher.assign_classes_subjects(assignments_data)
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Teacher added successfully with assignments',
+                'teacher_id': teacher.id
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    # GET request - show teachers list with class filtering
+    class_filter = request.GET.get('class', '')
+    
+    if class_filter:
+        # Filter teachers who teach the selected class
+        teacher_ids = TeacherClassSubject.objects.filter(class_name=class_filter, is_active=True).values_list('teacher_id', flat=True).distinct()
+        teachers = Teacher.objects.filter(id__in=teacher_ids).order_by('name')
+    else:
+        teachers = Teacher.objects.all().order_by('name')
+    
+    # Add assignments to each teacher
+    for teacher in teachers:
+        assignments = TeacherClassSubject.objects.filter(teacher=teacher, is_active=True).select_related('subject')
+        teacher.assignments = assignments
+        # Also add assignment summary for display
+        teacher.assignment_summary = teacher.get_all_assignments()
+    
+    # Get all unique classes for filter dropdown from TeacherClassSubject
+    all_classes = TeacherClassSubject.objects.filter(is_active=True).values_list('class_name', flat=True).distinct().order_by('class_name')
+    
+    school_info = SchoolDetail.get_current_school()
+    
+    return render(request, 'teachers.html', {
+        'teachers': teachers,
+        'school_info': school_info,
+        'all_classes': all_classes,
+        'selected_class': class_filter,
+    })
+
+def teacher_view(request, teacher_id):
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    school_info = SchoolDetail.get_current_school()
+    
+    # Get teacher's class-subject assignments
+    assignments = TeacherClassSubject.objects.filter(teacher=teacher).select_related('subject').order_by('class_name', 'subject__name')
+    
+    return render(request, 'teacher_detail.html', {
+        'teacher': teacher, 
+        'school_info': school_info,
+        'assignments': assignments
+    })
+
+def teacher_edit(request, teacher_id):
+    from .forms import TeacherAssignmentForm
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    
+    if request.method == 'POST':
+        # Update basic teacher information
+        teacher.name = request.POST.get('name')
+        teacher.designation = request.POST.get('designation')
+        teacher.phone_number = request.POST.get('phone_number')
+        teacher.email = request.POST.get('email')
+        teacher.address = request.POST.get('address')
+        teacher.qualification = request.POST.get('qualification', '')
+        teacher.save()
+        
+        # Handle assignment form
+        assignment_form = TeacherAssignmentForm(request.POST, teacher=teacher)
+        if assignment_form.is_valid():
+            assignments_data = assignment_form.get_assignments_data()
+            teacher.assign_classes_subjects(assignments_data)
+            messages.success(request, 'Teacher information and assignments updated successfully!')
+        else:
+            messages.error(request, 'Error updating assignments. Please check the form.')
+        
+        return redirect('teachers')
+    
+    # GET request - prepare context
+    assignment_form = TeacherAssignmentForm(teacher=teacher)
+    
+    return render(request, 'teacher_edit.html', {
+        'teacher': teacher,
+        'assignment_form': assignment_form
+    })
+
+@csrf_exempt
+def teacher_delete(request, teacher_id):
+    if request.method == 'POST':
+        teacher = get_object_or_404(Teacher, id=teacher_id)
+        teacher.delete()
+        return JsonResponse({'success': True})
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def teacher_assignment(request, teacher_id):
+    """Assign multiple classes and subjects to a teacher"""
+    from .forms import TeacherAssignmentForm
+    teacher = get_object_or_404(Teacher, id=teacher_id)
+    
+    if request.method == 'POST':
+        form = TeacherAssignmentForm(request.POST, teacher=teacher)
+        if form.is_valid():
+            assignments_data = form.get_assignments_data()
+            teacher.assign_classes_subjects(assignments_data)
+            messages.success(request, f'Successfully assigned classes and subjects to {teacher.name}')
+            return redirect('teachers')
+    else:
+        form = TeacherAssignmentForm(teacher=teacher)
+    
+    return render(request, 'teacher_assignment.html', {
+        'teacher': teacher,
+        'form': form
+    })
 
 def classes(request):
     return render(request, 'classes.html')
 
+@permission_required('can_view_reports')
 def reports(request):
     # Get statistics
     total_exams = Exam.objects.count()
@@ -415,6 +580,7 @@ def reports(request):
     
     return render(request, 'reports.html', context)
 
+@permission_required('can_view_fees')
 def fees(request):
     if request.method == 'POST':
         try:
@@ -441,7 +607,12 @@ def fees(request):
     
     # GET request - load existing data
     fee_structures = FeeStructure.objects.all()
-    return render(request, 'fee_structure.html', {'fee_structures': fee_structures})
+    
+    context = {
+        'fee_structures': fee_structures,
+    }
+    
+    return render(request, 'fee_structure.html', context)
 
 def pay(request):
     students = Student.objects.all()
@@ -1136,6 +1307,7 @@ def submit_payment(request):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+@permission_required('can_view_receipts')
 def fee_receipt_book(request):
     from django.db.models import Sum, Max
     from decimal import Decimal
@@ -2052,6 +2224,7 @@ def create_subject(request):
                 name=request.POST.get('name'),
                 code=code,
                 class_name=request.POST.get('class_name'),
+                specialization=request.POST.get('specialization') or None,
                 max_marks=int(request.POST.get('max_marks', 100)),
                 pass_marks=int(request.POST.get('pass_marks', 35))
             )
@@ -2077,6 +2250,7 @@ def edit_subject(request):
             subject.name = request.POST.get('name')
             subject.code = code
             subject.class_name = request.POST.get('class_name')
+            subject.specialization = request.POST.get('specialization') or None
             subject.max_marks = int(request.POST.get('max_marks', 100))
             subject.pass_marks = int(request.POST.get('pass_marks', 35))
             subject.save()
@@ -2334,10 +2508,27 @@ def bulk_edit_subjects(request):
             return JsonResponse({'success': False, 'error': str(e)})
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
+@permission_required('can_view_marksheet')
 def marksheet_system(request):
     """Main marksheet system page"""
     exams = Exam.objects.all().order_by('-exam_date')
-    subjects = Subject.objects.all().order_by('class_name', 'name')
+    
+    # Filter subjects based on user's teaching assignments
+    admin_username = request.session.get('admin_username')
+    if admin_username:
+        try:
+            admin_user = AdminLogin.objects.get(username=admin_username)
+            if admin_user.teacher:
+                subjects = Subject.objects.filter(
+                    teacherclasssubject__teacher=admin_user.teacher,
+                    teacherclasssubject__is_active=True
+                ).distinct().order_by('class_name', 'name')
+            else:
+                subjects = Subject.objects.all().order_by('class_name', 'name')
+        except AdminLogin.DoesNotExist:
+            subjects = Subject.objects.all().order_by('class_name', 'name')
+    else:
+        subjects = Subject.objects.all().order_by('class_name', 'name')
     
     # Get current Nepali session for filtering
     current_nepali_session = get_current_nepali_year_session()
@@ -2404,34 +2595,26 @@ def marksheet_advanced(request):
 def subjects_by_class_api(request, class_name):
     """API to get subjects by class"""
     try:
-        subjects = Subject.objects.filter(class_name=class_name).order_by('name')
-        subjects_data = []
-        
-        # Class name mapping for display
-        class_name_mapping = {
-            '1st': 'One',
-            '2nd': 'Two',
-            '3rd': 'Three',
-            '4th': 'Four',
-            '5th': 'Five',
-            '6th': 'Six',
-            '7th': 'Seven',
-            '8th': 'Eight',
-            '9th': 'Nine',
-            '10th': 'Ten',
-            '11th': 'Eleven',
-            '12th': 'Twelve'
+        # Handle class name mapping
+        class_mapping = {
+            'One': '1st', 'Two': '2nd', 'Three': '3rd', 'Four': '4th', 'Five': '5th',
+            'Six': '6th', 'Seven': '7th', 'Eight': '8th', 'Nine': '9th', 'Ten': '10th',
+            'Eleven': '11th', 'Twelve': '12th'
         }
         
-        display_class_name = class_name_mapping.get(class_name, class_name)
+        # Try both original and mapped class names
+        mapped_class = class_mapping.get(class_name, class_name)
+        subjects = Subject.objects.filter(
+            models.Q(class_name=class_name) | models.Q(class_name=mapped_class)
+        ).order_by('name')
         
+        subjects_data = []
         for subject in subjects:
             subjects_data.append({
                 'id': subject.id,
                 'name': subject.name,
                 'code': subject.code,
-                'class_name': display_class_name,
-                'original_class_name': subject.class_name,
+                'class_name': subject.class_name,
                 'max_marks': subject.max_marks,
                 'pass_marks': subject.pass_marks
             })
@@ -2439,8 +2622,7 @@ def subjects_by_class_api(request, class_name):
         return JsonResponse({
             'success': True,
             'subjects': subjects_data,
-            'class_name': display_class_name,
-            'original_class_name': class_name
+            'class_name': class_name
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
@@ -2569,6 +2751,197 @@ def save_marksheet_api(request):
             return JsonResponse({
                 'success': True,
                 'saved_count': saved_count
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def auto_populate_exam_marks(request, exam_id):
+    """API to auto-populate marks for a specific exam"""
+    if request.method == 'POST':
+        try:
+            import random
+            
+            exam = get_object_or_404(Exam, id=exam_id)
+            students = Student.objects.filter(student_class=exam.class_name)
+            subjects = Subject.objects.filter(class_name=exam.class_name)
+            
+            total_records = 0
+            
+            for student in students:
+                for subject in subjects:
+                    # Check if marksheet already exists with marks
+                    existing = Marksheet.objects.filter(
+                        student=student, exam=exam, subject=subject
+                    ).first()
+                    
+                    if not existing or not existing.marks_obtained:
+                        # Generate random marks (35-95% of max marks)
+                        min_marks = max(35, int(subject.max_marks * 0.35))
+                        max_marks = int(subject.max_marks * 0.95)
+                        random_marks = random.randint(min_marks, max_marks)
+                        
+                        # Create or update marksheet
+                        Marksheet.objects.update_or_create(
+                            student=student,
+                            exam=exam,
+                            subject=subject,
+                            defaults={
+                                'marks_obtained': random_marks,
+                                'remarks': 'Auto-filled'
+                            }
+                        )
+                        total_records += 1
+            
+            return JsonResponse({
+                'success': True,
+                'total_records': total_records,
+                'exam_name': exam.name,
+                'class_name': exam.class_name
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def get_student_marksheet_data(request, student_id):
+    """API to get student's marksheet data for dashboard"""
+    try:
+        student = get_object_or_404(Student, id=student_id)
+        marksheets = Marksheet.objects.filter(student=student).select_related('exam', 'subject')
+        
+        # Group by exam
+        exam_data = {}
+        subject_performance = {}
+        
+        for marksheet in marksheets:
+            exam_name = marksheet.exam.name
+            subject_name = marksheet.subject.name
+            
+            if exam_name not in exam_data:
+                exam_data[exam_name] = {
+                    'total_marks': 0,
+                    'obtained_marks': 0,
+                    'subjects': 0
+                }
+            
+            exam_data[exam_name]['total_marks'] += marksheet.subject.max_marks
+            exam_data[exam_name]['obtained_marks'] += marksheet.marks_obtained or 0
+            exam_data[exam_name]['subjects'] += 1
+            
+            # Subject performance
+            if subject_name not in subject_performance:
+                subject_performance[subject_name] = []
+            
+            percentage = (marksheet.marks_obtained / marksheet.subject.max_marks * 100) if marksheet.marks_obtained else 0
+            subject_performance[subject_name].append({
+                'exam': exam_name,
+                'percentage': round(percentage, 1),
+                'marks': marksheet.marks_obtained or 0,
+                'max_marks': marksheet.subject.max_marks
+            })
+        
+        # Calculate exam percentages
+        exam_percentages = []
+        for exam, data in exam_data.items():
+            percentage = (data['obtained_marks'] / data['total_marks'] * 100) if data['total_marks'] > 0 else 0
+            exam_percentages.append({
+                'exam': exam,
+                'percentage': round(percentage, 1)
+            })
+        
+        # Calculate subject averages
+        subject_averages = []
+        for subject, performances in subject_performance.items():
+            avg_percentage = sum(p['percentage'] for p in performances) / len(performances)
+            subject_averages.append({
+                'subject': subject,
+                'average': round(avg_percentage, 1),
+                'performances': performances
+            })
+        
+        # Return empty data if no marksheets found
+        if not exam_data:
+            return JsonResponse({
+                'success': True,
+                'progression_data': [{'exam': 'No Data', 'percentage': 0}],
+                'subject_averages': [{'subject': 'No Data', 'average': 0}],
+                'total_exams': 0,
+                'total_subjects': 0
+            })
+        
+        # If only one exam, duplicate it for trend visualization
+        if len(exam_percentages) == 1:
+            single_exam = exam_percentages[0]
+            exam_percentages = [
+                {'exam': f"{single_exam['exam']} (Start)", 'percentage': max(0, single_exam['percentage'] - 5)},
+                single_exam
+            ]
+        
+        return JsonResponse({
+            'success': True,
+            'progression_data': exam_percentages,
+            'subject_averages': subject_averages,
+            'total_exams': len(exam_data),
+            'total_subjects': len(subject_performance)
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def populate_all_marksheet_data(request):
+    """API to populate all students with random marks for all subjects"""
+    if request.method == 'POST':
+        try:
+            import random
+            
+            students = Student.objects.all()
+            subjects = Subject.objects.all()
+            exams = Exam.objects.all()
+            
+            if not students.exists():
+                return JsonResponse({'success': False, 'error': 'No students found'})
+            if not subjects.exists():
+                return JsonResponse({'success': False, 'error': 'No subjects found'})
+            if not exams.exists():
+                return JsonResponse({'success': False, 'error': 'No exams found'})
+            
+            total_records = 0
+            
+            for student in students:
+                # Get subjects for student's class
+                student_subjects = subjects.filter(class_name=student.student_class)
+                
+                # Get exams for student's class
+                student_exams = exams.filter(class_name=student.student_class)
+                
+                for exam in student_exams:
+                    for subject in student_subjects:
+                        # Generate random marks (60-95% of max marks for realistic data)
+                        min_marks = int(subject.max_marks * 0.6)
+                        max_marks = int(subject.max_marks * 0.95)
+                        random_marks = random.randint(min_marks, max_marks)
+                        
+                        # Create or update marksheet
+                        marksheet, created = Marksheet.objects.update_or_create(
+                            student=student,
+                            exam=exam,
+                            subject=subject,
+                            defaults={
+                                'marks_obtained': random_marks,
+                                'remarks': 'Auto-generated'
+                            }
+                        )
+                        total_records += 1
+            
+            return JsonResponse({
+                'success': True,
+                'total_records': total_records,
+                'students_count': students.count(),
+                'subjects_count': subjects.count(),
+                'exams_count': exams.count()
             })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
@@ -3472,6 +3845,7 @@ def populate_grade_sheet_certificate(request):
     
     return render(request, 'generate-class-marksheets-print-see-style.html', context)
 
+@permission_required('can_view_attendance')
 def student_attendance_dashboard(request):
     """Student Attendance Dashboard with StudentAttendance model integration"""
     # Get unique classes and sections from students
@@ -3506,11 +3880,13 @@ def print_bill(request):
     school = SchoolDetail.get_current_school()
     return render(request, 'print_bill.html', {'school': school})
 
+@permission_required('can_view_expenses')
 def student_daily_exp(request):
     """Student daily expenses page"""
     context = {
         'current_date': datetime.now().strftime('%B %d, %Y')
     }
+    
     return render(request, 'student_daily_exp.html', context)
 
 # Nepali Date API Endpoints
@@ -3833,8 +4209,9 @@ def collection_dashboard(request):
     week_start = today - timedelta(days=6)
     weekly_collection = FeePayment.objects.filter(payment_date__range=[week_start, today]).aggregate(total=Sum('payment_amount'))['total'] or 0
     
-    # Get monthly collection (current month)
-    monthly_collection = FeePayment.objects.filter(payment_date__year=today.year, payment_date__month=today.month).aggregate(total=Sum('payment_amount'))['total'] or 0
+    # Get monthly collection (last 30 days)
+    thirty_days_ago = today - timedelta(days=29)  # 30 days including today
+    monthly_collection = FeePayment.objects.filter(payment_date__range=[thirty_days_ago, today]).aggregate(total=Sum('payment_amount'))['total'] or 0
     
     # Get yearly collection (current year)
     yearly_collection = FeePayment.objects.filter(payment_date__year=today.year).aggregate(total=Sum('payment_amount'))['total'] or 0
@@ -3931,6 +4308,107 @@ def collection_details(request, period='today'):
     
     return render(request, 'collection_details.html', context)
 
+def weekly_collection_details(request):
+    """Weekly collection details view"""
+    return collection_details(request, 'weekly')
+
+def monthly_collection_details(request):
+    """Monthly collection details view - Last 30 days"""
+    from datetime import timedelta
+    
+    today = date.today()
+    
+    # Get monthly collection (last 30 days)
+    start_date = today - timedelta(days=29)  # 30 days including today
+    end_date = today
+    period_title = "Monthly (Last 30 Days)"
+    date_range = f"{start_date.strftime('%b %d')} - {end_date.strftime('%b %d, %Y')}"
+    
+    # Get payments for the period (FeePayment)
+    payments = FeePayment.objects.filter(
+        payment_date__range=[start_date, end_date]
+    ).select_related('student').order_by('-payment_date', '-id')
+    
+    # Get daily expenses for the period
+    daily_expenses = StudentDailyExpense.objects.filter(
+        expense_date__range=[start_date, end_date]
+    ).select_related('student').order_by('-expense_date', '-id')
+    
+    # Process fee types for display
+    for payment in payments:
+        payment.fee_types_list = []
+        if payment.fee_types:
+            try:
+                fee_types = json.loads(payment.fee_types)
+                payment.fee_types_list = fee_types
+            except json.JSONDecodeError:
+                pass
+    
+    # Calculate totals (FeePayment + StudentDailyExpense)
+    fee_total = payments.aggregate(total=Sum('payment_amount'))['total'] or 0
+    expense_total = daily_expenses.aggregate(total=Sum('amount'))['total'] or 0
+    total_amount = fee_total + expense_total
+    total_payments = payments.count() + daily_expenses.count()
+    
+    # Payment method summary
+    payment_methods = payments.values('payment_method').annotate(
+        count=Count('id'),
+        total=Sum('payment_amount')
+    ).order_by('-total')
+    
+    # Debug: Check if we have any data at all
+    all_payments_count = FeePayment.objects.count()
+    all_expenses_count = StudentDailyExpense.objects.count()
+    
+    # If no data for current month, get some recent data for display
+    if not payments.exists() and not daily_expenses.exists():
+        # Get last 10 payments regardless of date
+        payments = FeePayment.objects.select_related('student').order_by('-payment_date', '-id')[:10]
+        daily_expenses = StudentDailyExpense.objects.select_related('student').order_by('-expense_date', '-id')[:10]
+        
+        # Update totals if we found some data
+        if payments.exists() or daily_expenses.exists():
+            fee_total = sum(p.payment_amount for p in payments)
+            expense_total = sum(e.amount for e in daily_expenses)
+            total_amount = fee_total + expense_total
+            total_payments = len(payments) + len(daily_expenses)
+            period_title = "Recent"
+            date_range = "Last 10 transactions"
+    
+    # Ensure all required template variables are present
+    context = {
+        'payments': payments,
+        'daily_expenses': daily_expenses,
+        'period_title': period_title,
+        'date_range': date_range,
+        'total_amount': total_amount,
+        'total_payments': total_payments,
+        'fee_total': fee_total,
+        'expense_total': expense_total,
+        'payment_methods': payment_methods,
+        'period': 'monthly',
+        'start_date': start_date,
+        'end_date': end_date,
+        'debug_info': {
+            'all_payments_count': all_payments_count,
+            'all_expenses_count': all_expenses_count,
+            'current_month_payments': FeePayment.objects.filter(payment_date__range=[start_date, end_date]).count(),
+            'current_month_expenses': StudentDailyExpense.objects.filter(expense_date__range=[start_date, end_date]).count(),
+        }
+    }
+    
+    return render(request, 'monthly_collection_details.html', context)
+
+def yearly_collection_details(request):
+    """Yearly collection details view"""
+    return collection_details(request, 'yearly')
+
+# Missing API function for subjects by class
+def api_subjects_by_class(request, class_name):
+    """API to get subjects by class - alias for subjects_by_class_api"""
+    return subjects_by_class_api(request, class_name)
+
+@permission_required('can_view_settings')
 def school_settings(request):
     try:
         from .models import SchoolDetail
@@ -4106,40 +4584,56 @@ def remove_photo(request):
 def generate_id(request):
     student_id = request.GET.get('student_id')
     student_ids = request.GET.get('student_ids')
-    template = request.GET.get('template', '1')
-    design = request.GET.get('design', template)
     
     try:
         school = SchoolDetail.get_current_school()
     except:
         school = None
     
+    students_data = []
+    
     if student_ids:
         # Bulk mode
         student_id_list = student_ids.split(',')
         students = Student.objects.filter(id__in=student_id_list)
-        return render(request, 'generate_id.html', {
-            'students': students,
-            'is_bulk': True,
-            'school': school,
-            'template': template,
-            'design': design
-        })
+        for student in students:
+            students_data.append({
+                'id': student.id,
+                'name': student.name,
+                'student_class': student.student_class,
+                'section': student.section,
+                'reg_number': student.reg_number,
+                'dob': student.dob.strftime('%Y-%m-%d') if student.dob else '',
+                'session': student.session,
+                'mobile': student.mobile,
+                'photo_url': student.get_random_photo_url()
+            })
     elif student_id:
         # Single student mode
         try:
             student = Student.objects.get(id=student_id)
-            return render(request, 'generate_id.html', {
-                'student': student,
-                'is_bulk': False,
-                'school': school,
-                'template': template,
-                'design': design
+            students_data.append({
+                'id': student.id,
+                'name': student.name,
+                'student_class': student.student_class,
+                'section': student.section,
+                'reg_number': student.reg_number,
+                'dob': student.dob.strftime('%Y-%m-%d') if student.dob else '',
+                'session': student.session,
+                'mobile': student.mobile,
+                'photo_url': student.get_random_photo_url()
             })
         except Student.DoesNotExist:
-            return render(request, '404.html', status=404)
+            return HttpResponse('Student not found', status=404)
     
-    return render(request, '404.html', status=404)
+    if not students_data:
+        return HttpResponse('No students found', status=404)
+    
+    import json
+    return render(request, 'generate_id.html', {
+        'students': json.dumps(students_data),
+        'school': school
+    })
 
 def print_id_cards(request):
     """Print ID cards with complete student database details"""
@@ -4379,20 +4873,69 @@ def update_registration_status_api(request):
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 def admin_login(request):
-    """Admin login page"""
+    """Admin login page - handles /login/ URL"""
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         
+        admin = None
+        
+        # Try MD5 hash first
         try:
-            admin = AdminLogin.objects.get(username=username, password=password, is_active=True)
-            request.session['admin_logged_in'] = True
-            request.session['admin_username'] = admin.username
-            return redirect('dashboard')
+            import hashlib
+            password_hash = hashlib.md5(password.encode()).hexdigest()
+            admin = AdminLogin.objects.get(username=username, password=password_hash, is_active=True)
         except AdminLogin.DoesNotExist:
-            messages.error(request, 'Invalid username or password')
+            # Try plain text password as fallback
+            try:
+                admin = AdminLogin.objects.get(username=username, password=password, is_active=True)
+            except AdminLogin.DoesNotExist:
+                messages.error(request, 'Invalid username or password')
+                return render(request, 'admin_login.html')
+        
+        # Set session data
+        request.session['admin_logged_in'] = True
+        request.session['admin_username'] = admin.username
+        request.session['is_super_admin'] = admin.is_super_admin
+        
+        # Set all permissions in session
+        request.session['can_create_users'] = admin.can_create_users
+        request.session['can_delete_users'] = admin.can_delete_users
+        request.session['can_view_dashboard'] = admin.can_view_dashboard
+        request.session['can_view_charts'] = admin.can_view_charts
+        request.session['can_view_stats'] = admin.can_view_stats
+        request.session['can_view_students'] = admin.can_view_students
+        request.session['can_view_teachers'] = admin.can_view_teachers
+        request.session['can_view_reports'] = admin.can_view_reports
+        request.session['can_view_marksheet'] = admin.can_view_marksheet
+        request.session['can_view_fees'] = admin.can_view_fees
+        request.session['can_view_receipts'] = admin.can_view_receipts
+        request.session['can_view_expenses'] = admin.can_view_expenses
+        request.session['can_view_settings'] = admin.can_view_settings
+        
+        # Redirect based on permissions
+        if not admin.can_create_users and not admin.can_delete_users and not admin.is_super_admin:
+            return redirect('basic_dashboard')
+        else:
+            return redirect('dashboard')
     
     return render(request, 'admin_login.html')
+
+def basic_dashboard(request):
+    """Basic dashboard for users with limited permissions"""
+    from datetime import datetime
+    
+    # Get basic statistics
+    total_students = Student.objects.count()
+    current_date = datetime.now().strftime('%B %d, %Y')
+    
+    context = {
+        'total_students': total_students,
+        'current_date': current_date,
+        'user_username': request.session.get('admin_username', 'User')
+    }
+    
+    return render(request, 'basic_dashboard.html', context)
 
 def admin_logout(request):
     """Admin logout"""
@@ -4785,3 +5328,201 @@ def attendance_report(request):
     }
     
     return render(request, 'attendance_report.html', context)
+def api_subjects_by_class(request, class_name):
+    """API to get subjects by class for teacher edit"""
+    try:
+        subjects = Subject.objects.filter(class_name=class_name).order_by('name')
+        subjects_data = []
+        
+        for subject in subjects:
+            subjects_data.append({
+                'id': subject.id,
+                'name': subject.name,
+                'code': subject.code
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'subjects': subjects_data
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+# Missing view functions that might be referenced
+def save_attendance(request):
+    """Save student attendance"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            attendance_date = data.get('date')
+            attendance_data = data.get('attendance', [])
+            
+            # Clear existing attendance for the date
+            StudentAttendance.objects.filter(date=attendance_date).delete()
+            
+            # Save new attendance records
+            for record in attendance_data:
+                student = get_object_or_404(Student, id=record['student_id'])
+                StudentAttendance.objects.create(
+                    student=student,
+                    date=attendance_date,
+                    status=record['status']
+                )
+            
+            return JsonResponse({'success': True, 'message': 'Attendance saved successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def load_attendance(request):
+    """Load student attendance for a specific date"""
+    try:
+        attendance_date = request.GET.get('date')
+        if not attendance_date:
+            return JsonResponse({'success': False, 'error': 'Date parameter required'})
+        
+        attendance_records = StudentAttendance.objects.filter(date=attendance_date).select_related('student')
+        attendance_data = []
+        
+        for record in attendance_records:
+            attendance_data.append({
+                'student_id': record.student.id,
+                'student_name': record.student.name,
+                'status': record.status
+            })
+        
+        return JsonResponse({'success': True, 'attendance': attendance_data})
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def get_attendance_summary(request, student_id):
+    """Get attendance summary for a student"""
+    try:
+        student = get_object_or_404(Student, id=student_id)
+        
+        # Get attendance records for current month
+        today = date.today()
+        start_date = today.replace(day=1)
+        
+        attendance_records = StudentAttendance.objects.filter(
+            student=student,
+            date__range=[start_date, today]
+        )
+        
+        present_count = attendance_records.filter(status='present').count()
+        absent_count = attendance_records.filter(status='absent').count()
+        late_count = attendance_records.filter(status='late').count()
+        
+        return JsonResponse({
+            'success': True,
+            'student_name': student.name,
+            'present': present_count,
+            'absent': absent_count,
+            'late': late_count,
+            'total_days': attendance_records.count()
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def attendance_report(request):
+    """Attendance report view"""
+    students = Student.objects.all().order_by('name')
+    today = date.today()
+    
+    # Get attendance statistics for each student
+    students_with_attendance = []
+    for student in students:
+        attendance_records = StudentAttendance.objects.filter(
+            student=student,
+            date__month=today.month,
+            date__year=today.year
+        )
+        
+        present_count = attendance_records.filter(status='present').count()
+        absent_count = attendance_records.filter(status='absent').count()
+        late_count = attendance_records.filter(status='late').count()
+        total_days = attendance_records.count()
+        
+        attendance_percentage = (present_count / total_days * 100) if total_days > 0 else 0
+        
+        student.present_days = present_count
+        student.absent_days = absent_count
+        student.late_days = late_count
+        student.total_days = total_days
+        student.attendance_percentage = round(attendance_percentage, 1)
+        
+        students_with_attendance.append(student)
+    
+    context = {
+        'students': students_with_attendance,
+        'current_month': today.strftime('%B %Y')
+    }
+    
+    return render(request, 'attendance_report.html', context)
+
+# Missing views for contact and blog functionality
+def contact(request):
+    """Contact page view"""
+    if request.method == 'POST':
+        try:
+            ContactEnquiry.objects.create(
+                name=request.POST.get('name'),
+                email=request.POST.get('email'),
+                phone=request.POST.get('phone'),
+                message=request.POST.get('message'),
+                status='pending'
+            )
+            messages.success(request, 'Your enquiry has been submitted successfully!')
+            return redirect('contact')
+        except Exception as e:
+            messages.error(request, f'Error submitting enquiry: {str(e)}')
+    
+    return render(request, 'contact.html')
+
+def blog_list(request):
+    """Blog list view"""
+    from .models import Blog
+    blogs = Blog.objects.all().order_by('-created_at')
+    return render(request, 'blog_list.html', {'blogs': blogs})
+
+def blog_detail(request, blog_id):
+    """Blog detail view"""
+    from .models import Blog
+    blog = get_object_or_404(Blog, id=blog_id)
+    return render(request, 'blog_detail.html', {'blog': blog})
+
+def pending_enquiry(request):
+    """Pending enquiry view"""
+    enquiries = ContactEnquiry.objects.exclude(status='closed').order_by('-created_at')
+    registrations = StudentRegistration.objects.filter(status='pending').order_by('-created_at')
+    
+    context = {
+        'enquiries': enquiries,
+        'registrations': registrations
+    }
+    
+    return render(request, 'pending_enquiry.html', context)
+
+def test_enquiry_status(request):
+    """Test enquiry status view"""
+    return render(request, 'test_enquiry_status.html')
+
+@csrf_exempt
+def update_registration_status_api(request):
+    """API to update registration status"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            registration_id = data.get('registration_id')
+            status = data.get('status')
+            
+            registration = get_object_or_404(StudentRegistration, id=registration_id)
+            registration.status = status
+            registration.save()
+            
+            return JsonResponse({'success': True, 'message': 'Status updated successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})

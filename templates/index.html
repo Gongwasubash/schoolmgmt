@@ -15,6 +15,7 @@
 <link rel="stylesheet" href="{% static 'css/dashboard-sidebar-fix.css' %}">
 <link rel="stylesheet" href="{% static 'css/dashboard-layout-fix.css' %}">
 <link rel="stylesheet" href="{% static 'css/charts-responsive.css' %}">
+<link rel="stylesheet" href="{% static 'css/interactive-collection.css' %}">
 {% endblock %}
 
 {% block content %}
@@ -100,21 +101,45 @@
                         <h2 class="card-title">Fee Collections</h2>
                     </div>
                     <div class="collection-merged">
-                        <div class="collection-item" onclick="window.location.href='{% url 'collection_details' 'today' %}'">
-                            <h4>Today's Collection</h4>
+                        <div class="collection-item interactive" onclick="window.location.href='{% url 'collection_details' 'today' %}'">
+                            <div class="collection-header">
+                                <h4>Today's Collection</h4>
+                                <div class="collection-trend positive">+12%</div>
+                            </div>
                             <span class="amount">Rs {{ todays_collection|default:"0" }}</span>
+                            <div class="collection-details">
+                                <small>{{ total_present|default:0 }} payments today</small>
+                            </div>
                         </div>
-                        <div class="collection-item" onclick="window.location.href='{% url 'collection_details' 'weekly' %}'">
-                            <h4>Weekly Collection</h4>
+                        <div class="collection-item interactive" onclick="window.location.href='{% url 'collection_details' 'weekly' %}'">
+                            <div class="collection-header">
+                                <h4>Weekly Collection</h4>
+                                <div class="collection-trend positive">+8%</div>
+                            </div>
                             <span class="amount">Rs {{ weekly_collection|default:"0" }}</span>
+                            <div class="collection-details">
+                                <small>Last 7 days</small>
+                            </div>
                         </div>
-                        <div class="collection-item" onclick="window.location.href='{% url 'collection_details' 'monthly' %}'">
-                            <h4>Monthly Collection</h4>
+                        <div class="collection-item interactive" onclick="window.location.href='{% url 'collection_details' 'monthly' %}'">
+                            <div class="collection-header">
+                                <h4>Monthly Collection</h4>
+                                <div class="collection-trend neutral">+2%</div>
+                            </div>
                             <span class="amount">Rs {{ monthly_collection|default:"0" }}</span>
+                            <div class="collection-details">
+                                <small>Current month</small>
+                            </div>
                         </div>
-                        <div class="collection-item" onclick="window.location.href='{% url 'collection_details' 'yearly' %}'">
-                            <h4>Yearly Collection</h4>
+                        <div class="collection-item interactive" onclick="window.location.href='{% url 'collection_details' 'yearly' %}'">
+                            <div class="collection-header">
+                                <h4>Yearly Collection</h4>
+                                <div class="collection-trend positive">+15%</div>
+                            </div>
                             <span class="amount">Rs {{ yearly_collection|default:"0" }}</span>
+                            <div class="collection-details">
+                                <small>{{ yearly_collection|default:0|floatformat:0 }} total payments</small>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -124,15 +149,15 @@
                 <div class="actions-grid">
                     <button class="action-btn registration" onclick="window.location.href='{% url 'public_registration' %}'">
                         <div class="action-icon">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M19,13H13V19H11V13H5V11H11V5H13V11H19V13Z"/>
                             </svg>
                         </div>
                         <span>Registration</span>
                     </button>
-                    <button class="action-btn admission" onclick="window.location.href='{% url 'students' %}'">
+                    <button class="action-btn admission" onclick="window.location.href='/student-admission/'">
                         <div class="action-icon">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z"/>
                             </svg>
                         </div>
@@ -140,7 +165,7 @@
                     </button>
                     <button class="action-btn search" onclick="window.location.href='{% url 'search_student' %}'">
                         <div class="action-icon">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
                             </svg>
                         </div>
@@ -148,7 +173,7 @@
                     </button>
                     <button class="action-btn list" onclick="window.location.href='{% url 'studentlist' %}'">
                         <div class="action-icon">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M16,4C16,2.89 15.11,2 14,2H10C8.89,2 8,2.89 8,4H5C3.89,4 3,4.89 3,6V20C3,21.11 3.89,22 5,22H19C20.11,22 21,21.11 21,20V6C21,4.89 20.11,4 19,4H16M10,4H14V6H10V4Z"/>
                             </svg>
                         </div>
@@ -156,7 +181,7 @@
                     </button>
                     <button class="action-btn expenses" onclick="window.location.href='{% url 'student_daily_exp' %}'">
                         <div class="action-icon">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M7,15H9C9,16.08 10.37,17 12,17C13.63,17 15,16.08 15,15C15,13.9 13.96,13.5 11.76,12.97C9.64,12.44 7,11.78 7,9C7,7.21 8.47,5.69 10.5,5.18V3H13.5V5.18C15.53,5.69 17,7.21 17,9H15C15,7.92 13.63,7 12,7C10.37,7 9,7.92 9,9C9,10.1 10.04,10.5 12.24,11.03C14.36,11.56 17,12.22 17,15C17,16.79 15.53,18.31 13.5,18.82V21H10.5V18.82C8.47,18.31 7,16.79 7,15Z"/>
                             </svg>
                         </div>
@@ -164,7 +189,7 @@
                     </button>
                     <button class="action-btn receipt" onclick="window.location.href='{% url 'fee_receipt_book' %}'">
                         <div class="action-icon">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.11,3 19,3M19,5V19H5V5H19Z"/>
                             </svg>
                         </div>
@@ -172,7 +197,7 @@
                     </button>
                     <button class="action-btn id-card" onclick="showLoaderAndNavigate('{% url 'id_creation' %}')">
                         <div class="action-icon">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M4,4H20A2,2 0 0,1 22,6V18A2,2 0 0,1 20,20H4A2,2 0 0,1 2,18V6A2,2 0 0,1 4,4M4,6V18H20V6H4M6,8H8V10H6V8M10,8H18V10H10V8M6,12H8V14H6V12M10,12H18V14H10V12M6,16H8V18H6V16M10,16H18V18H10V16Z"/>
                             </svg>
                         </div>
@@ -180,7 +205,7 @@
                     </button>
                     <button class="action-btn report" onclick="window.open('{% url 'fee_payment_report_dashboard' %}', '_blank')">
                         <div class="action-icon">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z"/>
                             </svg>
                         </div>
@@ -188,7 +213,7 @@
                     </button>
                     <button class="action-btn table" onclick="window.location.href='{% url 'student_attendance_dashboard' %}'">
                         <div class="action-icon">
-                            <svg viewBox="0 0 24 24" fill="currentColor">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                                 <path d="M5,4H19A2,2 0 0,1 21,6V18A2,2 0 0,1 19,20H5A2,2 0 0,1 3,18V6A2,2 0 0,1 5,4M5,8V12H11V8H5M13,8V12H19V8H13M5,14V18H11V14H5M13,14V18H19V14H13Z"/>
                             </svg>
                         </div>
@@ -265,27 +290,43 @@
 // Auto-refresh page every 24 hours
 setTimeout(() => location.reload(), 86400000);
 
+// Get CSRF token
+function getCSRFToken() {
+    return document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
+           document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+}
+
 // Loader functionality
 function showLoaderAndNavigate(url) {
     document.getElementById('pageLoader').style.display = 'flex';
     setTimeout(() => window.location.href = url, 500);
 }
 
-// Add cursor pointer style to collection items
+// Interactive collection items
 document.addEventListener('DOMContentLoaded', function() {
-    const collectionItems = document.querySelectorAll('.collection-item');
+    const collectionItems = document.querySelectorAll('.collection-item.interactive');
     collectionItems.forEach(item => {
         item.style.cursor = 'pointer';
+        item.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-2px)';
+            this.style.boxShadow = '0 8px 25px rgba(0,0,0,0.15)';
+        });
+        item.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+            this.style.boxShadow = '0 4px 15px rgba(0,0,0,0.1)';
+        });
     });
 });
 
 // Chart.js initialization
 document.addEventListener('DOMContentLoaded', function() {
     // Student Chart
-    const studentCtx = document.getElementById('studentChart').getContext('2d');
+    const studentElement = document.getElementById('studentChart');
+    if (studentElement) {
+        const studentCtx = studentElement.getContext('2d');
     const classLabels = [{% for class in class_data %}'{{ class.student_class }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
-    const classData = [{% for class in class_data %}{{ class.count|add:class.count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
-    const colors = ['#007bff', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#fd7e14', '#20c997', '#e83e8c', '#6c757d', '#17a2b8'];
+    const classData = [{% for class in class_data %}{{ class.count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+    const colors = ['#4299e1', '#48bb78', '#ed8936', '#f56565', '#9f7aea', '#38b2ac', '#ecc94b', '#ed64a6', '#a0aec0', '#68d391'];
     
     new Chart(studentCtx, {
         type: 'doughnut',
@@ -294,40 +335,61 @@ document.addEventListener('DOMContentLoaded', function() {
             datasets: [{
                 data: classData,
                 backgroundColor: colors.slice(0, classLabels.length),
-                borderWidth: 0
+                borderWidth: 3,
+                borderColor: '#fff',
+                hoverBorderWidth: 4
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: 20 },
+            layout: { padding: 15 },
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    callbacks: {
+                        label: function(context) {
+                            return context.label + ': ' + context.parsed + ' students';
+                        }
+                    }
+                }
             },
-            radius: '80%'
+            cutout: '60%'
         }
-    });
+        });
+    }
 
     // Gender Chart
-    const genderCtx = document.getElementById('genderChart').getContext('2d');
+    const genderElement = document.getElementById('genderChart');
+    if (genderElement) {
+        const genderCtx = genderElement.getContext('2d');
     new Chart(genderCtx, {
         type: 'bar',
         data: {
             labels: ['Boys', 'Girls'],
             datasets: [{
                 data: [{{ boys_count }}, {{ girls_count }}],
-                backgroundColor: ['#007bff', '#e83e8c'],
+                backgroundColor: ['#4299e1', '#ed64a6'],
                 borderWidth: 0,
-                barThickness: 40
+                barThickness: 35,
+                borderRadius: 8
             }]
         },
         options: {
             indexAxis: 'y',
             responsive: true,
             maintainAspectRatio: false,
-            layout: { padding: 10 },
+            layout: { padding: 15 },
             plugins: {
-                legend: { display: false }
+                legend: { display: false },
+                tooltip: {
+                    backgroundColor: 'rgba(0,0,0,0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff'
+                }
             },
             scales: {
                 x: {
@@ -336,38 +398,52 @@ document.addEventListener('DOMContentLoaded', function() {
                     ticks: { display: false }
                 },
                 y: {
-                    grid: { display: false }
+                    grid: { display: false },
+                    ticks: { font: { size: 12, weight: '500' } }
                 }
             }
         }
-    });
+        });
+    }
 
     // Religion Chart
-    const religionCtx = document.getElementById('religionChart').getContext('2d');
-    new Chart(religionCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Hindu', 'Muslim', 'Christian', 'Others'],
-            datasets: [{
-                data: [{{ religion_hindu|default:60 }}, {{ religion_muslim|default:25 }}, {{ religion_christian|default:10 }}, {{ religion_others|default:5 }}],
-                backgroundColor: ['#ff6b35', '#f7931e', '#00d4aa', '#9b59b6'],
-                borderWidth: 0
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            layout: { padding: 5 },
-            plugins: {
-                legend: {
-                    display: false
+    const religionElement = document.getElementById('religionChart');
+    if (religionElement) {
+        const religionCtx = religionElement.getContext('2d');
+        const religionLabels = [{% for religion in religion_data %}'{{ religion.religion }}'{% if not forloop.last %}, {% endif %}{% endfor %}];
+        const religionCounts = [{% for religion in religion_data %}{{ religion.count }}{% if not forloop.last %}, {% endif %}{% endfor %}];
+        
+        new Chart(religionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: religionLabels,
+                datasets: [{
+                    data: religionCounts,
+                    backgroundColor: ['#ff6b35', '#f7931e', '#00d4aa', '#9b59b6', '#e74c3c'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                layout: { padding: 10 },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: '#fff',
+                        bodyColor: '#fff'
+                    }
                 }
             }
-        }
-    });
+        });
+    }
 
     // Category Chart
-    const categoryCtx = document.getElementById('categoryChart').getContext('2d');
+    const categoryElement = document.getElementById('categoryChart');
+    if (categoryElement) {
+        const categoryCtx = categoryElement.getContext('2d');
     new Chart(categoryCtx, {
         type: 'doughnut',
         data: {
@@ -387,8 +463,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     display: false
                 }
             }
-        }
-    });
+            }
+        });
+    }
 });
 </script>
 {% endblock %}

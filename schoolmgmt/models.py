@@ -265,9 +265,21 @@ class FeePayment(models.Model):
 
 
 class Subject(models.Model):
+    SPECIALIZATION_CHOICES = [
+        ('Mathematics', 'Mathematics'),
+        ('Science', 'Science'),
+        ('English', 'English'),
+        ('Social Studies', 'Social Studies'),
+        ('Computer Science', 'Computer Science'),
+        ('Arts', 'Arts'),
+        ('Physical Education', 'Physical Education'),
+        ('Other', 'Other'),
+    ]
+    
     name = models.CharField(max_length=100)
     code = models.CharField(max_length=10, unique=True)
     class_name = models.CharField(max_length=10, choices=Student.CLASS_CHOICES)
+    specialization = models.CharField(max_length=50, choices=SPECIALIZATION_CHOICES, blank=True, null=True)
     max_marks = models.IntegerField(default=100)
     pass_marks = models.IntegerField(default=35)
     
@@ -600,13 +612,72 @@ class StudentDailyExpense(models.Model):
 
 class AdminLogin(models.Model):
     username = models.CharField(max_length=50, unique=True)
-    password = models.CharField(max_length=100)
+    password = models.CharField(max_length=100, help_text="Plain text password (no hashing)")
+    teacher = models.OneToOneField('Teacher', on_delete=models.CASCADE, blank=True, null=True, related_name='login')
     is_active = models.BooleanField(default=True)
+    is_super_admin = models.BooleanField(default=False, help_text="Can create and delete users")
+    can_create_users = models.BooleanField(default=False)
+    can_delete_users = models.BooleanField(default=False)
+    
+    # Sidebar Menu Permissions
+    can_view_dashboard = models.BooleanField(default=False, verbose_name="Dashboard", help_text="Can view dashboard")
+    can_view_students = models.BooleanField(default=True, verbose_name="Students", help_text="Can view students menu")
+    can_view_teachers = models.BooleanField(default=True, verbose_name="Teachers", help_text="Can view teachers menu")
+    can_view_reports = models.BooleanField(default=False, verbose_name="Reports", help_text="Can view reports menu")
+    can_view_marksheet = models.BooleanField(default=False, verbose_name="Marksheet", help_text="Can view marksheet menu")
+    can_view_fee_structure = models.BooleanField(default=False, verbose_name="Fee Structure", help_text="Can view fee structure menu")
+    can_view_fee_receipt = models.BooleanField(default=False, verbose_name="Fee Receipt", help_text="Can view fee receipt menu")
+    can_view_daily_expenses = models.BooleanField(default=False, verbose_name="Daily Expenses", help_text="Can view daily expenses menu")
+    can_view_school_settings = models.BooleanField(default=False, verbose_name="School Settings", help_text="Can view school settings menu")
+    can_view_website_settings = models.BooleanField(default=False, verbose_name="Website Settings", help_text="Can view website settings menu")
+    can_view_user_management = models.BooleanField(default=False, verbose_name="User Management", help_text="Can view user management menu")
+    can_view_attendance = models.BooleanField(default=False, verbose_name="Student Attendance", help_text="Can view student attendance menu")
+    can_edit_own_class_marksheet = models.BooleanField(default=True, verbose_name="Edit Own Class Marksheet", help_text="Can edit marksheet data for assigned classes/subjects")
+    
+    # Additional permissions for compatibility
+    can_view_charts = models.BooleanField(default=False, verbose_name="Charts", help_text="Can view charts and graphs")
+    can_view_stats = models.BooleanField(default=False, verbose_name="Statistics", help_text="Can view statistics")
+    can_view_fees = models.BooleanField(default=False, verbose_name="Fees", help_text="Can view fees menu")
+    can_view_receipts = models.BooleanField(default=False, verbose_name="Receipts", help_text="Can view receipts menu")
+    can_view_expenses = models.BooleanField(default=False, verbose_name="Expenses", help_text="Can view expenses menu")
+    can_view_settings = models.BooleanField(default=False, verbose_name="Settings", help_text="Can view settings menu")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
     def __str__(self):
+        if self.teacher:
+            return f"{self.username} ({self.teacher.name})"
         return self.username
+    
+    def save(self, *args, **kwargs):
+        # Store password as plain text (no hashing)
+        super().save(*args, **kwargs)
+    
+    def has_user_management_permission(self):
+        return self.is_super_admin or self.can_view_user_management
+    
+    def enable_all_permissions(self):
+        """Enable all sidebar menu permissions for basic users"""
+        self.can_view_dashboard = True
+        self.can_view_students = True
+        self.can_view_teachers = True
+        self.can_view_reports = True
+        self.can_view_marksheet = True
+        self.can_view_fee_structure = True
+        self.can_view_fee_receipt = True
+        self.can_view_daily_expenses = True
+        self.can_view_school_settings = True
+        self.can_view_website_settings = True
+        self.can_view_user_management = True
+        self.can_view_charts = True
+        self.can_view_stats = True
+        self.can_view_fees = True
+        self.can_view_receipts = True
+        self.can_view_expenses = True
+        self.can_view_settings = True
+        self.can_view_attendance = True
+        self.save()
     
     class Meta:
         verbose_name = "Admin Login"
@@ -764,6 +835,177 @@ class WelcomeSection(models.Model):
     
     class Meta:
         ordering = ['-created_at']
+
+
+class Teacher(models.Model):
+    GENDER_CHOICES = [
+        ('Male', 'Male'),
+        ('Female', 'Female'),
+    ]
+    
+    CLASS_CHOICES = [
+        ('Nursery', 'Nursery'),
+        ('LKG', 'LKG'),
+        ('UKG', 'UKG'),
+        ('One', 'One'),
+        ('Two', 'Two'),
+        ('Three', 'Three'),
+        ('Four', 'Four'),
+        ('Five', 'Five'),
+        ('Six', 'Six'),
+        ('Seven', 'Seven'),
+        ('Eight', 'Eight'),
+        ('Nine', 'Nine'),
+        ('Ten', 'Ten'),
+        ('Eleven', 'Eleven'),
+        ('Twelve', 'Twelve'),
+    ]
+    
+    DESIGNATION_CHOICES = [
+        ('Principal', 'Principal'),
+        ('Vice Principal', 'Vice Principal'),
+        ('Head Teacher', 'Head Teacher'),
+        ('Senior Teacher', 'Senior Teacher'),
+        ('Teacher', 'Teacher'),
+        ('Assistant Teacher', 'Assistant Teacher'),
+        ('Subject Teacher', 'Subject Teacher'),
+        ('Accountant', 'Accountant'),
+        ('Office Assistant', 'Office Assistant'),
+        ('Librarian', 'Librarian'),
+        ('Lab Assistant', 'Lab Assistant'),
+        ('Computer Operator', 'Computer Operator'),
+        ('Security Guard', 'Security Guard'),
+        ('Kitchen Staff', 'Kitchen Staff'),
+        ('Cleaner', 'Cleaner'),
+        ('Driver', 'Driver'),
+        ('Maintenance Staff', 'Maintenance Staff'),
+        ('Nurse', 'Nurse'),
+        ('Counselor', 'Counselor'),
+        ('Sports Instructor', 'Sports Instructor'),
+    ]
+    
+    name = models.CharField(max_length=100)
+    address = models.TextField()
+    designation = models.CharField(max_length=50, choices=DESIGNATION_CHOICES)
+    phone_number = models.CharField(max_length=15)
+    email = models.EmailField()
+    gender = models.CharField(max_length=10, choices=GENDER_CHOICES)
+    date_of_birth = models.DateField(blank=True, null=True)
+    joining_date = models.DateField()
+    qualification = models.CharField(max_length=200, blank=True)
+    salary = models.DecimalField(max_digits=10, decimal_places=2, blank=True, null=True)
+    is_active = models.BooleanField(default=True)
+    class_teacher_for = models.CharField(max_length=15, choices=CLASS_CHOICES, blank=True, null=True, help_text="Class for which this teacher is the class teacher")
+    photo = models.ImageField(upload_to='teacher_photos/', blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.name} - {self.designation}"
+    
+    def get_assigned_classes(self):
+        """Get all active classes assigned to this teacher"""
+        return TeacherClassSubject.objects.filter(teacher=self, is_active=True).values_list('class_name', flat=True).distinct()
+    
+    def get_subjects_for_class(self, class_name):
+        """Get all active subjects this teacher teaches for a specific class"""
+        return TeacherClassSubject.objects.filter(teacher=self, class_name=class_name, is_active=True).select_related('subject')
+    
+    def get_all_assignments(self):
+        """Get all active class-subject assignments grouped by class"""
+        return TeacherClassSubject.get_teacher_assignments(self)
+    
+    def assign_classes_subjects(self, assignments_data):
+        """Assign multiple classes and subjects to this teacher"""
+        TeacherClassSubject.assign_multiple_classes_subjects(self, assignments_data)
+    
+    def get_random_photo_url(self):
+        """Get a random photo from static/img/teachers folder"""
+        try:
+            teachers_folder = os.path.join(settings.BASE_DIR, 'static', 'img', 'teachers')
+            if os.path.exists(teachers_folder):
+                image_files = [f for f in os.listdir(teachers_folder) 
+                             if f.lower().endswith(('.jpg', '.jpeg', '.png', '.gif'))]
+                if image_files:
+                    random_image = random.choice(image_files)
+                    return f'/static/img/teachers/{random_image}'
+            return '/static/img/default-teacher.png'
+        except:
+            return '/static/img/default-teacher.png'
+    
+    class Meta:
+        ordering = ['name']
+
+
+class TeacherClassSubject(models.Model):
+    """Model to handle teacher assignments to multiple classes and subjects"""
+    CLASS_CHOICES = [
+        ('Nursery', 'Nursery'),
+        ('LKG', 'LKG'),
+        ('UKG', 'UKG'),
+        ('One', 'One'),
+        ('Two', 'Two'),
+        ('Three', 'Three'),
+        ('Four', 'Four'),
+        ('Five', 'Five'),
+        ('Six', 'Six'),
+        ('Seven', 'Seven'),
+        ('Eight', 'Eight'),
+        ('Nine', 'Nine'),
+        ('Ten', 'Ten'),
+        ('Eleven', 'Eleven'),
+        ('Twelve', 'Twelve'),
+    ]
+    
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='class_subjects')
+    class_name = models.CharField(max_length=15, choices=CLASS_CHOICES)
+    subject = models.ForeignKey(Subject, on_delete=models.CASCADE)
+    is_active = models.BooleanField(default=True, help_text="Is this assignment currently active?")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"{self.teacher.name} - {self.class_name} - {self.subject.name}"
+    
+    @classmethod
+    def get_teacher_assignments(cls, teacher):
+        """Get all active assignments for a teacher grouped by class"""
+        assignments = cls.objects.filter(teacher=teacher, is_active=True).select_related('subject')
+        grouped = {}
+        for assignment in assignments:
+            if assignment.class_name not in grouped:
+                grouped[assignment.class_name] = []
+            grouped[assignment.class_name].append(assignment.subject)
+        return grouped
+    
+    @classmethod
+    def assign_multiple_classes_subjects(cls, teacher, assignments_data):
+        """Assign multiple classes and subjects to a teacher
+        assignments_data format: [{'class_name': 'One', 'subject_ids': [1, 2, 3]}, ...]
+        """
+        # Deactivate existing assignments
+        cls.objects.filter(teacher=teacher).update(is_active=False)
+        
+        # Create new assignments
+        for assignment in assignments_data:
+            class_name = assignment['class_name']
+            subject_ids = assignment['subject_ids']
+            
+            for subject_id in subject_ids:
+                try:
+                    subject = Subject.objects.get(id=subject_id, class_name=class_name)
+                    cls.objects.update_or_create(
+                        teacher=teacher,
+                        class_name=class_name,
+                        subject=subject,
+                        defaults={'is_active': True}
+                    )
+                except Subject.DoesNotExist:
+                    continue
+    
+    class Meta:
+        unique_together = ['teacher', 'class_name', 'subject']
+        ordering = ['teacher__name', 'class_name', 'subject__name']
 
 
 class StudentAttendance(models.Model):

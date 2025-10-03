@@ -1,4 +1,4 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% load static %}
 
 {% block title %}Marksheet System{% endblock %}
@@ -246,11 +246,30 @@
         <h3>Select Exam and Class</h3>
         <div class="controls-grid">
             <div class="form-group">
+                <label>Session</label>
+                <select id="sessionFilter" onchange="filterExams()">
+                    <option value="">All Sessions</option>
+                    {% for session in available_sessions %}
+                    <option value="{{ session }}">{{ session }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Exam Type</label>
+                <select id="examTypeFilter" onchange="filterExams()">
+                    <option value="">All Types</option>
+                    <option value="Terminal">Terminal</option>
+                    <option value="Final">Final</option>
+                    <option value="Unit Test">Unit Test</option>
+                    <option value="Monthly">Monthly</option>
+                </select>
+            </div>
+            <div class="form-group">
                 <label>Exam</label>
                 <select id="examSelect" onchange="loadClassStudents()">
                     <option value="">Select Exam</option>
                     {% for exam in exams %}
-                    <option value="{{ exam.id }}" data-class="{{ exam.class_name }}">{{ exam.name }} - {{ exam.class_name }}</option>
+                    <option value="{{ exam.id }}" data-class="{{ exam.class_name }}" data-session="{{ exam.session }}" data-type="{{ exam.exam_type }}">{{ exam.name }} - {{ exam.class_name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -333,6 +352,21 @@
 let currentExam = null;
 let currentSubject = null;
 let studentsData = [];
+let isAutoSaving = false;
+let allExams = [];
+
+// Store all exams on page load
+window.addEventListener('load', function() {
+    const examSelect = document.getElementById('examSelect');
+    allExams = Array.from(examSelect.options).slice(1).map(option => ({
+        value: option.value,
+        text: option.text,
+        class: option.dataset.class,
+        session: option.dataset.session || '',
+        type: option.dataset.type || ''
+    }));
+    convertClassNames();
+});
 
 // Convert class names from numeric to word format
 function convertClassNames() {
@@ -365,6 +399,36 @@ function convertClassNames() {
         const convertedClass = classNameMapping[selectedClassInput.value] || selectedClassInput.value;
         selectedClassInput.value = convertedClass;
     }
+}
+
+function filterExams() {
+    const sessionFilter = document.getElementById('sessionFilter').value;
+    const examTypeFilter = document.getElementById('examTypeFilter').value;
+    const examSelect = document.getElementById('examSelect');
+    
+    // Clear current exam selection
+    examSelect.innerHTML = '<option value="">Select Exam</option>';
+    
+    // Filter and populate exams
+    allExams.forEach(exam => {
+        const matchesSession = !sessionFilter || exam.session === sessionFilter;
+        const matchesType = !examTypeFilter || exam.type === examTypeFilter;
+        
+        if (matchesSession && matchesType) {
+            const option = document.createElement('option');
+            option.value = exam.value;
+            option.textContent = exam.text;
+            option.dataset.class = exam.class;
+            option.dataset.session = exam.session;
+            option.dataset.type = exam.type;
+            examSelect.appendChild(option);
+        }
+    });
+    
+    // Clear dependent fields
+    document.getElementById('selectedClass').value = '';
+    document.getElementById('subjectSelect').innerHTML = '<option value="">Select Subject</option>';
+    document.getElementById('marksheetContainer').classList.add('hidden');
 }
 
 function loadClassStudents() {
@@ -742,8 +806,7 @@ function updateSummary(students) {
 }
 
 function saveAllMarks() {
-    if (!currentExam || !currentSubject) {
-        alert('Please select exam and subject first');
+    if (!currentExam || !currentSubject || isAutoSaving) {
         return;
     }
     
@@ -763,15 +826,9 @@ function saveAllMarks() {
         }
     });
     
-    if (marksData.length === 0) {
-        alert('No valid marks to save');
-        return;
-    }
+    if (marksData.length === 0) return;
     
-    // Get CSRF token
-    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value || 
-                     document.querySelector('meta[name=csrf-token]')?.getAttribute('content') || 
-                     getCookie('csrftoken');
+    const csrfToken = getCookie('csrftoken');
     
     fetch('/api/save-marksheet/', {
         method: 'POST',
@@ -784,16 +841,10 @@ function saveAllMarks() {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            alert(`Successfully saved marks for ${data.saved_count} students`);
-            loadMarksheet(); // Reload to show saved data
-        } else {
-            alert('Error: ' + data.error);
+            console.log(`Saved marks for ${data.saved_count} students`);
         }
     })
-    .catch(error => {
-        console.error('Error saving marks:', error);
-        alert('Error saving marks');
-    });
+    .catch(error => console.error('Error saving marks:', error));
 }
 
 // Helper function to get CSRF token from cookies
@@ -826,6 +877,26 @@ function autoFillMarks() {
     }
 }
 
+function autoFillAndSaveMarks(subject) {
+    if (isAutoSaving) return;
+    isAutoSaving = true;
+    
+    // Auto-fill marks for all students
+    document.querySelectorAll('.marks-input').forEach(input => {
+        if (!input.value || input.value === '0') {
+            const randomMarks = Math.floor(Math.random() * (subject.max_marks - 35 + 1)) + 35;
+            input.value = randomMarks;
+            updateStudentResult(input, subject.max_marks, subject.pass_marks);
+        }
+    });
+    
+    // Auto-save after filling
+    setTimeout(() => {
+        saveAllMarks();
+        isAutoSaving = false;
+    }, 500);
+}
+
 function clearAllMarks() {
     if (confirm('Clear all marks? This cannot be undone.')) {
         document.querySelectorAll('.marks-input').forEach(input => {
@@ -850,10 +921,69 @@ function generateMarksheets() {
     window.open(`/generate-class-marksheets-print/${currentExam}/`, '_blank');
 }
 
-// Initialize class name conversion when page loads
-window.addEventListener('load', function() {
-    convertClassNames();
-});
+function autoPopulateAllSubjects(examId, subjects) {
+    if (isAutoSaving) return;
+    isAutoSaving = true;
+    
+    const csrfToken = getCookie('csrftoken');
+    
+    fetch(`/api/auto-populate-exam-marks/${examId}/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            console.log(`Auto-populated ${data.total_records} marks for exam`);
+            setTimeout(() => {
+                loadMarksheet();
+                isAutoSaving = false;
+            }, 1000);
+        } else {
+            isAutoSaving = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error auto-populating:', error);
+        isAutoSaving = false;
+    });
+}
+
+function populateAllData() {
+    if (!confirm('This will populate ALL students with random marks for ALL subjects across ALL classes. Continue?')) {
+        return;
+    }
+    
+    const csrfToken = getCookie('csrftoken');
+    
+    fetch('/api/populate-all-marksheet-data/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`Successfully populated ${data.total_records} marksheet records for ${data.students_count} students across ${data.subjects_count} subjects!`);
+            if (currentExam && currentSubject) {
+                loadMarksheet(); // Reload current view
+            }
+        } else {
+            alert('Error: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error populating data:', error);
+        alert('Error populating marksheet data');
+    });
+}
+
+
 
 </script>
 {% endblock %}

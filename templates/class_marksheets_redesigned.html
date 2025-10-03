@@ -7,7 +7,7 @@
     <style>
         @page { 
             size: A4 portrait; 
-            margin: 8mm;
+            margin: 0;
             -webkit-print-color-adjust: exact;
             color-adjust: exact;
         }
@@ -23,11 +23,11 @@
             .sidebar { display: none !important; }
             .main-content { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
             .see-marksheet { 
-                margin: 0 !important; 
+                margin: 5mm !important; 
                 box-shadow: none !important;
-                width: 100% !important;
-                height: 267mm !important;
-                padding: 0 !important;
+                width: calc(100% - 10mm) !important;
+                height: calc(100vh - 10mm) !important;
+                padding: 5mm !important;
                 page-break-after: always;
                 background: white !important;
                 border: none !important;
@@ -35,6 +35,19 @@
             body { 
                 background: white !important;
                 font-size: 12px !important;
+            }
+            .marks-table, .eca-table {
+                border-collapse: collapse !important;
+                border: 1px solid #000 !important;
+            }
+            .marks-table th, .marks-table td, .eca-table th, .eca-table td {
+                border: 1px solid #000 !important;
+                padding: 1.5mm !important;
+            }
+            .nepal-emblem img {
+                width: 100% !important;
+                height: 100% !important;
+                object-fit: contain !important;
             }
         }
 
@@ -101,34 +114,34 @@
         .see-marksheet {
             width: 210mm;
             height: 297mm;
-            margin: 0 auto 15px;
+            margin: 5mm auto 15px;
             background: white;
-            padding: 6mm;
+            padding: 5mm;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
             position: relative;
             page-break-after: always;
             page-break-inside: avoid;
             border: 1px solid #000;
+            -webkit-print-color-adjust: exact;
+            color-adjust: exact;
         }
 
         .see-header {
             display: flex;
             align-items: center;
-            padding-bottom: 3mm;
-            margin-bottom: 3mm;
+            padding-bottom: 1mm;
+            margin-bottom: 1mm;
         }
 
         .nepal-emblem {
-            width: 25mm;
-            height: 25mm;
-            border: 1px solid #000;
-            border-radius: 50%;
+            width: 20mm;
+            height: 20mm;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 10px;
+            font-size: 8px;
             font-weight: bold;
-            margin-right: 8mm;
+            margin-right: 5mm;
             flex-shrink: 0;
         }
 
@@ -140,59 +153,59 @@
         .government-header {
             font-size: 20px;
             font-weight: bold;
-            margin-bottom: 1mm;
+            margin-bottom: 0.5mm;
         }
 
         .ministry-name {
-            font-size: 11px;
-            margin-bottom: 1mm;
+            font-size: 12px;
+            margin-bottom: 0.5mm;
         }
 
         .board-name {
-            font-size: 13px;
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 1mm;
+            margin-bottom: 0.5mm;
         }
 
         .marksheet-title {
-            font-size: 16px;
+            font-size: 18px;
             font-weight: bold;
             text-decoration: underline;
-            margin-bottom: 2mm;
+            margin-bottom: 1mm;
         }
 
         .exam-type {
             font-size: 14px;
             font-weight: bold;
-            margin-bottom: 1mm;
+            margin-bottom: 0.5mm;
         }
 
         .exam-details {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 3mm;
-            font-size: 10px;
+            margin-bottom: 1mm;
+            font-size: 11px;
         }
 
         .student-info {
-            margin-bottom: 3mm;
+            margin-bottom: 1mm;
         }
 
         .student-info-header {
             background: #f0f0f0;
-            padding: 1.5mm;
+            padding: 1mm;
             font-weight: bold;
             text-align: center;
-            font-size: 11px;
+            font-size: 12px;
         }
 
         .student-details {
-            padding: 2mm;
+            padding: 1mm;
         }
 
         .student-columns {
             display: flex;
-            gap: 10mm;
+            gap: 5mm;
         }
 
         .student-column {
@@ -201,7 +214,7 @@
 
         .student-row {
             display: flex;
-            margin-bottom: 1.5mm;
+            margin-bottom: 0.5mm;
         }
 
         .student-label {
@@ -212,34 +225,34 @@
         .student-value {
             width: 70%;
             border-bottom: 1px solid #000;
-            padding-left: 2mm;
+            padding-left: 1mm;
         }
 
         .marks-table {
             width: 100%;
             border-collapse: collapse;
             border: 1px solid #000;
-            margin-bottom: 3mm;
-            font-size: 10px;
+            margin-bottom: 1mm;
+            font-size: 11px;
         }
 
         .marks-table th {
             background: #f0f0f0;
             border: 1px solid #000;
-            padding: 1.5mm;
+            padding: 1mm;
             text-align: center;
             font-weight: bold;
         }
 
         .marks-table td {
             border: 1px solid #000;
-            padding: 1.5mm;
+            padding: 1mm;
             text-align: center;
         }
 
         .subject-name {
             text-align: left !important;
-            padding-left: 3mm !important;
+            padding-left: 2mm !important;
         }
 
         .total-row {
@@ -251,32 +264,32 @@
             width: 100%;
             border-collapse: collapse;
             border: 1px solid #000;
-            margin-bottom: 3mm;
-            font-size: 9px;
+            margin-bottom: 1mm;
+            font-size: 10px;
         }
 
         .eca-table th {
             background: #f0f0f0;
             border: 1px solid #000;
-            padding: 1.5mm;
+            padding: 1mm;
             text-align: center;
             font-weight: bold;
         }
 
         .eca-table td {
             border: 1px solid #000;
-            padding: 1.5mm;
+            padding: 1mm;
             text-align: center;
         }
 
         .eca-table td:first-child,
         .eca-table td:nth-child(5) {
             text-align: left;
-            padding-left: 2mm;
+            padding-left: 1mm;
         }
 
         .eca-header {
-            font-size: 11px;
+            font-size: 13px;
         }
 
         .eca-checkbox {
@@ -286,27 +299,27 @@
         .result-summary {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 3mm;
+            margin-bottom: 1mm;
         }
 
         .result-box {
             border: 1px solid #000;
-            padding: 2mm;
+            padding: 1mm;
             width: 48%;
-            font-size: 10px;
+            font-size: 11px;
         }
 
         .result-title {
             font-weight: bold;
             text-align: center;
             border-bottom: 1px solid #000;
-            padding-bottom: 1mm;
-            margin-bottom: 1.5mm;
-            font-size: 11px;
+            padding-bottom: 0.5mm;
+            margin-bottom: 1mm;
+            font-size: 12px;
         }
 
         .grade-scale {
-            font-size: 9px;
+            font-size: 10px;
         }
 
         .grade-row {
@@ -317,10 +330,10 @@
 
         .see-footer {
             position: absolute;
-            bottom: 8mm;
-            left: 8mm;
-            right: 8mm;
-            padding-top: 2mm;
+            bottom: 3mm;
+            left: 3mm;
+            right: 3mm;
+            padding-top: 1mm;
         }
 
         .signatures {
@@ -335,12 +348,12 @@
 
         .signature-line {
             border-bottom: 1px solid #000;
-            margin-bottom: 2mm;
-            height: 10mm;
+            margin-bottom: 1mm;
+            height: 8mm;
         }
 
         .signature-title {
-            font-size: 10px;
+            font-size: 11px;
             font-weight: bold;
         }
 

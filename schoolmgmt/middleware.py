@@ -1,27 +1,23 @@
 from django.shortcuts import redirect
-from django.urls import reverse
 
 class AdminAuthMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # URLs that don't require authentication
-        public_urls = [
-            reverse('admin_login'),
-            reverse('home'),
-            reverse('public_registration'),
-            reverse('blog_list'),
-            reverse('contact'),
-            '/admin/',
-            '/blog/',
-            '/blogs/',
-            '/media/',  # Allow access to media files (images, etc.)
-            '/static/', # Allow access to static files
-        ]
+        # Allow public pages
+        public_paths = ['/', '/contact/', '/public-registration/', '/application-status/']
+        if request.path in public_paths or request.path.startswith('/blog/') or request.path.startswith('/application-status/'):
+            response = self.get_response(request)
+            return response
         
-        # Allow all blog detail URLs
-        if request.path.startswith('/blog/'):
+        # Allow login pages
+        if request.path in ['/admin-login/', '/user-login/', '/login/']:
+            response = self.get_response(request)
+            return response
+        
+        # Allow admin URLs
+        if request.path.startswith('/admin/'):
             response = self.get_response(request)
             return response
         
@@ -30,14 +26,10 @@ class AdminAuthMiddleware:
             response = self.get_response(request)
             return response
         
-        # Check if user is accessing a public URL
-        if request.path in public_urls:
+        # Check if user is logged in for all other URLs
+        if request.session.get('admin_logged_in'):
             response = self.get_response(request)
             return response
         
-        # Check if admin is logged in
-        if not request.session.get('admin_logged_in'):
-            return redirect('admin_login')
-        
-        response = self.get_response(request)
-        return response
+        # Redirect all other URLs to admin login if not authenticated
+        return redirect('/admin-login/')
