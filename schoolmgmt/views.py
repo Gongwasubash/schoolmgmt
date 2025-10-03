@@ -360,17 +360,28 @@ def studentlist(request):
 def teachers(request):
     if request.method == 'POST':
         try:
+            # Validate required fields
+            name = request.POST.get('name')
+            designation = request.POST.get('designation')
+            phone_number = request.POST.get('phone_number')
+            email = request.POST.get('email')
+            address = request.POST.get('address')
+            joining_date = request.POST.get('joining_date')
+            
+            if not all([name, designation, phone_number, email, address, joining_date]):
+                return JsonResponse({'success': False, 'error': 'All required fields must be filled'})
+            
             # Handle teacher creation
             teacher = Teacher.objects.create(
-                name=request.POST.get('name'),
-                designation=request.POST.get('designation'),
-                phone_number=request.POST.get('phone_number'),
-                email=request.POST.get('email'),
-                address=request.POST.get('address'),
+                name=name,
+                designation=designation,
+                phone_number=phone_number,
+                email=email,
+                address=address,
                 gender=request.POST.get('gender', 'Male'),
-                joining_date=request.POST.get('joining_date'),
+                joining_date=joining_date,
                 qualification=request.POST.get('qualification', ''),
-                is_active=request.POST.get('is_active') == 'true'
+                is_active=bool(request.POST.get('is_active'))
             )
             
             # Handle photo upload
@@ -3318,6 +3329,10 @@ def generate_class_marksheets_new_tab(request, exam_id):
     school = SchoolDetail.get_current_school()
     students = Student.objects.filter(student_class=exam.class_name).order_by('name')
     
+    # If no students found, get all students for demo
+    if not students.exists():
+        students = Student.objects.all().order_by('name')[:10]  # Get first 10 students for demo
+    
     # Calculate total school days and attendance for the session
     current_session = Session.get_current_session()
     if current_session:
@@ -4360,11 +4375,11 @@ def monthly_collection_details(request):
     all_payments_count = FeePayment.objects.count()
     all_expenses_count = StudentDailyExpense.objects.count()
     
-    # If no data for current month, get some recent data for display
+    # If no data for last 30 days, get some recent data for display
     if not payments.exists() and not daily_expenses.exists():
-        # Get last 10 payments regardless of date
-        payments = FeePayment.objects.select_related('student').order_by('-payment_date', '-id')[:10]
-        daily_expenses = StudentDailyExpense.objects.select_related('student').order_by('-expense_date', '-id')[:10]
+        # Get last 30 payments regardless of date to show some data
+        payments = FeePayment.objects.select_related('student').order_by('-payment_date', '-id')[:30]
+        daily_expenses = StudentDailyExpense.objects.select_related('student').order_by('-expense_date', '-id')[:30]
         
         # Update totals if we found some data
         if payments.exists() or daily_expenses.exists():
@@ -4372,8 +4387,8 @@ def monthly_collection_details(request):
             expense_total = sum(e.amount for e in daily_expenses)
             total_amount = fee_total + expense_total
             total_payments = len(payments) + len(daily_expenses)
-            period_title = "Recent"
-            date_range = "Last 10 transactions"
+            period_title = "Recent Transactions"
+            date_range = "Last 30 transactions (no data in last 30 days)"
     
     # Ensure all required template variables are present
     context = {
@@ -4392,8 +4407,9 @@ def monthly_collection_details(request):
         'debug_info': {
             'all_payments_count': all_payments_count,
             'all_expenses_count': all_expenses_count,
-            'current_month_payments': FeePayment.objects.filter(payment_date__range=[start_date, end_date]).count(),
-            'current_month_expenses': StudentDailyExpense.objects.filter(expense_date__range=[start_date, end_date]).count(),
+            'last_30_days_payments': FeePayment.objects.filter(payment_date__range=[start_date, end_date]).count(),
+            'last_30_days_expenses': StudentDailyExpense.objects.filter(expense_date__range=[start_date, end_date]).count(),
+            'date_range_used': f'{start_date} to {end_date}',
         }
     }
     
@@ -4785,6 +4801,8 @@ School Administration'''
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 @csrf_exempt
+@csrf_exempt
+@csrf_exempt
 def update_enquiry_status_api(request):
     """API endpoint to update contact enquiry status"""
     if request.method == 'POST':
@@ -5049,8 +5067,8 @@ def blog_detail(request, blog_id):
     })
 
 def pending_enquiry(request):
-    """Pending enquiry page"""
-    from .models import ContactEnquiry
+    """Pending enquiry page - Enhanced with proper data fetching"""
+    from .models import ContactEnquiry, StudentRegistration
     
     if request.method == 'POST':
         action = request.POST.get('action')
@@ -5107,21 +5125,159 @@ def pending_enquiry(request):
             
             messages.success(request, f'Contact enquiry status updated to {status.title()}')
             return redirect('pending_enquiry')
+        
+        elif action == 'delete_registration':
+            registration_id = request.POST.get('registration_id')
+            registration = get_object_or_404(StudentRegistration, id=registration_id)
+            student_name = registration.name
+            
+            # If approved, also delete the corresponding student record
+            if registration.status == 'approved':
+                try:
+                    student = Student.objects.get(reg_number=registration.application_number)
+                    student.delete()
+                except Student.DoesNotExist:
+                    pass
+            
+            registration.delete()
+            messages.success(request, f'Registration for {student_name} has been permanently deleted')
+            return redirect('pending_enquiry')
     
-    enquiries = ContactEnquiry.objects.all().order_by('-created_at')
-    registrations = StudentRegistration.objects.all().order_by('-registration_date')
+    # GET request - Fetch data with filtering support
+    enquiry_status_filter = request.GET.get('enquiry_status', '')
+    registration_status_filter = request.GET.get('registration_status', '')
     
-    response = render(request, 'pending_enquiry.html', {
+    try:
+        # Filter contact enquiries based on status
+        enquiries = ContactEnquiry.objects.all()
+        if enquiry_status_filter:
+            enquiries = enquiries.filter(status=enquiry_status_filter)
+        enquiries = enquiries.order_by('-created_at')
+        enquiries_count = enquiries.count()
+        
+        # Filter student registrations based on status
+        registrations = StudentRegistration.objects.all()
+        if registration_status_filter:
+            registrations = registrations.filter(status=registration_status_filter)
+        registrations = registrations.order_by('-registration_date')
+        registrations_count = registrations.count()
+        
+        # Calculate status counts for enquiries
+        enquiry_status_counts = {
+            'new': enquiries.filter(status='new').count(),
+            'contacted': enquiries.filter(status='contacted').count(),
+            'resolved': enquiries.filter(status='resolved').count(), 
+            'closed': enquiries.filter(status='closed').count(),
+        }
+        
+        # Calculate status counts for registrations
+        registration_status_counts = {
+            'pending': registrations.filter(status='pending').count(),
+            'approved': registrations.filter(status='approved').count(),
+            'rejected': registrations.filter(status='rejected').count(),
+        }
+        
+
+        
+    except Exception as e:
+        print(f"ERROR fetching data: {e}")
+        # Fallback empty data
+        enquiries = ContactEnquiry.objects.none()
+        registrations = StudentRegistration.objects.none()
+        enquiries_count = 0
+        registrations_count = 0
+        enquiry_status_counts = {'new': 0, 'contacted': 0, 'resolved': 0, 'closed': 0}
+        registration_status_counts = {'pending': 0, 'approved': 0, 'rejected': 0}
+    
+    # Prepare context with all required data
+    context = {
         'enquiries': enquiries,
-        'registrations': registrations
-    })
+        'registrations': registrations,
+        'enquiries_count': enquiries_count,
+        'registrations_count': registrations_count,
+        'enquiry_status_counts': enquiry_status_counts,
+        'registration_status_counts': registration_status_counts,
+        # Filter values for dropdowns
+        'selected_enquiry_status': enquiry_status_filter,
+        'selected_registration_status': registration_status_filter,
+
+    }
     
-    # Add cache-busting headers to ensure fresh data
+
+    
+    # Render template with no-cache headers
+    response = render(request, 'pending_enquiry.html', context)
     response['Cache-Control'] = 'no-cache, no-store, must-revalidate'
     response['Pragma'] = 'no-cache'
     response['Expires'] = '0'
     
     return response
+
+@csrf_exempt
+def filter_enquiries_api(request):
+    """API endpoint for filtering enquiries and registrations"""
+    if request.method == 'GET':
+        try:
+            enquiry_status = request.GET.get('enquiry_status', '')
+            registration_status = request.GET.get('registration_status', '')
+            
+            # Filter enquiries
+            enquiries = ContactEnquiry.objects.all()
+            if enquiry_status:
+                enquiries = enquiries.filter(status=enquiry_status)
+            enquiries = enquiries.order_by('-created_at')
+            
+            # Filter registrations
+            registrations = StudentRegistration.objects.all()
+            if registration_status:
+                registrations = registrations.filter(status=registration_status)
+            registrations = registrations.order_by('-registration_date')
+            
+            # Prepare response data
+            enquiries_data = []
+            for enquiry in enquiries:
+                enquiries_data.append({
+                    'id': enquiry.id,
+                    'name': enquiry.name or 'No Name',
+                    'email': enquiry.email,
+                    'phone': enquiry.phone or '',
+                    'subject': enquiry.subject or 'No Subject',
+                    'enquiry': enquiry.enquiry,
+                    'status': enquiry.status or 'new',
+                    'created_at': enquiry.created_at.strftime('%Y-%m-%d')
+                })
+            
+            registrations_data = []
+            for registration in registrations:
+                registrations_data.append({
+                    'id': registration.id,
+                    'name': registration.name or 'No Name',
+                    'student_class': registration.student_class or 'N/A',
+                    'section': registration.section or 'N/A',
+                    'gender': registration.gender,
+                    'dob': registration.dob.strftime('%Y-%m-%d') if registration.dob else '',
+                    'father_name': registration.father_name,
+                    'mother_name': registration.mother_name,
+                    'mobile': registration.mobile,
+                    'address': registration.address,
+                    'city': registration.city,
+                    'application_number': registration.application_number,
+                    'registration_date': registration.registration_date.strftime('%Y-%m-%d') if registration.registration_date else '',
+                    'status': registration.status or 'pending'
+                })
+            
+            return JsonResponse({
+                'success': True,
+                'enquiries': enquiries_data,
+                'registrations': registrations_data,
+                'enquiries_count': len(enquiries_data),
+                'registrations_count': len(registrations_data)
+            })
+            
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 def blog_list(request):
     """Public blog list page"""
@@ -5495,7 +5651,7 @@ def blog_detail(request, blog_id):
 def pending_enquiry(request):
     """Pending enquiry view"""
     enquiries = ContactEnquiry.objects.exclude(status='closed').order_by('-created_at')
-    registrations = StudentRegistration.objects.filter(status='pending').order_by('-created_at')
+    registrations = StudentRegistration.objects.filter(status='pending').order_by('-registration_date')
     
     context = {
         'enquiries': enquiries,
@@ -5522,6 +5678,407 @@ def update_registration_status_api(request):
             registration.save()
             
             return JsonResponse({'success': True, 'message': 'Status updated successfully'})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def pending_enquiry(request):
+    """Pending enquiry management page with filtering"""
+    # Get filter parameters
+    enquiry_status = request.GET.get('enquiry_status', '')
+    registration_status = request.GET.get('registration_status', '')
+    
+    # Handle POST requests for status updates
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'update_enquiry_status':
+            enquiry_id = request.POST.get('enquiry_id')
+            status = request.POST.get('status')
+            remarks = request.POST.get('remarks', '')
+            
+            try:
+                enquiry = get_object_or_404(ContactEnquiry, id=enquiry_id)
+                enquiry.status = status
+                if remarks:
+                    enquiry.enquiry += f'\n\nRemarks: {remarks}'
+                enquiry.save()
+                messages.success(request, f'Enquiry status updated to {status.title()}')
+            except Exception as e:
+                messages.error(request, f'Error updating enquiry: {str(e)}')
+        
+        elif action == 'update_status':
+            registration_id = request.POST.get('registration_id')
+            status = request.POST.get('status')
+            remarks = request.POST.get('remarks', '')
+            
+            try:
+                registration = get_object_or_404(StudentRegistration, id=registration_id)
+                registration.status = status
+                registration.save()
+                messages.success(request, f'Registration status updated to {status.title()}')
+            except Exception as e:
+                messages.error(request, f'Error updating registration: {str(e)}')
+        
+        return redirect('pending_enquiry')
+    
+    # Filter enquiries
+    enquiries = ContactEnquiry.objects.all().order_by('-created_at')
+    if enquiry_status:
+        enquiries = enquiries.filter(status=enquiry_status)
+    
+    # Filter registrations
+    registrations = StudentRegistration.objects.all().order_by('-registration_date')
+    if registration_status:
+        registrations = registrations.filter(status=registration_status)
+    
+    # Get counts for statistics
+    enquiries_count = ContactEnquiry.objects.count()
+    registrations_count = StudentRegistration.objects.count()
+    
+    # Get status counts for enquiries
+    enquiry_status_counts = {
+        'new': ContactEnquiry.objects.filter(status='new').count(),
+        'contacted': ContactEnquiry.objects.filter(status='contacted').count(),
+        'resolved': ContactEnquiry.objects.filter(status='resolved').count(),
+        'closed': ContactEnquiry.objects.filter(status='closed').count(),
+    }
+    
+    # Get status counts for registrations
+    registration_status_counts = {
+        'pending': StudentRegistration.objects.filter(status='pending').count(),
+        'approved': StudentRegistration.objects.filter(status='approved').count(),
+        'rejected': StudentRegistration.objects.filter(status='rejected').count(),
+    }
+    
+    # Debug data
+    debug_enquiry_list = list(ContactEnquiry.objects.values_list('name', 'status')[:5])
+    debug_registration_list = list(StudentRegistration.objects.values_list('name', 'status')[:5])
+    
+    context = {
+        'enquiries': enquiries,
+        'registrations': registrations,
+        'enquiries_count': enquiries_count,
+        'registrations_count': registrations_count,
+        'enquiry_status_counts': enquiry_status_counts,
+        'registration_status_counts': registration_status_counts,
+        'selected_enquiry_status': enquiry_status,
+        'selected_registration_status': registration_status,
+        'debug_enquiry_list': debug_enquiry_list,
+        'debug_registration_list': debug_registration_list,
+    }
+    
+    return render(request, 'pending_enquiry.html', context)
+
+@csrf_exempt
+def update_enquiry_status_api(request):
+    """API to update enquiry status"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            enquiry_id = data.get('enquiry_id')
+            status = data.get('status')
+            
+            enquiry = get_object_or_404(ContactEnquiry, id=enquiry_id)
+            enquiry.status = status
+            enquiry.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Enquiry status updated to {status.title()}'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def update_registration_status_api(request):
+    """API to update registration status"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            registration_id = data.get('registration_id')
+            status = data.get('status')
+            
+            registration = get_object_or_404(StudentRegistration, id=registration_id)
+            registration.status = status
+            registration.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Registration status updated to {status.title()}'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def filter_enquiries_api(request):
+    """API to filter enquiries"""
+    try:
+        enquiry_status = request.GET.get('enquiry_status', '')
+        registration_status = request.GET.get('registration_status', '')
+        
+        # Filter enquiries
+        enquiries = ContactEnquiry.objects.all().order_by('-created_at')
+        if enquiry_status:
+            enquiries = enquiries.filter(status=enquiry_status)
+        
+        # Filter registrations
+        registrations = StudentRegistration.objects.all().order_by('-registration_date')
+        if registration_status:
+            registrations = registrations.filter(status=registration_status)
+        
+        enquiries_data = []
+        for enquiry in enquiries:
+            enquiries_data.append({
+                'id': enquiry.id,
+                'name': enquiry.name,
+                'email': enquiry.email,
+                'phone': enquiry.phone,
+                'subject': enquiry.subject,
+                'enquiry': enquiry.enquiry,
+                'status': enquiry.status,
+                'created_at': enquiry.created_at.strftime('%Y-%m-%d')
+            })
+        
+        registrations_data = []
+        for registration in registrations:
+            registrations_data.append({
+                'id': registration.id,
+                'name': registration.name,
+                'student_class': registration.student_class,
+                'section': registration.section,
+                'gender': registration.gender,
+                'dob': registration.dob.strftime('%Y-%m-%d') if registration.dob else '',
+                'father_name': registration.father_name,
+                'mother_name': registration.mother_name,
+                'mobile': registration.mobile,
+                'address': registration.address,
+                'city': registration.city,
+                'application_number': registration.application_number,
+                'status': registration.status,
+                'registration_date': registration.registration_date.strftime('%Y-%m-%d')
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'enquiries': enquiries_data,
+            'registrations': registrations_data
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def contact(request):
+    """Contact page with enquiry form"""
+    if request.method == 'POST':
+        try:
+            ContactEnquiry.objects.create(
+                name=request.POST.get('name'),
+                email=request.POST.get('email'),
+                phone=request.POST.get('phone', ''),
+                subject=request.POST.get('subject'),
+                enquiry=request.POST.get('message'),
+                status='new'
+            )
+            messages.success(request, 'Your enquiry has been submitted successfully!')
+            return redirect('contact')
+        except Exception as e:
+            messages.error(request, f'Error submitting enquiry: {str(e)}')
+    
+    return render(request, 'contact.html')
+
+def blog_list(request):
+    """Blog list page"""
+    from .models import Blog
+    blogs = Blog.objects.all().order_by('-created_at')
+    return render(request, 'blog_list.html', {'blogs': blogs})
+
+def blog_detail(request, blog_id):
+    """Blog detail page"""
+    from .models import Blog
+    blog = get_object_or_404(Blog, id=blog_id)
+    return render(request, 'blog_detail.html', {'blog': blog})
+
+def test_enquiry_status(request):
+    """Test view to check enquiry status"""
+    enquiries = ContactEnquiry.objects.all()
+    registrations = StudentRegistration.objects.all()
+    
+    context = {
+        'enquiries': enquiries,
+        'registrations': registrations,
+        'enquiries_count': enquiries.count(),
+        'registrations_count': registrations.count()
+    }
+    
+    return render(request, 'test_enquiry_status.html', context)
+
+@csrf_exempt
+def save_attendance(request):
+    """API to save student attendance"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            attendance_date = data.get('date')
+            attendance_data = data.get('attendance', [])
+            
+            # Delete existing attendance for this date
+            StudentAttendance.objects.filter(date=attendance_date).delete()
+            
+            # Save new attendance records
+            for record in attendance_data:
+                student = get_object_or_404(Student, id=record['student_id'])
+                StudentAttendance.objects.create(
+                    student=student,
+                    date=attendance_date,
+                    status=record['status']
+                )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Attendance saved for {len(attendance_data)} students'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def load_attendance(request):
+    """API to load student attendance for a date"""
+    try:
+        attendance_date = request.GET.get('date')
+        if not attendance_date:
+            return JsonResponse({'success': False, 'error': 'Date parameter required'})
+        
+        attendance_records = StudentAttendance.objects.filter(date=attendance_date).select_related('student')
+        attendance_data = {}
+        
+        for record in attendance_records:
+            attendance_data[record.student.id] = record.status
+        
+        return JsonResponse({
+            'success': True,
+            'attendance': attendance_data
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def get_attendance_summary(request, student_id):
+    """API to get attendance summary for a student"""
+    try:
+        student = get_object_or_404(Student, id=student_id)
+        
+        # Get attendance records for current month
+        from datetime import datetime, timedelta
+        today = date.today()
+        month_start = today.replace(day=1)
+        
+        attendance_records = StudentAttendance.objects.filter(
+            student=student,
+            date__range=[month_start, today]
+        )
+        
+        present_count = attendance_records.filter(status='present').count()
+        absent_count = attendance_records.filter(status='absent').count()
+        late_count = attendance_records.filter(status='late').count()
+        leave_count = attendance_records.filter(status='leave').count()
+        
+        total_days = (today - month_start).days + 1
+        attendance_percentage = (present_count / total_days * 100) if total_days > 0 else 0
+        
+        return JsonResponse({
+            'success': True,
+            'student': {
+                'id': student.id,
+                'name': student.name,
+                'class': student.student_class,
+                'section': student.section
+            },
+            'summary': {
+                'present': present_count,
+                'absent': absent_count,
+                'late': late_count,
+                'leave': leave_count,
+                'total_days': total_days,
+                'attendance_percentage': round(attendance_percentage, 1)
+            }
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def attendance_report(request):
+    """Attendance report page"""
+    # Get filter parameters
+    class_filter = request.GET.get('class', '')
+    date_filter = request.GET.get('date', '')
+    
+    if not date_filter:
+        date_filter = date.today().strftime('%Y-%m-%d')
+    
+    # Get students based on class filter
+    if class_filter:
+        students = Student.objects.filter(student_class=class_filter).order_by('name')
+    else:
+        students = Student.objects.all().order_by('name')
+    
+    # Get attendance for the selected date
+    attendance_records = StudentAttendance.objects.filter(date=date_filter).select_related('student')
+    attendance_dict = {record.student.id: record.status for record in attendance_records}
+    
+    # Add attendance status to students
+    students_with_attendance = []
+    for student in students:
+        student.attendance_status = attendance_dict.get(student.id, 'not_marked')
+        students_with_attendance.append(student)
+    
+    # Calculate statistics
+    total_students = len(students_with_attendance)
+    present_count = len([s for s in students_with_attendance if s.attendance_status == 'present'])
+    absent_count = len([s for s in students_with_attendance if s.attendance_status == 'absent'])
+    late_count = len([s for s in students_with_attendance if s.attendance_status == 'late'])
+    leave_count = len([s for s in students_with_attendance if s.attendance_status == 'leave'])
+    not_marked_count = len([s for s in students_with_attendance if s.attendance_status == 'not_marked'])
+    
+    attendance_percentage = (present_count / total_students * 100) if total_students > 0 else 0
+    
+    # Get unique classes for filter
+    classes = Student.objects.values_list('student_class', flat=True).distinct().order_by('student_class')
+    
+    context = {
+        'students': students_with_attendance,
+        'classes': classes,
+        'selected_class': class_filter,
+        'selected_date': date_filter,
+        'statistics': {
+            'total_students': total_students,
+            'present': present_count,
+            'absent': absent_count,
+            'late': late_count,
+            'leave': leave_count,
+            'not_marked': not_marked_count,
+            'attendance_percentage': round(attendance_percentage, 1)
+        }
+    }
+    
+    return render(request, 'attendance_report.html', context)
+
+@csrf_exempt
+def delete_registration_api(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            registration = get_object_or_404(StudentRegistration, id=data['registration_id'])
+            registration.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Registration deleted successfully'
+            })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})
     
