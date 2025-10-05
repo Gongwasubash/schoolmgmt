@@ -1008,6 +1008,59 @@ class TeacherClassSubject(models.Model):
         ordering = ['teacher__name', 'class_name', 'subject__name']
 
 
+class SchoolAttendance(models.Model):
+    ATTENDANCE_CHOICES = [
+        ('present', 'Present'),
+        ('absent', 'Absent'),
+        ('late', 'Late'),
+    ]
+    
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    date = models.DateField()
+    date_nepali = models.CharField(max_length=50, blank=True, help_text="Nepali date format")
+    status = models.CharField(max_length=10, choices=ATTENDANCE_CHOICES, default='present')
+    remarks = models.CharField(max_length=200, blank=True)
+    marked_by = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        if self.date and not self.date_nepali:
+            nepali_date = NepaliCalendar.english_to_nepali_date(self.date)
+            self.date_nepali = NepaliCalendar.format_nepali_date(nepali_date, 'full_en')
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.student.name} - {self.date} - {self.status}"
+    
+    @classmethod
+    def get_attendance_summary(cls, student, start_date=None, end_date=None):
+        queryset = cls.objects.filter(student=student)
+        if start_date:
+            queryset = queryset.filter(date__gte=start_date)
+        if end_date:
+            queryset = queryset.filter(date__lte=end_date)
+        
+        total = queryset.count()
+        present = queryset.filter(status='present').count()
+        absent = queryset.filter(status='absent').count()
+        late = queryset.filter(status='late').count()
+        
+        return {
+            'total': total,
+            'present': present,
+            'absent': absent,
+            'late': late,
+            'attendance_percentage': (present / total * 100) if total > 0 else 0
+        }
+    
+    class Meta:
+        unique_together = ['student', 'date']
+        ordering = ['-date', 'student__name']
+        verbose_name = "School Attendance"
+        verbose_name_plural = "School Attendance"
+
+
 class CalendarEvent(models.Model):
     EVENT_TYPE_CHOICES = [
         ('holiday', 'Holiday'),

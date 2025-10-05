@@ -99,7 +99,10 @@ urlpatterns = [
     path('student-marksheet-finder/', views.student_marksheet_finder, name='student_marksheet_finder'),
     path('student_attendance_dashboard/', views.student_attendance_dashboard, name='student_attendance_dashboard'),
     path('api/save-attendance/', views.save_attendance, name='save_attendance'),
+    path('api/bulk-save-attendance/', views.bulk_save_attendance, name='bulk_save_attendance'),
+    path('api/delete-attendance/', views.delete_attendance, name='delete_attendance'),
     path('api/load-attendance/', views.load_attendance, name='load_attendance'),
+    path('api/get-attendance/', views.get_attendance_api, name='get_attendance_api'),
     path('api/attendance-summary/<int:student_id>/', views.get_attendance_summary, name='get_attendance_summary'),
     path('attendance-report/', views.attendance_report, name='attendance_report'),
     # Nepali Date API endpoints
@@ -169,6 +172,8 @@ urlpatterns = [
     path('api/add-holiday/', views.add_holiday_api, name='add_holiday_api'),
     path('api/edit-holiday/', views.edit_holiday_api, name='edit_holiday_api'),
     path('api/delete-holiday/', views.delete_holiday_api, name='delete_holiday_api'),
+    path('api/nepali-calendar-events/', views.get_nepali_calendar_events_api, name='get_nepali_calendar_events_api'),
+    path('api/send-whatsapp-attendance/', views.send_whatsapp_attendance, name='send_whatsapp_attendance'),
 ]
 
 # Serve media files during development

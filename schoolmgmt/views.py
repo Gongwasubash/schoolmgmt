@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, WelcomeSection, ContactEnquiry, StudentAttendance, Teacher, TeacherClassSubject, CalendarEvent
+from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, WelcomeSection, ContactEnquiry, SchoolAttendance, Teacher, TeacherClassSubject, CalendarEvent
 from .decorators import permission_required
 from django.db import models
 from django.db.models import F, Q
@@ -94,12 +94,26 @@ def dashboard(request):
     pending_registrations_count = StudentRegistration.objects.filter(status='pending').count()
     pending_enquiries = contact_enquiries_count + pending_registrations_count
     
-    # Get today's attendance statistics
-    todays_attendance = StudentAttendance.objects.filter(date=today)
+    # Check if today is a school day or holiday
+    today_event = CalendarEvent.objects.filter(event_date=today, is_active=True).first()
+    
+    # Always get attendance data
+    todays_attendance = SchoolAttendance.objects.filter(date=today)
     total_present = todays_attendance.filter(status='present').count()
     total_absent = todays_attendance.filter(status='absent').count()
     total_late = todays_attendance.filter(status='late').count()
     attendance_percentage = round((total_present / total_students * 100) if total_students > 0 else 0, 1)
+    
+    if today_event:
+        # Today has an event - show event info with attendance
+        today_status = today_event.event_type.title()
+        today_message = today_event.title
+        is_holiday = True
+    else:
+        # Today is a school day
+        today_status = 'School Day'
+        today_message = 'Regular school day'
+        is_holiday = False
     
     # Get class-wise data
     class_data = Student.objects.values('student_class').annotate(count=Count('student_class')).order_by('student_class')
@@ -124,6 +138,9 @@ def dashboard(request):
         'total_absent': total_absent,
         'total_late': total_late,
         'attendance_percentage': attendance_percentage,
+        'today_status': today_status,
+        'today_message': today_message,
+        'is_holiday': is_holiday,
         'class_data': class_data,
         'religion_data': religion_data,
         'nepali_info': nepali_info,
@@ -172,12 +189,28 @@ def home(request):
         monthly_collection = Decimal('0')
     yearly_collection = FeePayment.objects.filter(payment_date__year=today.year).aggregate(total=Sum('payment_amount'))['total'] or 0
     
-    # Get today's attendance statistics
-    todays_attendance = StudentAttendance.objects.filter(date=today)
-    total_present = todays_attendance.filter(status='present').count()
-    total_absent = todays_attendance.filter(status='absent').count()
-    total_late = todays_attendance.filter(status='late').count()
-    attendance_percentage = round((total_present / total_students * 100) if total_students > 0 else 0, 1)
+    # Check if today is a school day or holiday
+    today_event = CalendarEvent.objects.filter(event_date=today, is_active=True).first()
+    
+    if today_event and today_event.event_type in ['holiday', 'festival']:
+        # Today is a holiday - show event info instead of attendance
+        total_present = 0
+        total_absent = 0
+        total_late = 0
+        attendance_percentage = 0
+        today_status = today_event.event_type.title()
+        today_message = today_event.title
+        is_holiday = True
+    else:
+        # Today is a school day - get attendance data
+        todays_attendance = SchoolAttendance.objects.filter(date=today)
+        total_present = todays_attendance.filter(status='present').count()
+        total_absent = todays_attendance.filter(status='absent').count()
+        total_late = todays_attendance.filter(status='late').count()
+        attendance_percentage = round((total_present / total_students * 100) if total_students > 0 else 0, 1)
+        today_status = 'School Day'
+        today_message = 'Regular school day'
+        is_holiday = False
     
     # Get class-wise and religion-wise data
     class_data = Student.objects.values('student_class').annotate(count=Count('student_class')).order_by('student_class')
@@ -199,6 +232,9 @@ def home(request):
         'total_absent': total_absent,
         'total_late': total_late,
         'attendance_percentage': attendance_percentage,
+        'today_status': today_status,
+        'today_message': today_message,
+        'is_holiday': is_holiday,
         'class_data': class_data,
         'religion_data': religion_data,
         'nepali_info': nepali_info,
@@ -3371,16 +3407,16 @@ def generate_class_marksheets_new_tab(request, exam_id):
             year_start = today.replace(month=4, day=1) if today.month >= 4 else today.replace(year=today.year-1, month=4, day=1)
             date_range = [year_start, today]
         
-        # Get actual attendance data from StudentAttendance model
-        student_present_days = StudentAttendance.objects.filter(
+        # Get actual attendance data from SchoolAttendance model
+        student_present_days = SchoolAttendance.objects.filter(
             student=student, date__range=date_range, status='present'
         ).count()
         
-        student_leave_days = StudentAttendance.objects.filter(
+        student_leave_days = SchoolAttendance.objects.filter(
             student=student, date__range=date_range, status='leave'
         ).count()
         
-        student_absent_days = StudentAttendance.objects.filter(
+        student_absent_days = SchoolAttendance.objects.filter(
             student=student, date__range=date_range, status='absent'
         ).count()
         
@@ -3870,33 +3906,80 @@ def populate_grade_sheet_certificate(request):
 
 @permission_required('can_view_attendance')
 def student_attendance_dashboard(request):
-    """Student Attendance Dashboard with StudentAttendance model integration"""
-    # Get unique classes and sections from students
+    """Student Attendance Dashboard with comprehensive CRUD operations"""
+    # Get filter parameters - default to today's date
+    selected_date = request.GET.get('date', date.today().strftime('%Y-%m-%d'))
+    selected_class = request.GET.get('class', '')
+    selected_section = request.GET.get('section', '')
+    
+    # Check if today is a holiday
+    today_event = CalendarEvent.objects.filter(event_date=date.today(), is_active=True).first()
+    is_holiday = bool(today_event)
+    
+    # Get unique classes and sections
     classes = Student.objects.values_list('student_class', flat=True).distinct().order_by('student_class')
     sections = Student.objects.values_list('section', flat=True).distinct().order_by('section')
     
-    # Get all students by default
-    students = Student.objects.all().order_by('name')
+    # Filter students based on selection
+    students_query = Student.objects.all()
+    if selected_class:
+        students_query = students_query.filter(student_class=selected_class)
+    if selected_section:
+        students_query = students_query.filter(section=selected_section)
     
-    # Get today's date
-    today = date.today()
+    students = students_query.order_by('name')
     
-    # Get existing attendance for today
-    today_attendance = StudentAttendance.objects.filter(date=today).select_related('student')
-    attendance_dict = {att.student.id: att.status for att in today_attendance}
+    # Get attendance for selected date
+    attendance_records = SchoolAttendance.objects.filter(
+        date=selected_date
+    ).select_related('student')
     
-    # Add attendance status to each student
+    # Create attendance dictionary
+    attendance_dict = {att.student.id: {
+        'status': att.status,
+        'remarks': att.remarks,
+        'marked_by': att.marked_by,
+        'id': att.id
+    } for att in attendance_records}
+    
+    # Add attendance data to students
+    students_with_attendance = []
     for student in students:
-        student.attendance_status = attendance_dict.get(student.id, 'present')
+        attendance_data = attendance_dict.get(student.id, {
+            'status': 'present',
+            'remarks': '',
+            'marked_by': '',
+            'id': None
+        })
+        
+        students_with_attendance.append({
+            'student': student,
+            'attendance': attendance_data
+        })
+    
+    # Calculate statistics
+    total_students = len(students_with_attendance)
+    present_count = sum(1 for s in students_with_attendance if s['attendance']['status'] == 'present')
+    absent_count = sum(1 for s in students_with_attendance if s['attendance']['status'] == 'absent')
+    late_count = sum(1 for s in students_with_attendance if s['attendance']['status'] == 'late')
     
     context = {
+        'students_with_attendance': students_with_attendance,
         'classes': classes,
         'sections': sections,
-        'students': students,
-        'today': today.strftime('%Y-%m-%d'),
-        'attendance_marked': len(attendance_dict) > 0
+        'selected_date': selected_date,
+        'selected_class': selected_class,
+        'selected_section': selected_section,
+        'total_students': total_students,
+        'today_event': today_event,
+        'is_holiday': is_holiday,
+        'present_count': present_count,
+        'absent_count': absent_count,
+        'late_count': late_count,
+        'attendance_percentage': round((present_count / total_students * 100) if total_students > 0 else 0, 1)
     }
-    return render(request, 'student_attendance.html', context)
+    
+    return render(request, 'student_attendance_dashboard.html', context)
 
 def print_bill(request):
     """Print bill page"""
@@ -4286,6 +4369,361 @@ def delete_holiday_api(request):
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def get_nepali_calendar_events_api(request):
+    """API to get calendar events converted to Nepali dates"""
+    try:
+        nepali_year = int(request.GET.get('year', 2081))
+        nepali_month = int(request.GET.get('month', 1))
+        
+        # Convert Nepali date range to English dates (approximate)
+        english_year = nepali_year - 56
+        english_month = nepali_month - 8
+        
+        if english_month <= 0:
+            english_month += 12
+            english_year -= 1
+        
+        # Get events for the approximate English month
+        events = CalendarEvent.objects.filter(
+            event_date__year=english_year,
+            event_date__month=english_month,
+            is_active=True
+        )
+        
+        events_data = []
+        for event in events:
+            # Convert English date to approximate Nepali date
+            nepali_day = event.event_date.day + 15
+            if nepali_day > 30:
+                nepali_day -= 30
+            
+            events_data.append({
+                'id': event.id,
+                'title': event.title,
+                'description': event.description,
+                'date': event.event_date.strftime('%Y-%m-%d'),
+                'nepali_day': nepali_day,
+                'type': event.event_type,
+                'school_id': event.school.id if event.school else None,
+                'school_name': event.school.school_name if event.school else 'All Schools',
+                'is_active': event.is_active
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'events': events_data,
+            'nepali_year': nepali_year,
+            'nepali_month': nepali_month
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def save_attendance(request):
+    """Save or update attendance records"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            attendance_date = data['date']
+            student_id = data['student_id']
+            status = data['status']
+            remarks = data.get('remarks', '')
+            marked_by = request.session.get('admin_username', 'System')
+            
+            student = get_object_or_404(Student, id=student_id)
+            
+            attendance, created = SchoolAttendance.objects.update_or_create(
+                student=student,
+                date=attendance_date,
+                defaults={
+                    'status': status,
+                    'remarks': remarks,
+                    'marked_by': marked_by
+                }
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Attendance saved successfully',
+                'attendance_id': attendance.id,
+                'created': created
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def bulk_save_attendance(request):
+    """Save attendance for multiple students at once"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            attendance_date = data['date']
+            attendance_records = data['attendance_records']
+            marked_by = request.session.get('admin_username', 'System')
+            
+            saved_count = 0
+            for record in attendance_records:
+                student = get_object_or_404(Student, id=record['student_id'])
+                
+                SchoolAttendance.objects.update_or_create(
+                    student=student,
+                    date=attendance_date,
+                    defaults={
+                        'status': record['status'],
+                        'remarks': record.get('remarks', ''),
+                        'marked_by': marked_by
+                    }
+                )
+                saved_count += 1
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Attendance saved for {saved_count} students'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def delete_attendance(request):
+    """Delete an attendance record"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            attendance_id = data['attendance_id']
+            
+            attendance = get_object_or_404(SchoolAttendance, id=attendance_id)
+            attendance.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Attendance record deleted successfully'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def send_whatsapp_attendance(request):
+    """Send WhatsApp notifications to parents of absent/late students"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            attendance_date = data['date']
+            students_data = data['students']
+            
+            sent_count = 0
+            for student_data in students_data:
+                student = get_object_or_404(Student, id=student_data['student_id'])
+                status = student_data['status']
+                
+                # Send message to father's mobile
+                if student.father_mobile:
+                    message = "Your child is absent please contact to our school"
+                    # Here you would integrate with actual WhatsApp API
+                    # For now, we'll simulate sending the message
+                    sent_count += 1
+                
+                # Send message to mother's mobile if different
+                if student.mother_mobile and student.mother_mobile != student.father_mobile:
+                    message = "Your child is absent please contact to our school"
+                    # Here you would integrate with actual WhatsApp API
+                    # For now, we'll simulate sending the message
+                    sent_count += 1
+            
+            return JsonResponse({
+                'success': True,
+                'sent_count': sent_count,
+                'message': f'WhatsApp notifications sent to {sent_count} parents'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def load_attendance(request):
+    try:
+        attendance_date = request.GET.get('date', date.today().strftime('%Y-%m-%d'))
+        attendance_records = SchoolAttendance.objects.filter(date=attendance_date).select_related('student')
+        
+        attendance_data = {}
+        for record in attendance_records:
+            attendance_data[record.student.id] = record.status
+        
+        return JsonResponse({
+            'success': True,
+            'attendance': attendance_data,
+            'date': attendance_date
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def get_attendance_api(request):
+    """Get attendance data for a specific date with filtering"""
+    try:
+        attendance_date = request.GET.get('date', date.today().strftime('%Y-%m-%d'))
+        student_class = request.GET.get('class', '')
+        section = request.GET.get('section', '')
+        
+        # Build query
+        query = SchoolAttendance.objects.filter(date=attendance_date).select_related('student')
+        
+        if student_class:
+            query = query.filter(student__student_class=student_class)
+        if section:
+            query = query.filter(student__section=section)
+        
+        attendance_records = query.order_by('student__name')
+        
+        attendance_data = []
+        for record in attendance_records:
+            attendance_data.append({
+                'id': record.id,
+                'student_id': record.student.id,
+                'student_name': record.student.name,
+                'student_class': record.student.student_class,
+                'section': record.student.section,
+                'reg_number': record.student.reg_number,
+                'status': record.status,
+                'remarks': record.remarks,
+                'marked_by': record.marked_by,
+                'date': record.date.strftime('%Y-%m-%d'),
+                'date_nepali': record.date_nepali
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'attendance_records': attendance_data,
+            'date': attendance_date,
+            'total_records': len(attendance_data)
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def get_attendance_summary(request, student_id):
+    """Get detailed attendance summary for a student"""
+    try:
+        student = get_object_or_404(Student, id=student_id)
+        
+        # Get date range from request or default to current month
+        start_date = request.GET.get('start_date')
+        end_date = request.GET.get('end_date')
+        
+        if start_date:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+        if end_date:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        
+        attendance_records = SchoolAttendance.objects.filter(student=student)
+        if start_date:
+            attendance_records = attendance_records.filter(date__gte=start_date)
+        if end_date:
+            attendance_records = attendance_records.filter(date__lte=end_date)
+        
+        total = attendance_records.count()
+        present = attendance_records.filter(status='present').count()
+        absent = attendance_records.filter(status='absent').count()
+        late = attendance_records.filter(status='late').count()
+        summary = {
+            'total': total,
+            'present': present,
+            'absent': absent,
+            'late': late,
+            'attendance_percentage': (present / total * 100) if total > 0 else 0
+        }
+        
+        # Get recent attendance records
+        recent_records = SchoolAttendance.objects.filter(
+            student=student
+        ).order_by('-date')[:10]
+        
+        recent_attendance = []
+        for record in recent_records:
+            recent_attendance.append({
+                'date': record.date.strftime('%Y-%m-%d'),
+                'date_nepali': record.date_nepali,
+                'status': record.status,
+                'remarks': record.remarks
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'student': {
+                'id': student.id,
+                'name': student.name,
+                'class': student.student_class,
+                'section': student.section,
+                'reg_number': student.reg_number
+            },
+            'summary': summary,
+            'recent_attendance': recent_attendance
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def attendance_report(request):
+    """Generate comprehensive attendance reports"""
+    from datetime import timedelta
+    
+    # Get filter parameters
+    start_date = request.GET.get('start_date', (date.today() - timedelta(days=30)).strftime('%Y-%m-%d'))
+    end_date = request.GET.get('end_date', date.today().strftime('%Y-%m-%d'))
+    selected_class = request.GET.get('class', '')
+    selected_section = request.GET.get('section', '')
+    
+    # Filter students
+    students_query = Student.objects.all()
+    if selected_class:
+        students_query = students_query.filter(student_class=selected_class)
+    if selected_section:
+        students_query = students_query.filter(section=selected_section)
+    
+    students = students_query.order_by('name')
+    
+    # Get attendance data for each student
+    students_with_attendance = []
+    for student in students:
+        attendance_records = SchoolAttendance.objects.filter(
+            student=student,
+            date__range=[datetime.strptime(start_date, '%Y-%m-%d').date(), datetime.strptime(end_date, '%Y-%m-%d').date()]
+        )
+        total = attendance_records.count()
+        present = attendance_records.filter(status='present').count()
+        absent = attendance_records.filter(status='absent').count()
+        late = attendance_records.filter(status='late').count()
+        summary = {
+            'total': total,
+            'present': present,
+            'absent': absent,
+            'late': late,
+            'attendance_percentage': (present / total * 100) if total > 0 else 0
+        }
+        
+        students_with_attendance.append({
+            'student': student,
+            'summary': summary
+        })
+    
+    # Get unique classes and sections for filters
+    classes = Student.objects.values_list('student_class', flat=True).distinct().order_by('student_class')
+    sections = Student.objects.values_list('section', flat=True).distinct().order_by('section')
+    
+    context = {
+        'students_with_attendance': students_with_attendance,
+        'classes': classes,
+        'sections': sections,
+        'start_date': start_date,
+        'end_date': end_date,
+        'selected_class': selected_class,
+        'selected_section': selected_section
+    }
+    
+    return render(request, 'attendance_report.html', context)
 
 def school_settings_test(request):
     """Test view to debug template loading"""

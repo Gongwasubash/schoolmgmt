@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, ContactEnquiry, HeroSlider, Blog, StudentAttendance, Teacher, TeacherClassSubject, CalendarEvent
+from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, ContactEnquiry, HeroSlider, Blog, SchoolAttendance, Teacher, TeacherClassSubject, CalendarEvent
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -170,8 +170,8 @@ class BlogAdmin(admin.ModelAdmin):
     search_fields = ['heading', 'description']
     ordering = ['-created_at']
 
-@admin.register(StudentAttendance)
-class StudentAttendanceAdmin(admin.ModelAdmin):
+@admin.register(SchoolAttendance)
+class SchoolAttendanceAdmin(admin.ModelAdmin):
     list_display = ['student', 'date', 'status', 'marked_by', 'created_at']
     list_filter = ['status', 'date', 'student__student_class', 'student__section']
     search_fields = ['student__name', 'student__reg_number']

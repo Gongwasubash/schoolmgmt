@@ -8,7 +8,7 @@
     .calendar-container {
         max-width: 1200px;
         margin: 0 auto;
-        padding: 20px;
+        padding: 10px;
         background: #f8f9fa;
         min-height: 100vh;
     }
@@ -23,18 +23,18 @@
     .calendar-header {
         background: linear-gradient(135deg, #d32f2f 0%, #b71c1c 100%);
         color: white;
-        padding: 25px;
+        padding: 20px 15px;
         text-align: center;
     }
     
     .calendar-title {
-        font-size: 24px;
+        font-size: 20px;
         font-weight: 700;
         margin-bottom: 5px;
     }
     
     .school-name {
-        font-size: 14px;
+        font-size: 13px;
         opacity: 0.9;
     }
     
@@ -42,7 +42,7 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 15px 25px;
+        padding: 12px 15px;
         background: #f5f5f5;
         border-bottom: 1px solid #ddd;
     }
@@ -51,11 +51,12 @@
         background: #d32f2f;
         color: white;
         border: none;
-        padding: 10px 18px;
+        padding: 8px 15px;
         border-radius: 5px;
         cursor: pointer;
-        font-size: 13px;
+        font-size: 12px;
         font-weight: 600;
+        min-width: 60px;
     }
     
     .nav-btn:hover {
@@ -63,7 +64,7 @@
     }
     
     .month-year {
-        font-size: 24px;
+        font-size: 18px;
         font-weight: 700;
         color: #2d3748;
     }
@@ -87,18 +88,18 @@
     .day-header {
         background: #424242;
         color: white;
-        padding: 15px 8px;
+        padding: 12px 4px;
         text-align: center;
         font-weight: 600;
-        font-size: 14px;
+        font-size: 12px;
         border: 1px solid #666;
         border-bottom: 2px solid #333;
     }
     
     .day-cell {
         border: 1px solid #ddd;
-        min-height: 120px;
-        padding: 8px;
+        min-height: 100px;
+        padding: 6px;
         position: relative;
         background: white;
         cursor: pointer;
@@ -110,16 +111,15 @@
     
     .day-cell:hover {
         background: #f7fafc;
-        transform: scale(1.02);
     }
     
     .day-number {
         font-weight: 700;
         color: #2d3748;
-        margin-bottom: 8px;
-        font-size: 18px;
+        margin-bottom: 6px;
+        font-size: 14px;
         line-height: 1;
-        min-width: 24px;
+        min-width: 20px;
         text-align: center;
     }
     
@@ -132,12 +132,12 @@
         color: white;
         background: #d32f2f;
         border-radius: 50%;
-        width: 28px;
-        height: 28px;
+        width: 24px;
+        height: 24px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
     }
     
@@ -152,126 +152,249 @@
         font-weight: 400;
     }
     
-    .school-day {
-        background: #2196F3;
+    .school-day, .festival, .holiday, .exam, .meeting, .event, .other {
         color: white;
-        padding: 3px 6px;
+        padding: 2px 4px;
         border-radius: 3px;
-        font-size: 10px;
-        margin-bottom: 2px;
+        font-size: 9px;
+        margin-bottom: 1px;
         display: block;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
         font-weight: 500;
         cursor: pointer;
-        border-left: 3px solid #1976D2;
+        border-left: 2px solid rgba(0,0,0,0.2);
     }
     
-    .festival {
-        background: #FF5722;
-        color: white;
-        padding: 3px 6px;
-        border-radius: 3px;
-        font-size: 10px;
-        margin-bottom: 2px;
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-weight: 500;
-        border-left: 3px solid #D84315;
-    }
-    
-    .holiday {
-        background: #e53e3e;
-        color: white;
-        padding: 3px 6px;
-        border-radius: 3px;
-        font-size: 10px;
-        margin-bottom: 2px;
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-weight: 500;
-        cursor: pointer;
-        border-left: 3px solid #c62828;
-    }
-    
-    .exam {
-        background: #FF9800;
-        color: white;
-        padding: 3px 6px;
-        border-radius: 3px;
-        font-size: 10px;
-        margin-bottom: 2px;
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-weight: 500;
-        cursor: pointer;
-        border-left: 3px solid #F57C00;
-    }
-    
-    .meeting {
-        background: #9C27B0;
-        color: white;
-        padding: 3px 6px;
-        border-radius: 3px;
-        font-size: 10px;
-        margin-bottom: 2px;
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-weight: 500;
-        cursor: pointer;
-        border-left: 3px solid #7B1FA2;
-    }
-    
-    .event {
-        background: #4CAF50;
-        color: white;
-        padding: 3px 6px;
-        border-radius: 3px;
-        font-size: 10px;
-        margin-bottom: 2px;
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-weight: 500;
-        cursor: pointer;
-        border-left: 3px solid #388E3C;
-    }
-    
-    .other {
-        background: #607D8B;
-        color: white;
-        padding: 3px 6px;
-        border-radius: 3px;
-        font-size: 10px;
-        margin-bottom: 2px;
-        display: block;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        font-weight: 500;
-        cursor: pointer;
-        border-left: 3px solid #455A64;
-    }
-    
-
+    .school-day { background: #2196F3; }
+    .festival { background: #FF5722; }
+    .holiday { background: #e53e3e; }
+    .exam { background: #FF9800; }
+    .meeting { background: #9C27B0; }
+    .event { background: #4CAF50; }
+    .other { background: #607D8B; }
     
     .date-info {
         background: #d32f2f;
         color: white;
-        padding: 15px;
+        padding: 12px;
         text-align: center;
-        font-size: 14px;
+        font-size: 12px;
         font-weight: 500;
+    }
+    
+    .filter-controls {
+        padding: 8px;
+        text-align: center;
+        background: #f5f5f5;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .filter-controls > div {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 6px;
+    }
+    
+    .filter-controls label {
+        font-size: 11px;
+        display: flex;
+        align-items: center;
+        gap: 3px;
+    }
+    
+    .filter-controls button {
+        background: #d32f2f;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 11px;
+    }
+    
+    .legend {
+        margin-top: 6px;
+        font-size: 10px;
+        color: #666;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    
+    .legend span {
+        display: inline-block;
+        margin: 0 3px;
+    }
+    
+    .legend span span {
+        padding: 1px 4px;
+        border-radius: 2px;
+        color: white;
+        font-size: 9px;
+    }
+    
+    /* Mobile Responsive Styles */
+    @media (max-width: 768px) {
+        .calendar-container {
+            padding: 5px;
+        }
+        
+        .calendar-header {
+            padding: 15px 10px;
+        }
+        
+        .calendar-title {
+            font-size: 18px;
+        }
+        
+        .school-name {
+            font-size: 12px;
+        }
+        
+        .calendar-nav {
+            padding: 10px;
+        }
+        
+        .nav-btn {
+            padding: 6px 10px;
+            font-size: 11px;
+            min-width: 50px;
+        }
+        
+        .month-year {
+            font-size: 16px;
+        }
+        
+        .day-header {
+            padding: 8px 2px;
+            font-size: 10px;
+        }
+        
+        .day-cell {
+            min-height: 80px;
+            padding: 4px;
+        }
+        
+        .day-number {
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+        
+        .today .day-number {
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+        }
+        
+        .school-day, .festival, .holiday, .exam, .meeting, .event, .other {
+            font-size: 8px;
+            padding: 1px 3px;
+        }
+        
+        .date-info {
+            padding: 8px;
+            font-size: 11px;
+        }
+        
+        .filter-controls {
+            padding: 6px;
+        }
+        
+        .filter-controls > div {
+            gap: 6px;
+        }
+        
+        .filter-controls label {
+            font-size: 10px;
+        }
+        
+        .filter-controls button {
+            padding: 3px 6px;
+            font-size: 10px;
+        }
+        
+        .legend {
+            font-size: 9px;
+            gap: 4px;
+        }
+        
+        .legend span span {
+            font-size: 8px;
+            padding: 1px 3px;
+        }
+        
+        /* Modal responsive */
+        #addHolidayModal > div,
+        #editHolidayModal > div,
+        #dayManagementModal > div {
+            width: 95% !important;
+            max-width: 400px !important;
+            padding: 20px !important;
+        }
+        
+        #addHolidayModal h3,
+        #editHolidayModal h3,
+        #dayManagementModal h3 {
+            font-size: 16px;
+        }
+        
+        #addHolidayModal input,
+        #addHolidayModal select,
+        #addHolidayModal textarea,
+        #editHolidayModal input,
+        #editHolidayModal select,
+        #editHolidayModal textarea {
+            font-size: 14px !important;
+        }
+        
+        #addHolidayModal button,
+        #editHolidayModal button,
+        #dayManagementModal button {
+            padding: 8px 15px !important;
+            font-size: 12px !important;
+        }
+    }
+    
+    @media (max-width: 480px) {
+        .day-cell {
+            min-height: 60px;
+            padding: 2px;
+        }
+        
+        .day-number {
+            font-size: 11px;
+        }
+        
+        .today .day-number {
+            width: 18px;
+            height: 18px;
+            font-size: 9px;
+        }
+        
+        .school-day, .festival, .holiday, .exam, .meeting, .event, .other {
+            font-size: 7px;
+            padding: 1px 2px;
+        }
+        
+        .day-header {
+            font-size: 9px;
+            padding: 6px 1px;
+        }
+        
+        .calendar-nav {
+            flex-direction: column;
+            gap: 8px;
+        }
+        
+        .nav-btn {
+            width: 80px;
+        }
     }
 </style>
 {% endblock %}
@@ -282,6 +405,7 @@
         <div class="calendar-header">
             <h1 class="calendar-title">हाम्रो पात्रो</h1>
             <p class="school-name">{{ school_info.school_name }}</p>
+            <p style="font-size: 12px; opacity: 0.8; margin-top: 5px;">शैक्षिक वर्ष: बैशाख १ - चैत्र ३०</p>
         </div>
         
         <div class="calendar-nav">
@@ -289,38 +413,38 @@
             <div class="month-year" id="monthYear">कार्तिक 2082</div>
             <button class="nav-btn" onclick="nextMonth()">अर्को &gt;</button>
         </div>
-        <div style="padding: 10px; text-align: center; background: #f5f5f5; border-bottom: 1px solid #ddd;">
-            <div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 15px;">
-                <label style="font-size: 12px;"><input type="checkbox" id="showHolidays" checked onchange="showEnglishCalendar()"> Holidays</label>
-                <label style="font-size: 12px;"><input type="checkbox" id="showFestivals" checked onchange="showEnglishCalendar()"> Festivals</label>
-                <label style="font-size: 12px;"><input type="checkbox" id="showExams" checked onchange="showEnglishCalendar()"> Exams</label>
-                <label style="font-size: 12px;"><input type="checkbox" id="showEvents" checked onchange="showEnglishCalendar()"> School Events</label>
-                <label style="font-size: 12px;"><input type="checkbox" id="showMeetings" checked onchange="showEnglishCalendar()"> Meetings</label>
-                <button onclick="showAddHolidayModal()" style="background: #d32f2f; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">Add Event</button>
+        <div class="filter-controls">
+            <div>
+                <label><input type="checkbox" id="showHolidays" checked onchange="refreshCalendar()"> Holidays</label>
+                <label><input type="checkbox" id="showFestivals" checked onchange="refreshCalendar()"> Festivals</label>
+                <label><input type="checkbox" id="showExams" checked onchange="refreshCalendar()"> Exams</label>
+                <label><input type="checkbox" id="showEvents" checked onchange="refreshCalendar()"> School Events</label>
+                <label><input type="checkbox" id="showMeetings" checked onchange="refreshCalendar()"> Meetings</label>
+                <button onclick="showAddHolidayModal()">Add Event</button>
             </div>
-            <div style="margin-top: 8px; font-size: 11px; color: #666;">
-                <span style="display: inline-block; margin: 0 8px;"><span style="background: #e53e3e; color: white; padding: 2px 6px; border-radius: 2px;">Holiday</span></span>
-                <span style="display: inline-block; margin: 0 8px;"><span style="background: #FF5722; color: white; padding: 2px 6px; border-radius: 2px;">Festival</span></span>
-                <span style="display: inline-block; margin: 0 8px;"><span style="background: #FF9800; color: white; padding: 2px 6px; border-radius: 2px;">Exam</span></span>
-                <span style="display: inline-block; margin: 0 8px;"><span style="background: #4CAF50; color: white; padding: 2px 6px; border-radius: 2px;">Event</span></span>
-                <span style="display: inline-block; margin: 0 8px;"><span style="background: #9C27B0; color: white; padding: 2px 6px; border-radius: 2px;">Meeting</span></span>
-                <span style="display: inline-block; margin: 0 8px;"><span style="background: #2196F3; color: white; padding: 2px 6px; border-radius: 2px;">School Day</span></span>
+            <div class="legend">
+                <span><span style="background: #e53e3e;">Holiday</span></span>
+                <span><span style="background: #FF5722;">Festival</span></span>
+                <span><span style="background: #FF9800;">Exam</span></span>
+                <span><span style="background: #4CAF50;">Event</span></span>
+                <span><span style="background: #9C27B0;">Meeting</span></span>
+                <span><span style="background: #2196F3;">School Day</span></span>
             </div>
         </div>
         
         <div class="calendar-grid">
-            <div class="day-header">Sunday</div>
-            <div class="day-header">Monday</div>
-            <div class="day-header">Tuesday</div>
-            <div class="day-header">Wednesday</div>
-            <div class="day-header">Thursday</div>
-            <div class="day-header">Friday</div>
-            <div class="day-header">Saturday</div>
+            <div class="day-header">Sun</div>
+            <div class="day-header">Mon</div>
+            <div class="day-header">Tue</div>
+            <div class="day-header">Wed</div>
+            <div class="day-header">Thu</div>
+            <div class="day-header">Fri</div>
+            <div class="day-header">Sat</div>
         </div>
         <div class="calendar-days-grid" id="calendarDays"></div>
         
         <div class="date-info" id="dateInfo">
-            आज: <span id="currentBSDate"></span>
+            आज: <span id="currentBSDate"></span> | शैक्षिक वर्ष: २०८२
         </div>
     </div>
 </div>
@@ -436,29 +560,14 @@ const englishYear = today.getFullYear();
 const englishMonth = today.getMonth() + 1;
 const englishDay = today.getDate();
 
-// Simple BS conversion (approximate)
-let currentBSYear = englishYear + 56;
-let currentBSMonth = englishMonth + 8;
-let currentBSDay = englishDay + 15;
-
-// Adjust for month overflow
-if (currentBSMonth > 12) {
-    currentBSMonth -= 12;
-    currentBSYear += 1;
-}
-
-// Adjust for day overflow
-if (currentBSDay > 30) {
-    currentBSDay -= 30;
-    currentBSMonth += 1;
-    if (currentBSMonth > 12) {
-        currentBSMonth = 1;
-        currentBSYear += 1;
-    }
-}
+// Set current BS date: १९ असोज २०८२
+let currentBSYear = 2082;
+let currentBSMonth = 6; // असोज is 6th month (0-based = 5)
+let currentBSDay = 19;
 
 let currentNepaliYear = currentBSYear;
-let currentNepaliMonth = currentBSMonth - 1; // Convert to 0-based
+let currentNepaliMonth = 5; // असोज (0-based)
+let currentNepaliDay = currentBSDay;
 let apiEvents = {};
 
 // Comprehensive Nepali festivals for all 12 months
@@ -533,25 +642,34 @@ const allEvents = {
 };
 
 function toggleCalendarMode() {
-    const isEnglishMode = document.getElementById('englishCalendar')?.checked;
+    const isNepaliMode = document.getElementById('nepaliCalendar')?.checked;
     const dayHeaders = document.querySelectorAll('.day-header');
     
-    if (isEnglishMode) {
+    if (isNepaliMode) {
+        // Update headers to Nepali
+        const nepaliDays = ['आइत', 'सोम', 'मंगल', 'बुध', 'बिहि', 'शुक्र', 'शनि'];
+        dayHeaders.forEach((header, index) => {
+            header.textContent = nepaliDays[index];
+        });
+        updateNepaliCalendar();
+    } else {
         // Update headers to English
         const englishDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
         dayHeaders.forEach((header, index) => {
             header.textContent = englishDays[index];
         });
         showEnglishCalendar();
-    } else {
-        // Update headers to Nepali
-        const nepaliDays = ['आइत', 'सोम', 'मंगल', 'बुध', 'बिहि', 'शुक्र', 'शनि'];
-        dayHeaders.forEach((header, index) => {
-            header.textContent = nepaliDays[index];
-        });
-        updateCalendar();
     }
     updateNavigationButtons();
+}
+
+function refreshCalendar() {
+    const isNepaliMode = document.getElementById('nepaliCalendar')?.checked;
+    if (isNepaliMode) {
+        updateNepaliCalendar();
+    } else {
+        showEnglishCalendar();
+    }
 }
 
 async function showEnglishCalendar() {
@@ -589,6 +707,11 @@ async function showEnglishCalendar() {
         }
         
         let dayContent = `<div class="day-number">${day}</div>`;
+        
+        // Add converted Nepali BS date
+        const nepaliConverted = convertEnglishToNepali(currentEnglishYear, currentEnglishMonth + 1, day);
+        const nepaliMonthName = nepaliMonths[nepaliConverted.month - 1];
+        dayContent += `<div style="font-size: 12px; color: #666; margin-top: 2px; font-weight: 500;">${nepaliConverted.day} ${nepaliMonthName}</div>`;
         
         // Add Nepali festivals and holidays
         const showFestivals = document.getElementById('showFestivals')?.checked !== false;
@@ -667,93 +790,72 @@ async function showEnglishCalendar() {
     }
 }
 
-function updateCalendar() {
+async function updateNepaliCalendar() {
     document.getElementById('monthYear').textContent = nepaliMonths[currentNepaliMonth] + ' ' + currentNepaliYear;
     const daysContainer = document.getElementById('calendarDays');
     daysContainer.innerHTML = '';
     
-    // Add 3 empty cells for Kartik starting on Wednesday
-    for (let i = 0; i < 3; i++) {
+    // Load events for current Nepali month
+    await loadNepaliEvents(currentNepaliYear, currentNepaliMonth + 1);
+    
+    // Calculate proper starting day for Ashoj 2082
+    // 1 Ashoj 2082 falls on Thursday (4)
+    const startDay = currentNepaliMonth === 5 ? 4 : 0; // Thursday for Ashoj
+    
+    // Days in each Nepali month for 2082
+    const daysInNepaliMonths = {
+        1: 31, 2: 31, 3: 31, 4: 32, 5: 31, 6: 30, // Ashoj has 30 days
+        7: 29, 8: 30, 9: 29, 10: 30, 11: 29, 12: 30
+    };
+    const daysInMonth = daysInNepaliMonths[currentNepaliMonth + 1] || 30;
+    
+    // Add empty cells for days before first day
+    for (let i = 0; i < startDay; i++) {
         const dayCell = document.createElement('div');
         dayCell.className = 'day-cell other-month';
-        dayCell.innerHTML = `<div class="day-number">${28 + i}</div>`;
         daysContainer.appendChild(dayCell);
     }
     
     // Add days of the month
-    for (let day = 1; day <= 30; day++) {
+    for (let day = 1; day <= daysInMonth; day++) {
         const dayCell = document.createElement('div');
         dayCell.className = 'day-cell';
         
-        if (day === currentBSDay) {
+        // Highlight today (19 Ashoj 2082) - falls on Monday
+        if (day === 19 && currentNepaliMonth === 5 && currentNepaliYear === 2082) {
             dayCell.classList.add('today');
         }
         
         let dayContent = `<div class="day-number">${day}</div>`;
         
-        // Add English date if toggle is on
-        const showEnglishDate = document.getElementById('showEnglishDate')?.checked;
-        if (showEnglishDate) {
-            // Simple BS to AD conversion (approximate)
-            const englishYear = currentNepaliYear - 56;
-            const englishMonth = (currentNepaliMonth + 1) - 8;
-            const englishDay = day - 15;
+        // Add traditional Nepali festivals for Ashoj
+        if (currentNepaliMonth === 5) { // Ashoj
+            const ashojEvents = {
+                1: {name: 'घटस्थापना', type: 'festival'},
+                7: {name: 'फुलपाती', type: 'festival'},
+                8: {name: 'महाअष्टमी', type: 'festival'},
+                9: {name: 'महानवमी', type: 'festival'},
+                10: {name: 'विजया दशमी', type: 'holiday'},
+                15: {name: 'कोजाग्रत पूर्णिमा', type: 'festival'}
+            };
             
-            let adjYear = englishYear;
-            let adjMonth = englishMonth;
-            let adjDay = englishDay;
-            
-            if (adjMonth <= 0) {
-                adjMonth += 12;
-                adjYear -= 1;
-            }
-            if (adjDay <= 0) {
-                adjDay += 30;
-                adjMonth -= 1;
-                if (adjMonth <= 0) {
-                    adjMonth += 12;
-                    adjYear -= 1;
+            if (ashojEvents[day]) {
+                const event = ashojEvents[day];
+                const showFestivals = document.getElementById('showFestivals')?.checked !== false;
+                const showHolidays = document.getElementById('showHolidays')?.checked !== false;
+                
+                if ((event.type === 'holiday' && showHolidays) || (event.type === 'festival' && showFestivals)) {
+                    const eventClass = event.type === 'holiday' ? 'holiday' : 'festival';
+                    dayContent += `<div class="${eventClass}">${event.name}</div>`;
                 }
             }
-            
-            dayContent += `<div style="font-size: 8px; color: #666;">${adjDay}/${adjMonth}</div>`;
         }
         
-        // Add festivals and holidays
-        const showFestivals = document.getElementById('showFestivals')?.checked !== false;
-        const showHolidays = document.getElementById('showHolidays')?.checked !== false;
-        
-        // Show events for current month (Kartik = month 8)
-        const monthIndex = currentNepaliMonth + 1;
-        if (allEvents[monthIndex] && allEvents[monthIndex][day]) {
-            const event = allEvents[monthIndex][day];
-            const eventClass = event.type === 'holiday' ? 'holiday' : 'festival';
-            dayContent += `<div class="${eventClass}">${event.name}</div>`;
-        }
-        
-        // Add some test events for Kartik
-        if (currentNepaliMonth === 7) { // Kartik
-            if (day === 1) dayContent += `<div class="festival">दशैं सुरु</div>`;
-            if (day === 10) dayContent += `<div class="holiday">विजया दशमी</div>`;
-            if (day === 15) dayContent += `<div class="festival">कोजाग्रत पूर्णिमा</div>`;
-            if (day === 25) dayContent += `<div class="festival">तिहार</div>`;
-        }
-        
-        // Show real API events
+        // Add events from database
         const monthKey = `${currentNepaliYear}-${currentNepaliMonth + 1}`;
-        if (apiEvents[monthKey]) {
-            const dayEvents = apiEvents[monthKey].filter(e => e.date === day);
+        if (nepaliEvents[monthKey]) {
+            const dayEvents = nepaliEvents[monthKey].filter(e => e.nepali_day === day);
             dayEvents.forEach(event => {
-                const eventType = event.holiday ? 'holiday' : 'festival';
-                dayContent += `<div class="${eventType}">${event.title}</div>`;
-            });
-        }
-        
-        // Show custom holidays from database with filtering
-        if (customHolidays[monthKey]) {
-            const customDayEvents = customHolidays[monthKey].filter(e => e.day === day);
-            customDayEvents.forEach(event => {
-                // Check filter settings
                 const showHolidays = document.getElementById('showHolidays')?.checked !== false;
                 const showFestivals = document.getElementById('showFestivals')?.checked !== false;
                 const showExams = document.getElementById('showExams')?.checked !== false;
@@ -764,70 +866,28 @@ function updateCalendar() {
                 let eventClass = 'other';
                 
                 switch(event.type) {
-                    case 'holiday':
-                        shouldShow = showHolidays;
-                        eventClass = 'holiday';
-                        break;
-                    case 'festival':
-                        shouldShow = showFestivals;
-                        eventClass = 'festival';
-                        break;
-                    case 'exam':
-                        shouldShow = showExams;
-                        eventClass = 'exam';
-                        break;
-                    case 'event':
-                        shouldShow = showEvents;
-                        eventClass = event.title === 'School Day' ? 'school-day' : 'event';
-                        break;
-                    case 'meeting':
-                        shouldShow = showMeetings;
-                        eventClass = 'meeting';
-                        break;
-                    default:
-                        shouldShow = true;
-                        eventClass = 'other';
+                    case 'holiday': shouldShow = showHolidays; eventClass = 'holiday'; break;
+                    case 'festival': shouldShow = showFestivals; eventClass = 'festival'; break;
+                    case 'exam': shouldShow = showExams; eventClass = 'exam'; break;
+                    case 'event': shouldShow = showEvents; eventClass = 'event'; break;
+                    case 'meeting': shouldShow = showMeetings; eventClass = 'meeting'; break;
+                    default: shouldShow = true; eventClass = 'other';
                 }
                 
                 if (shouldShow) {
-                    dayContent += `<div class="${eventClass}" onclick="showEditHolidayModal(${event.id}, '${event.title}', '${event.date}', '${event.type}', '${event.description || ''}')" title="${event.description || event.title}">${event.title}</div>`;
+                    dayContent += `<div class="${eventClass}">${event.title}</div>`;
                 }
             });
         }
         
         dayCell.innerHTML = dayContent;
-        dayCell.addEventListener('click', function() {
-            // Convert Nepali date to English date (approximate)
-            const englishYear = currentNepaliYear - 56;
-            const englishMonth = (currentNepaliMonth + 1) - 8;
-            const englishDay = day - 15;
-            
-            let adjYear = englishYear;
-            let adjMonth = englishMonth;
-            let adjDay = englishDay;
-            
-            if (adjMonth <= 0) {
-                adjMonth += 12;
-                adjYear -= 1;
-            }
-            if (adjDay <= 0) {
-                adjDay += 30;
-                adjMonth -= 1;
-                if (adjMonth <= 0) {
-                    adjMonth += 12;
-                    adjYear -= 1;
-                }
-            }
-            
-            const clickedDate = new Date(adjYear, adjMonth - 1, adjDay);
-            showDayManagementModal(clickedDate.toISOString().split('T')[0], day);
-        });
         daysContainer.appendChild(dayCell);
     }
     
     // Fill remaining cells
     const totalCells = daysContainer.children.length;
-    for (let day = 1; day <= (42 - totalCells); day++) {
+    const remainingCells = 42 - totalCells;
+    for (let day = 1; day <= remainingCells; day++) {
         const dayCell = document.createElement('div');
         dayCell.className = 'day-cell other-month';
         dayCell.innerHTML = `<div class="day-number">${day}</div>`;
@@ -865,16 +925,46 @@ async function loadApiEvents(year, month) {
 }
 
 async function prevMonth() {
-    await prevEnglishMonth();
+    const isNepaliMode = document.getElementById('nepaliCalendar')?.checked;
+    if (isNepaliMode) {
+        await prevNepaliMonth();
+    } else {
+        await prevEnglishMonth();
+    }
 }
 
 async function nextMonth() {
-    await nextEnglishMonth();
+    const isNepaliMode = document.getElementById('nepaliCalendar')?.checked;
+    if (isNepaliMode) {
+        await nextNepaliMonth();
+    } else {
+        await nextEnglishMonth();
+    }
+}
+
+async function prevNepaliMonth() {
+    currentNepaliMonth--;
+    if (currentNepaliMonth < 0) {
+        currentNepaliMonth = 11;
+        currentNepaliYear--;
+    }
+    await loadCustomHolidays(currentNepaliYear, currentNepaliMonth + 1);
+    updateNepaliCalendar();
+}
+
+async function nextNepaliMonth() {
+    currentNepaliMonth++;
+    if (currentNepaliMonth > 11) {
+        currentNepaliMonth = 0;
+        currentNepaliYear++;
+    }
+    await loadCustomHolidays(currentNepaliYear, currentNepaliMonth + 1);
+    updateNepaliCalendar();
 }
 
 function updateCurrentDate() {
     const monthName = nepaliMonths[currentNepaliMonth];
-    document.getElementById('currentBSDate').textContent = `${currentNepaliYear} ${monthName} ${currentBSDay} गते`;
+    document.getElementById('currentBSDate').textContent = `आज: ${currentNepaliYear} ${monthName} १९ गते, आइतवार`;
 }
 
 // English calendar navigation
@@ -903,24 +993,32 @@ async function nextEnglishMonth() {
 
 // Update navigation buttons based on calendar mode
 function updateNavigationButtons() {
-    const isEnglishMode = document.getElementById('englishCalendar')?.checked;
+    const isNepaliMode = document.getElementById('nepaliCalendar')?.checked;
     const prevBtn = document.querySelector('.nav-btn');
     const nextBtn = document.querySelectorAll('.nav-btn')[1];
     
-    if (isEnglishMode) {
-        prevBtn.onclick = prevEnglishMonth;
-        nextBtn.onclick = nextEnglishMonth;
-    } else {
+    if (isNepaliMode) {
         prevBtn.onclick = prevMonth;
         nextBtn.onclick = nextMonth;
+    } else {
+        prevBtn.onclick = prevEnglishMonth;
+        nextBtn.onclick = nextEnglishMonth;
     }
 }
 
 document.addEventListener('DOMContentLoaded', async function() {
     await loadSchools();
+    
+    // Load current month for both calendars
     await loadCustomHolidays(currentEnglishYear, currentEnglishMonth + 1);
+    await loadNepaliEvents(currentNepaliYear, currentNepaliMonth + 1);
+    
+    // Set Nepali calendar to current month/year (असोज २०८२)
+    currentNepaliYear = 2082;
+    currentNepaliMonth = 5; // असोज
+    
     await showEnglishCalendar();
-    console.log('English calendar loaded');
+    console.log('Calendar loaded - English mode by default, BS calendar ready');
 });
 
 // Load schools for dropdown
@@ -1111,6 +1209,125 @@ async function loadCustomHolidays(year, month) {
     } catch (error) {
         console.log('Error loading custom holidays:', error);
     }
+}
+
+// Load events converted to Nepali dates
+let nepaliEvents = {};
+
+async function loadNepaliEvents(nepaliYear, nepaliMonth) {
+    try {
+        const response = await fetch(`/api/nepali-calendar-events/?year=${nepaliYear}&month=${nepaliMonth}`);
+        if (response.ok) {
+            const data = await response.json();
+            if (data.success) {
+                const monthKey = `${nepaliYear}-${nepaliMonth}`;
+                nepaliEvents[monthKey] = data.events;
+                console.log(`Loaded ${data.events.length} events for Nepali calendar`);
+            }
+        } else {
+            // Fallback: convert English events to Nepali
+            await convertEnglishEventsToNepali(nepaliYear, nepaliMonth);
+        }
+    } catch (error) {
+        console.log('Error loading Nepali events, using fallback conversion:', error);
+        await convertEnglishEventsToNepali(nepaliYear, nepaliMonth);
+    }
+}
+
+async function convertEnglishEventsToNepali(nepaliYear, nepaliMonth) {
+    // Convert English calendar events to Nepali dates
+    const englishYear = nepaliYear - 56; // Approximate conversion
+    const englishMonth = nepaliMonth - 8; // Approximate conversion
+    
+    let adjYear = englishYear;
+    let adjMonth = englishMonth;
+    
+    if (adjMonth <= 0) {
+        adjMonth += 12;
+        adjYear -= 1;
+    }
+    
+    // Load English events and convert
+    await loadCustomHolidays(adjYear, adjMonth);
+    
+    const monthKey = `${adjYear}-${adjMonth}`;
+    const nepaliMonthKey = `${nepaliYear}-${nepaliMonth}`;
+    
+    if (customHolidays[monthKey]) {
+        nepaliEvents[nepaliMonthKey] = customHolidays[monthKey].map(event => {
+            // Simple conversion: add 15 days to get approximate Nepali date
+            const nepaliDay = event.day + 15;
+            return {
+                ...event,
+                nepali_day: nepaliDay > 30 ? nepaliDay - 30 : nepaliDay,
+                original_english_date: event.date
+            };
+        });
+    }
+}
+
+function convertEnglishToNepali(englishYear, englishMonth, englishDay) {
+    // More accurate conversion based on current reference: 19 Ashoj 2082 = current date
+    const referenceEnglish = new Date(2024, 9, 6); // Oct 6, 2024
+    const referenceNepali = { year: 2082, month: 6, day: 19 }; // 19 Ashoj 2082
+    
+    const inputDate = new Date(englishYear, englishMonth - 1, englishDay);
+    const daysDiff = Math.floor((inputDate - referenceEnglish) / (1000 * 60 * 60 * 24));
+    
+    let nepaliYear = referenceNepali.year;
+    let nepaliMonth = referenceNepali.month;
+    let nepaliDay = referenceNepali.day + daysDiff;
+    
+    // Days in each Nepali month for 2082
+    const daysInNepaliMonths = [31, 31, 31, 32, 31, 30, 29, 30, 29, 30, 29, 30];
+    
+    // Adjust for day overflow/underflow
+    while (nepaliDay > daysInNepaliMonths[nepaliMonth - 1]) {
+        nepaliDay -= daysInNepaliMonths[nepaliMonth - 1];
+        nepaliMonth++;
+        if (nepaliMonth > 12) {
+            nepaliMonth = 1;
+            nepaliYear++;
+        }
+    }
+    
+    while (nepaliDay < 1) {
+        nepaliMonth--;
+        if (nepaliMonth < 1) {
+            nepaliMonth = 12;
+            nepaliYear--;
+        }
+        nepaliDay += daysInNepaliMonths[nepaliMonth - 1];
+    }
+    
+    return { year: nepaliYear, month: nepaliMonth, day: nepaliDay };
+}
+
+function convertNepaliToEnglish(nepaliYear, nepaliMonth, nepaliDay) {
+    // Simple conversion for modal functionality
+    const englishYear = nepaliYear - 56;
+    const englishMonth = nepaliMonth - 8;
+    const englishDay = nepaliDay - 15;
+    
+    let adjYear = englishYear;
+    let adjMonth = englishMonth;
+    let adjDay = englishDay;
+    
+    if (adjMonth <= 0) {
+        adjMonth += 12;
+        adjYear -= 1;
+    }
+    if (adjDay <= 0) {
+        adjDay += 30;
+        adjMonth -= 1;
+        if (adjMonth <= 0) {
+            adjMonth += 12;
+            adjYear -= 1;
+        }
+    }
+    
+    const date = new Date(adjYear, adjMonth - 1, adjDay);
+    return date.toISOString().split('T')[0];
 }
 
 // Get CSRF token function
