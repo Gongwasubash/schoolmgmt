@@ -828,12 +828,33 @@ body {
 }
 
 @media (max-width: 768px) {
-    .menu-toggle {
-        display: block;
+    /* GLOBAL MOBILE FIX */
+    * {
+        -webkit-tap-highlight-color: rgba(0,0,0,0.2) !important;
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        -khtml-user-select: none !important;
+        -moz-user-select: none !important;
+        -ms-user-select: none !important;
+        user-select: none !important;
     }
     
-    .mobile-overlay {
+    button, select, input, a, .btn, .nav-item {
+        -webkit-user-select: auto !important;
+        -moz-user-select: auto !important;
+        -ms-user-select: auto !important;
+        user-select: auto !important;
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+        min-height: 48px !important;
+        min-width: 48px !important;
+        position: relative !important;
+        z-index: 10 !important;
+    }
+    
+    .menu-toggle {
         display: block;
+        z-index: 1002;
     }
     
     .sidebar {
@@ -848,6 +869,17 @@ body {
     
     .sidebar.open {
         transform: translateX(0);
+    }
+    
+    .mobile-overlay {
+        display: block;
+        pointer-events: none;
+        opacity: 0;
+    }
+    
+    .mobile-overlay.active {
+        pointer-events: all;
+        opacity: 1;
     }
     
     .topbar {
@@ -3318,4 +3350,41 @@ body {
     max-height: 250px !important;
     width: 100% !important;
     height: 250px !important;
+}
+/* GLOBAL MOBILE FIX - FORCE CLICKABILITY */
+@media (max-width: 768px) {
+    * {
+        -webkit-tap-highlight-color: rgba(0,0,0,0.2) !important;
+        -webkit-touch-callout: none !important;
+    }
+    
+    button, select, input, a, .btn, .nav-item, .profile-btn, .menu-toggle {
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+        min-height: 48px !important;
+        min-width: 48px !important;
+        position: relative !important;
+        z-index: 999 !important;
+        -webkit-user-select: auto !important;
+        user-select: auto !important;
+    }
+}
+
+/* AGGRESSIVE MOBILE CLICKABILITY FIX */
+@media (max-width: 768px) {
+    .main-content {
+        pointer-events: auto !important;
+        touch-action: auto !important;
+    }
+    
+    .main-content * {
+        pointer-events: auto !important;
+    }
+    
+    button, select, input, a, .btn, [onclick] {
+        pointer-events: auto !important;
+        touch-action: manipulation !important;
+        z-index: 999 !important;
+        position: relative !important;
+    }
 }

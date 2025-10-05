@@ -1,0 +1,14 @@
+/* MOBILE OVERLAY FIX */
+@media (max-width: 768px) {
+    .mobile-overlay {
+        pointer-events: none !important;
+        touch-action: none !important;
+        -webkit-tap-highlight-color: transparent !important;
+        z-index: 999 !important;
+    }
+    
+    .mobile-overlay.active {
+        pointer-events: all !important;
+        touch-action: auto !important;
+    }
+}

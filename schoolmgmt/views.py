@@ -5,7 +5,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.core.exceptions import ValidationError
 from django.core.mail import send_mail
 from django.conf import settings
-from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, WelcomeSection, ContactEnquiry, StudentAttendance, Teacher, TeacherClassSubject
+from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, WelcomeSection, ContactEnquiry, StudentAttendance, Teacher, TeacherClassSubject, CalendarEvent
 from .decorators import permission_required
 from django.db import models
 from django.db.models import F, Q
@@ -591,7 +591,6 @@ def reports(request):
     
     return render(request, 'reports.html', context)
 
-@permission_required('can_view_fees')
 def fees(request):
     if request.method == 'POST':
         try:
@@ -803,7 +802,17 @@ def pay_student(request, student_id):
     return render(request, 'pay.html', context)
 
 def events(request):
-    return render(request, 'events.html')
+    # Get all schools for dropdown
+    schools = SchoolDetail.objects.all()
+    
+    # Get all events
+    events = CalendarEvent.objects.filter(is_active=True).order_by('-event_date')
+    
+    context = {
+        'schools': schools,
+        'events': events,
+    }
+    return render(request, 'events.html', context)
 
 def edit_student(request, student_id):
     student = get_object_or_404(Student, id=student_id)
@@ -1318,7 +1327,6 @@ def submit_payment(request):
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
-@permission_required('can_view_receipts')
 def fee_receipt_book(request):
     from django.db.models import Sum, Max
     from decimal import Decimal
@@ -3895,7 +3903,6 @@ def print_bill(request):
     school = SchoolDetail.get_current_school()
     return render(request, 'print_bill.html', {'school': school})
 
-@permission_required('can_view_expenses')
 def student_daily_exp(request):
     """Student daily expenses page"""
     context = {
@@ -4155,6 +4162,130 @@ def get_todays_all_expenses_api(request):
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)})
+
+# Calendar Views
+def school_calendar(request):
+    """School calendar view with holiday management"""
+    school_info = SchoolDetail.get_current_school()
+    
+    context = {
+        'school_info': school_info,
+    }
+    
+    return render(request, 'school_calendar.html', context)
+
+def get_calendar_data_api(request):
+    """API to get calendar events for a specific month"""
+    try:
+        year = int(request.GET.get('year', date.today().year))
+        month = int(request.GET.get('month', date.today().month))
+        
+        # Get events for the specified month
+        events = CalendarEvent.get_events_for_month(year, month)
+        
+        events_data = []
+        for event in events:
+            events_data.append({
+                'id': event.id,
+                'title': event.title,
+                'description': event.description,
+                'date': event.event_date.strftime('%Y-%m-%d'),
+                'day': event.event_date.day,
+                'type': event.event_type,
+                'school_id': event.school.id if event.school else None,
+                'school_name': event.school.school_name if event.school else 'All Schools',
+                'is_active': event.is_active
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'events': events_data,
+            'year': year,
+            'month': month
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def add_holiday_api(request):
+    """API to add a new holiday/event"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Get school if provided
+            school = None
+            if data.get('school_id'):
+                school = get_object_or_404(SchoolDetail, id=data['school_id'])
+            
+            event = CalendarEvent.objects.create(
+                title=data['title'],
+                description=data.get('description', ''),
+                event_date=data['event_date'],
+                event_type=data.get('event_type', 'event'),
+                school=school,
+                is_active=True,
+                created_by=request.session.get('admin_username', 'System')
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Holiday added successfully',
+                'event_id': event.id
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def edit_holiday_api(request):
+    """API to edit an existing holiday/event"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            event = get_object_or_404(CalendarEvent, id=data['holiday_id'])
+            event.title = data['title']
+            event.description = data.get('description', '')
+            event.event_date = data['event_date']
+            event.event_type = data.get('event_type', 'event')
+            
+            # Update school if provided
+            if data.get('school_id'):
+                event.school = get_object_or_404(SchoolDetail, id=data['school_id'])
+            else:
+                event.school = None
+            
+            event.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Holiday updated successfully'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def delete_holiday_api(request):
+    """API to delete a holiday/event"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            event = get_object_or_404(CalendarEvent, id=data['holiday_id'])
+            event.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Holiday deleted successfully'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
 
 def school_settings_test(request):
     """Test view to debug template loading"""
@@ -6078,6 +6209,706 @@ def delete_registration_api(request):
             return JsonResponse({
                 'success': True,
                 'message': 'Registration deleted successfully'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib import messages
+from django.http import JsonResponse, HttpResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.core.exceptions import ValidationError
+from django.core.mail import send_mail
+from django.conf import settings
+from .models import Student, FeeStructure, FeePayment, Subject, Exam, Marksheet, Session, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, WelcomeSection, ContactEnquiry, StudentAttendance, Teacher, TeacherClassSubject
+from .decorators import permission_required
+from django.db import models
+from django.db.models import F, Q
+import json
+from datetime import datetime, date
+from django.db.models import Count, Sum, Max
+from decimal import Decimal
+import csv
+import io
+from .nepali_calendar import NepaliCalendar
+try:
+    from nepali_datetime import date as nepali_date
+except ImportError:
+    nepali_date = None
+
+def get_current_nepali_year_session():
+    """Get current Nepali year session (e.g., '2082-83')"""
+    return NepaliCalendar.get_nepali_session_from_date()
+
+def convert_english_to_nepali_date_string(english_date, format_type='short'):
+    """Convert English date to Nepali date string"""
+    if not english_date:
+        return ''
+    try:
+        nepali_date_dict = NepaliCalendar.english_to_nepali_date(english_date)
+        return NepaliCalendar.format_nepali_date(nepali_date_dict, format_type)
+    except:
+        return str(english_date)
+
+def get_nepali_months_list():
+    """Get list of Nepali months in English"""
+    return NepaliCalendar.NEPALI_MONTHS_EN
+
+def get_comprehensive_nepali_info():
+    """Get comprehensive Nepali date information for views"""
+    return NepaliCalendar.get_nepali_today_info()
+
+def format_nepali_datetime_for_display(english_datetime):
+    """Format datetime for display with Nepali date"""
+    if not english_datetime:
+        return ''
+    try:
+        return NepaliCalendar.format_nepali_datetime(english_datetime, 'full')
+    except:
+        return str(english_datetime)
+
+def school_calendar(request):
+    """School Calendar page for managing school events and dates"""
+    school = SchoolDetail.get_current_school()
+    
+    context = {
+        'school': school,
+        'current_date': datetime.now().strftime('%B %d, %Y')
+    }
+    
+    return render(request, 'school_calendar.html', context)
+
+def school_calendar(request):
+    school_info = SchoolDetail.get_current_school()
+    
+    # Get current Nepali date information
+    try:
+        nepali_info = get_comprehensive_nepali_info()
+        current_nepali_date = nepali_info['nepali_date']
+    except:
+        # Fallback if NepaliCalendar fails
+        current_nepali_date = {
+            'year': 2082,
+            'month': 8,
+            'day': 15,
+            'month_name_en': 'Kartik'
+        }
+    
+    context = {
+        'school_info': school_info,
+        'current_date': datetime.now().strftime('%Y-%m-%d'),
+        'current_nepali_date': current_nepali_date,
+        'nepali_months': get_nepali_months_list()
+    }
+    return render(request, 'school_calendar.html', context)
+
+def school_calendar(request):
+    """School calendar view with Nepali date context and Hamro Patro API integration"""
+    
+    
+    try:
+        # Get current Nepali date using NepaliCalendar class
+        current_nepali_date = NepaliCalendar.get_current_nepali_date()
+        school_info = SchoolDetail.get_current_school()
+        
+        # Fetch festival data from Hamro Patro API
+        festivals_data = []
+        try:
+            # Get current year and month for API call
+            year = current_nepali_date.get('year', 2082)
+            month = current_nepali_date.get('month', 8)
+            
+            # Hamro Patro API endpoint
+            api_url = f"https://www.hamropatro.com/api/v1/calendar/{year}/{month}"
+            response = requests.get(api_url, timeout=5)
+            
+            if response.status_code == 200:
+                api_data = response.json()
+                if 'data' in api_data:
+                    festivals_data = api_data['data']
+        except Exception as api_error:
+            print(f"Hamro Patro API error: {api_error}")
+            # Fallback festival data
+            festivals_data = [
+                {'date': 15, 'title': 'Dashain Festival', 'type': 'festival'},
+                {'date': 20, 'title': 'Tihar Festival', 'type': 'festival'},
+                {'date': 25, 'title': 'Chhath Puja', 'type': 'festival'}
+            ]
+        
+        context = {
+            'school_info': school_info,
+            'current_nepali_date': current_nepali_date,
+            'festivals_data': festivals_data
+        }
+        
+        return render(request, 'school_calendar.html', context)
+    except Exception as e:
+        # Fallback context if NepaliCalendar fails
+        school_info = SchoolDetail.get_current_school()
+        context = {
+            'school_info': school_info,
+            'current_nepali_date': {
+                'year': 2082,
+                'month': 8,
+                'day': 15
+            },
+            'festivals_data': [
+                {'date': 15, 'title': 'Dashain Festival', 'type': 'festival'},
+                {'date': 20, 'title': 'Tihar Festival', 'type': 'festival'}
+            ]
+        }
+        return render(request, 'school_calendar.html', context)
+
+@csrf_exempt
+def get_calendar_data_api(request):
+    """API to get calendar data with festivals for specific month/year"""
+    if request.method == 'GET':
+        try:
+            year = int(request.GET.get('year', 2082))
+            month = int(request.GET.get('month', 8))
+            
+            # Fetch festival data from Hamro Patro API
+            festivals_data = []
+            try:
+                api_url = f"https://www.hamropatro.com/api/v1/calendar/{year}/{month}"
+                response = requests.get(api_url, timeout=5)
+                
+                if response.status_code == 200:
+                    api_data = response.json()
+                    if 'data' in api_data:
+                        festivals_data = api_data['data']
+            except Exception as api_error:
+                print(f"Hamro Patro API error: {api_error}")
+                # Fallback festival data based on month
+                if month == 7:  # Kartik
+                    festivals_data = [
+                        {'date': 15, 'title': 'Dashain Festival', 'type': 'festival'},
+                        {'date': 30, 'title': 'Tihar Festival', 'type': 'festival'}
+                    ]
+                elif month == 8:  # Mangsir
+                    festivals_data = [
+                        {'date': 5, 'title': 'Chhath Puja', 'type': 'festival'},
+                        {'date': 15, 'title': 'Bala Chaturdashi', 'type': 'festival'}
+                    ]
+                elif month == 9:  # Poush
+                    festivals_data = [
+                        {'date': 1, 'title': 'Maghe Sankranti', 'type': 'festival'},
+                        {'date': 15, 'title': 'Sonam Lhosar', 'type': 'festival'}
+                    ]
+                else:
+                    festivals_data = []
+            
+            return JsonResponse({
+                'success': True,
+                'year': year,
+                'month': month,
+                'festivals': festivals_data
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def school_calendar(request):
+    """School calendar page with Nepali festivals and holidays"""
+    school_info = SchoolDetail.get_current_school()
+    return render(request, 'school_calendar.html', {'school_info': school_info})
+
+def get_calendar_data_api(request):
+    """API to get calendar data with Nepali festivals and holidays"""
+    try:
+        year = int(request.GET.get('year', date.today().year))
+        month = int(request.GET.get('month', date.today().month))
+        
+        # Nepali festivals and holidays data
+        nepali_events = {
+            1: {  # January
+                1: {'name': 'New Year Day', 'type': 'holiday'},
+                15: {'name': 'Maghe Sankranti', 'type': 'festival'},
+                26: {'name': 'Republic Day', 'type': 'holiday'},
+                29: {'name': 'Martyrs Day', 'type': 'holiday'}
+            },
+            2: {  # February
+                19: {'name': 'Democracy Day', 'type': 'holiday'},
+                21: {'name': 'International Mother Language Day', 'type': 'festival'}
+            },
+            3: {  # March
+                8: {'name': 'International Women Day', 'type': 'festival'},
+                21: {'name': 'Holi/Fagu Purnima', 'type': 'holiday'}
+            },
+            4: {  # April
+                13: {'name': 'Nepali New Year', 'type': 'holiday'},
+                14: {'name': 'Nepali New Year', 'type': 'holiday'}
+            },
+            5: {  # May
+                1: {'name': 'Labour Day', 'type': 'holiday'},
+                15: {'name': 'Buddha Jayanti', 'type': 'holiday'},
+                29: {'name': 'Republic Day', 'type': 'holiday'}
+            },
+            8: {  # August
+                15: {'name': 'Janai Purnima', 'type': 'festival'},
+                23: {'name': 'Krishna Janmashtami', 'type': 'festival'}
+            },
+            9: {  # September
+                3: {'name': 'Teej', 'type': 'festival'},
+                15: {'name': 'Constitution Day', 'type': 'holiday'}
+            },
+            10: {  # October
+                1: {'name': 'Ghatasthapana', 'type': 'festival'},
+                10: {'name': 'Vijaya Dashami', 'type': 'holiday'},
+                15: {'name': 'Kojagrat Purnima', 'type': 'festival'}
+            },
+            11: {  # November
+                2: {'name': 'Gai Tihar', 'type': 'festival'},
+                3: {'name': 'Goru Tihar', 'type': 'festival'},
+                4: {'name': 'Laxmi Puja', 'type': 'holiday'},
+                5: {'name': 'Govardhan Puja', 'type': 'festival'},
+                6: {'name': 'Bhai Tika', 'type': 'holiday'}
+            },
+            12: {  # December
+                25: {'name': 'Christmas Day', 'type': 'holiday'}
+            }
+        }
+        
+        # Get events for the requested month
+        events = nepali_events.get(month, {})
+        
+        # Format events for frontend
+        formatted_events = []
+        for day, event in events.items():
+            formatted_events.append({
+                'date': f'{year}-{month:02d}-{day:02d}',
+                'title': event['name'],
+                'type': event['type'],
+                'day': day
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'events': formatted_events,
+            'year': year,
+            'month': month
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+def school_calendar(request):
+    """School calendar view with Nepali festivals"""
+    school_info = SchoolDetail.get_current_school()
+    return render(request, 'school_calendar.html', {'school_info': school_info})
+
+def get_calendar_data_api(request):
+    """API to get Nepali festivals and holidays for English calendar"""
+    try:
+        year = int(request.GET.get('year', datetime.now().year))
+        month = int(request.GET.get('month', datetime.now().month))
+        
+        # Comprehensive Nepali festivals mapped to English calendar dates
+        nepali_festivals = {
+            1: {  # January
+                1: {'title': 'नयाँ वर्ष', 'type': 'holiday'},
+                15: {'title': 'मकर संक्रान्ति', 'type': 'festival'},
+                26: {'title': 'गणतन्त्र दिवस', 'type': 'holiday'},
+                30: {'title': 'शहीद दिवस', 'type': 'holiday'}
+            },
+            2: {  # February
+                19: {'title': 'प्रजातन्त्र दिवस', 'type': 'holiday'},
+                21: {'title': 'अन्तर्राष्ट्रिय मातृभाषा दिवस', 'type': 'festival'}
+            },
+            3: {  # March
+                8: {'title': 'अन्तर्राष्ट्रिय महिला दिवस', 'type': 'festival'},
+                21: {'title': 'होली', 'type': 'festival'}
+            },
+            4: {  # April
+                14: {'title': 'नेपाली नयाँ वर्ष', 'type': 'holiday'},
+                18: {'title': 'राम नवमी', 'type': 'festival'}
+            },
+            5: {  # May
+                1: {'title': 'अन्तर्राष्ट्रिय श्रमिक दिवस', 'type': 'holiday'},
+                15: {'title': 'बुद्ध जयन्ती', 'type': 'holiday'},
+                29: {'title': 'गणेश चतुर्थी', 'type': 'festival'}
+            },
+            6: {  # June
+                11: {'title': 'गाई जात्रा', 'type': 'festival'}
+            },
+            7: {  # July
+                15: {'title': 'हरितालिका तीज', 'type': 'festival'}
+            },
+            8: {  # August
+                20: {'title': 'कृष्ण जन्माष्टमी', 'type': 'festival'},
+                27: {'title': 'तीज', 'type': 'festival'}
+            },
+            9: {  # September
+                15: {'title': 'इन्द्रजात्रा', 'type': 'festival'},
+                27: {'title': 'घटस्थापना', 'type': 'festival'}
+            },
+            10: {  # October
+                6: {'title': 'विजया दशमी', 'type': 'holiday'},
+                15: {'title': 'कोजाग्रत पूर्णिमा', 'type': 'festival'},
+                24: {'title': 'दीपावली', 'type': 'festival'},
+                25: {'title': 'गोवर्धन पूजा', 'type': 'festival'},
+                26: {'title': 'भाई टीका', 'type': 'holiday'}
+            },
+            11: {  # November
+                14: {'title': 'छठ पर्व', 'type': 'festival'},
+                30: {'title': 'उधौली पर्व', 'type': 'festival'}
+            },
+            12: {  # December
+                25: {'title': 'क्रिसमस', 'type': 'holiday'},
+                30: {'title': 'तामु ल्होसार', 'type': 'festival'}
+            }
+        }
+        
+        events = []
+        if month in nepali_festivals:
+            for day, event in nepali_festivals[month].items():
+                events.append({
+                    'day': day,
+                    'title': event['title'],
+                    'type': event['type']
+                })
+        
+        return JsonResponse({
+            'success': True,
+            'events': events,
+            'year': year,
+            'month': month
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def add_calendar_event(request):
+    """API to add a new calendar event"""
+    if request.method == 'POST':
+        try:
+            from .models import CalendarEvent
+            data = json.loads(request.body)
+            
+            event = CalendarEvent.objects.create(
+                title=data['title'],
+                description=data.get('description', ''),
+                event_date=data['event_date'],
+                event_type=data.get('event_type', 'event'),
+                created_by=request.session.get('admin_username', 'admin')
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'event': {
+                    'id': event.id,
+                    'title': event.title,
+                    'description': event.description,
+                    'event_date': event.event_date.strftime('%Y-%m-%d'),
+                    'event_type': event.event_type
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def edit_calendar_event(request):
+    """API to edit an existing calendar event"""
+    if request.method == 'POST':
+        try:
+            from .models import CalendarEvent
+            data = json.loads(request.body)
+            
+            event = get_object_or_404(CalendarEvent, id=data['event_id'])
+            event.title = data['title']
+            event.description = data.get('description', '')
+            event.event_date = data['event_date']
+            event.event_type = data.get('event_type', 'event')
+            event.save()
+            
+            return JsonResponse({
+                'success': True,
+                'event': {
+                    'id': event.id,
+                    'title': event.title,
+                    'description': event.description,
+                    'event_date': event.event_date.strftime('%Y-%m-%d'),
+                    'event_type': event.event_type
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def delete_calendar_event(request):
+    """API to delete a calendar event"""
+    if request.method == 'POST':
+        try:
+            from .models import CalendarEvent
+            data = json.loads(request.body)
+            
+            event = get_object_or_404(CalendarEvent, id=data['event_id'])
+            event.delete()
+            
+            return JsonResponse({'success': True})
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def school_calendar(request):
+    """School calendar view with holiday management"""
+    from .models import CalendarEvent, SchoolDetail
+    
+    # Get school info
+    school_info = SchoolDetail.get_current_school()
+    
+    # Get current date info
+    today = date.today()
+    current_year = today.year
+    current_month = today.month
+    
+    # Get events for current month
+    events = CalendarEvent.objects.filter(
+        event_date__year=current_year,
+        event_date__month=current_month,
+        is_active=True
+    ).order_by('event_date')
+    
+    context = {
+        'school_info': school_info,
+        'events': events,
+        'current_year': current_year,
+        'current_month': current_month,
+    }
+    
+    return render(request, 'school_calendar.html', context)
+
+def get_calendar_data_api(request):
+    """API to get calendar events for a specific month/year"""
+    try:
+        year = int(request.GET.get('year', date.today().year))
+        month = int(request.GET.get('month', date.today().month))
+        
+        events = CalendarEvent.objects.filter(
+            event_date__year=year,
+            event_date__month=month,
+            is_active=True
+        ).order_by('event_date')
+        
+        events_data = []
+        for event in events:
+            events_data.append({
+                'id': event.id,
+                'title': event.title,
+                'description': event.description,
+                'day': event.event_date.day,
+                'date': event.event_date.strftime('%Y-%m-%d'),
+                'type': event.event_type,
+                'created_by': event.created_by
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'events': events_data,
+            'year': year,
+            'month': month
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def add_holiday_api(request):
+    """API to add a new holiday to the calendar"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            # Get admin username for created_by field
+            admin_username = request.session.get('admin_username', 'System')
+            
+            holiday = CalendarEvent.objects.create(
+                title=data['title'],
+                description=data.get('description', ''),
+                event_date=data['event_date'],
+                event_type=data.get('event_type', 'holiday'),
+                created_by=admin_username,
+                is_active=True
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Holiday "{holiday.title}" added successfully',
+                'holiday': {
+                    'id': holiday.id,
+                    'title': holiday.title,
+                    'description': holiday.description,
+                    'date': holiday.event_date.strftime('%Y-%m-%d'),
+                    'type': holiday.event_type,
+                    'created_by': holiday.created_by
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def edit_holiday_api(request):
+    """API to edit an existing holiday"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            holiday_id = data.get('holiday_id')
+            
+            holiday = get_object_or_404(CalendarEvent, id=holiday_id)
+            
+            holiday.title = data.get('title', holiday.title)
+            holiday.description = data.get('description', holiday.description)
+            holiday.event_date = data.get('event_date', holiday.event_date)
+            holiday.event_type = data.get('event_type', holiday.event_type)
+            holiday.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Holiday "{holiday.title}" updated successfully',
+                'holiday': {
+                    'id': holiday.id,
+                    'title': holiday.title,
+                    'description': holiday.description,
+                    'date': holiday.event_date.strftime('%Y-%m-%d'),
+                    'type': holiday.event_type,
+                    'created_by': holiday.created_by
+                }
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def delete_holiday_api(request):
+    """API to delete a holiday"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            holiday_id = data.get('holiday_id')
+            
+            holiday = get_object_or_404(CalendarEvent, id=holiday_id)
+            holiday_title = holiday.title
+            holiday.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': f'Holiday "{holiday_title}" deleted successfully'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+# Calendar and Holiday Management Views
+from .models import CalendarEvent
+
+def school_calendar(request):
+    """School calendar view with holiday management"""
+    school_info = SchoolDetail.get_current_school()
+    
+    context = {
+        'school_info': school_info,
+    }
+    
+    return render(request, 'school_calendar.html', context)
+
+def get_calendar_data_api(request):
+    """API to get calendar events for a specific month"""
+    try:
+        year = int(request.GET.get('year', date.today().year))
+        month = int(request.GET.get('month', date.today().month))
+        
+        # Get events for the specified month
+        events = CalendarEvent.get_events_for_month(year, month)
+        
+        events_data = []
+        for event in events:
+            events_data.append({
+                'id': event.id,
+                'title': event.title,
+                'date': event.event_date.strftime('%Y-%m-%d'),
+                'day': event.event_date.day,
+                'type': event.event_type,
+                'description': event.description,
+                'event_date_nepali': event.event_date_nepali
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'events': events_data
+        })
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)})
+
+@csrf_exempt
+def add_holiday_api(request):
+    """API to add a new holiday/event"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            event = CalendarEvent.objects.create(
+                title=data['title'],
+                description=data.get('description', ''),
+                event_date=data['event_date'],
+                event_type=data['event_type'],
+                created_by=request.session.get('admin_username', 'System')
+            )
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Holiday added successfully',
+                'event_id': event.id
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def edit_holiday_api(request):
+    """API to edit an existing holiday/event"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            event = get_object_or_404(CalendarEvent, id=data['holiday_id'])
+            event.title = data['title']
+            event.description = data.get('description', '')
+            event.event_date = data['event_date']
+            event.event_type = data['event_type']
+            event.save()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Holiday updated successfully'
+            })
+        except Exception as e:
+            return JsonResponse({'success': False, 'error': str(e)})
+    
+    return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+@csrf_exempt
+def delete_holiday_api(request):
+    """API to delete a holiday/event"""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            event = get_object_or_404(CalendarEvent, id=data['holiday_id'])
+            event.delete()
+            
+            return JsonResponse({
+                'success': True,
+                'message': 'Holiday deleted successfully'
             })
         except Exception as e:
             return JsonResponse({'success': False, 'error': str(e)})

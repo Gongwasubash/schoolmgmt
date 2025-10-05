@@ -46,19 +46,27 @@
 }
 
 .form-group select, .form-group input {
-    padding: 0.75rem;
+    padding: 12px;
     border: 1px solid #ddd;
     border-radius: 6px;
-    font-size: 0.875rem;
+    font-size: 16px;
+    min-height: 48px;
+    pointer-events: auto;
+    z-index: 999;
+    position: relative;
 }
 
 .btn {
-    padding: 0.75rem 1.5rem;
+    padding: 12px 24px;
     border: none;
     border-radius: 6px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
+    min-height: 48px;
+    min-width: 48px;
+    pointer-events: auto;
+    z-index: 999;
+    position: relative;
 }
 
 .btn-primary { background: #007bff; color: white; }
@@ -195,6 +203,18 @@
         grid-template-columns: 1fr;
     }
     
+    /* FORCE MOBILE INTERACTION */
+    * {
+        -webkit-tap-highlight-color: rgba(0,0,0,0.1) !important;
+        touch-action: manipulation !important;
+    }
+    
+    button, select, input {
+        pointer-events: auto !important;
+        position: relative !important;
+        z-index: 999 !important;
+    }
+    
     #allSubjectsTable {
         font-size: 0.65rem;
     }
@@ -286,9 +306,9 @@
             </div>
             <div class="form-group">
                 <label>Actions</label>
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn btn-primary" onclick="loadMarksheet()">Load Marksheet</button>
-                    <button class="btn btn-success" onclick="saveAllMarks()">Save All</button>
+                <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-primary" onclick="loadMarksheet()" style="min-height: 48px; touch-action: manipulation;">Load Marksheet</button>
+                    <button type="button" class="btn btn-success" onclick="saveAllMarks()" style="min-height: 48px; touch-action: manipulation;">Save All</button>
                 </div>
             </div>
         </div>
@@ -339,10 +359,10 @@
         <div class="controls-section">
             <h3>Bulk Actions</h3>
             <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
-                <button class="btn btn-warning" onclick="autoFillMarks()">Auto Fill Marks</button>
-                <button class="btn btn-primary" onclick="calculateResults()">Calculate Results</button>
-                <button class="btn btn-success" onclick="generateMarksheets()">Generate Marksheets</button>
-                <button class="btn btn-danger" onclick="clearAllMarks()">Clear All Marks</button>
+                <button type="button" class="btn btn-warning" onclick="autoFillMarks()" style="min-height: 48px; touch-action: manipulation;">Auto Fill Marks</button>
+                <button type="button" class="btn btn-primary" onclick="calculateResults()" style="min-height: 48px; touch-action: manipulation;">Calculate Results</button>
+                <button type="button" class="btn btn-success" onclick="generateMarksheets()" style="min-height: 48px; touch-action: manipulation;">Generate Marksheets</button>
+                <button type="button" class="btn btn-danger" onclick="clearAllMarks()" style="min-height: 48px; touch-action: manipulation;">Clear All Marks</button>
             </div>
         </div>
     </div>

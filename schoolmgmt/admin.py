@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, ContactEnquiry, HeroSlider, Blog, StudentAttendance, Teacher, TeacherClassSubject
+from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, ContactEnquiry, HeroSlider, Blog, StudentAttendance, Teacher, TeacherClassSubject, CalendarEvent
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -246,3 +246,20 @@ class TeacherClassSubjectAdmin(admin.ModelAdmin):
     
     def get_queryset(self, request):
         return super().get_queryset(request).select_related('teacher', 'subject')
+
+@admin.register(CalendarEvent)
+class CalendarEventAdmin(admin.ModelAdmin):
+    list_display = ['title', 'event_date', 'event_type', 'is_active', 'created_by', 'created_at']
+    list_filter = ['event_type', 'is_active', 'event_date', 'created_at']
+    search_fields = ['title', 'description', 'created_by']
+    date_hierarchy = 'event_date'
+    ordering = ['-event_date']
+    
+    fieldsets = (
+        ('Event Information', {
+            'fields': ('title', 'description', 'event_date', 'event_type')
+        }),
+        ('Status', {
+            'fields': ('is_active', 'created_by')
+        }),
+    )

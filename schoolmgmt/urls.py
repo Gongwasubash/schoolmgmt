@@ -164,6 +164,11 @@ urlpatterns = [
     path('user-login/', views_user.user_login_view, name='user_login'),
     path('user-dashboard/', views_user.user_dashboard, name='user_dashboard'),
     path('user-logout/', views_user.user_logout, name='user_logout'),
+    path('school-calendar/', views.school_calendar, name='school_calendar'),
+    path('get-calendar-data/', views.get_calendar_data_api, name='get_calendar_data_api'),
+    path('api/add-holiday/', views.add_holiday_api, name='add_holiday_api'),
+    path('api/edit-holiday/', views.edit_holiday_api, name='edit_holiday_api'),
+    path('api/delete-holiday/', views.delete_holiday_api, name='delete_holiday_api'),
 ]
 
 # Serve media files during development

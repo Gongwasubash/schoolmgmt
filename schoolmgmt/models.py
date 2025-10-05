@@ -1008,6 +1008,52 @@ class TeacherClassSubject(models.Model):
         ordering = ['teacher__name', 'class_name', 'subject__name']
 
 
+class CalendarEvent(models.Model):
+    EVENT_TYPE_CHOICES = [
+        ('holiday', 'Holiday'),
+        ('festival', 'Festival'),
+        ('exam', 'Exam'),
+        ('meeting', 'Meeting'),
+        ('event', 'School Event'),
+        ('other', 'Other'),
+    ]
+    
+    title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    event_date = models.DateField()
+    event_date_nepali = models.CharField(max_length=50, blank=True, help_text="Nepali date format")
+    event_type = models.CharField(max_length=20, choices=EVENT_TYPE_CHOICES, default='event')
+    school = models.ForeignKey(SchoolDetail, on_delete=models.CASCADE, blank=True, null=True, help_text="School for this event")
+    is_active = models.BooleanField(default=True)
+    created_by = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def save(self, *args, **kwargs):
+        # Auto-populate Nepali date if not provided
+        if self.event_date and not self.event_date_nepali:
+            nepali_date = NepaliCalendar.english_to_nepali_date(self.event_date)
+            self.event_date_nepali = NepaliCalendar.format_nepali_date(nepali_date, 'full_en')
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.title} - {self.event_date}"
+    
+    @classmethod
+    def get_events_for_month(cls, year, month):
+        """Get all active events for a specific month"""
+        return cls.objects.filter(
+            event_date__year=year,
+            event_date__month=month,
+            is_active=True
+        ).order_by('event_date')
+    
+    class Meta:
+        ordering = ['-event_date']
+        verbose_name = "Calendar Event"
+        verbose_name_plural = "Calendar Events"
+
+
 class StudentAttendance(models.Model):
     ATTENDANCE_CHOICES = [
         ('present', 'Present'),

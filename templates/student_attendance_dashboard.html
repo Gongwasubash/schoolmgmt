@@ -157,6 +157,8 @@
         .calendar-day.holiday {
             background: #6c757d;
             color: white;
+            cursor: not-allowed !important;
+            opacity: 0.8;
         }
 
         .calendar-day:hover:not(.header) {
@@ -305,6 +307,7 @@
         let currentYear = 2024;
         let selectedDay = null;
         let attendanceData = {}; // Store attendance data
+        let holidayData = {}; // Store holiday data
 
         const months = [
             'January', 'February', 'March', 'April', 'May', 'June',
@@ -347,25 +350,38 @@
                 
                 const dateKey = `${currentYear}-${currentMonth + 1}-${day}`;
                 
-                // Apply attendance status
-                if (attendanceData[dateKey] === 'present') {
+                // Check if day is a holiday first
+                const isHoliday = isHolidayDate(currentYear, currentMonth + 1, day);
+                
+                if (isHoliday) {
+                    dayElement.classList.add('holiday');
+                    dayElement.style.cursor = 'not-allowed';
+                    dayElement.title = 'Holiday - Attendance not allowed';
+                } else if (attendanceData[dateKey] === 'present') {
                     dayElement.classList.add('present');
                 } else if (attendanceData[dateKey] === 'absent') {
                     dayElement.classList.add('absent');
-                } else if (new Date(currentYear, currentMonth, day).getDay() === 0) {
-                    // Mark Sundays as holidays
-                    dayElement.classList.add('holiday');
                 }
 
-                dayElement.addEventListener('click', () => selectDay(day));
+                if (!isHoliday) {
+                    dayElement.addEventListener('click', () => selectDay(day));
+                }
                 grid.appendChild(dayElement);
             }
         }
 
         function selectDay(day) {
+            // Check if day is holiday
+            if (isHolidayDate(currentYear, currentMonth + 1, day)) {
+                alert('Cannot mark attendance on holidays');
+                return;
+            }
+            
             // Remove previous selection
             document.querySelectorAll('.calendar-day').forEach(el => {
-                el.style.border = '1px solid #ddd';
+                if (!el.classList.contains('holiday')) {
+                    el.style.border = '1px solid #ddd';
+                }
             });
 
             // Select new day
@@ -374,44 +390,58 @@
         }
 
         function markPresent() {
-            if (selectedDay) {
-                const dateKey = `${currentYear}-${currentMonth + 1}-${selectedDay}`;
-                attendanceData[dateKey] = 'present';
-                generateCalendar();
-                updateSummary();
-            } else {
+            if (!selectedDay) {
                 alert('Please select a day first');
+                return;
             }
+            
+            if (isHolidayDate(currentYear, currentMonth + 1, selectedDay)) {
+                alert('Cannot mark attendance on holidays');
+                return;
+            }
+            
+            const dateKey = `${currentYear}-${currentMonth + 1}-${selectedDay}`;
+            attendanceData[dateKey] = 'present';
+            generateCalendar();
+            updateSummary();
         }
 
         function markAbsent() {
-            if (selectedDay) {
-                const dateKey = `${currentYear}-${currentMonth + 1}-${selectedDay}`;
-                attendanceData[dateKey] = 'absent';
-                generateCalendar();
-                updateSummary();
-            } else {
+            if (!selectedDay) {
                 alert('Please select a day first');
+                return;
             }
+            
+            if (isHolidayDate(currentYear, currentMonth + 1, selectedDay)) {
+                alert('Cannot mark attendance on holidays');
+                return;
+            }
+            
+            const dateKey = `${currentYear}-${currentMonth + 1}-${selectedDay}`;
+            attendanceData[dateKey] = 'absent';
+            generateCalendar();
+            updateSummary();
         }
 
-        function previousMonth() {
+        async function previousMonth() {
             currentMonth--;
             if (currentMonth < 0) {
                 currentMonth = 11;
                 currentYear--;
             }
             selectedDay = null;
+            await loadHolidays();
             generateCalendar();
         }
 
-        function nextMonth() {
+        async function nextMonth() {
             currentMonth++;
             if (currentMonth > 11) {
                 currentMonth = 0;
                 currentYear++;
             }
             selectedDay = null;
+            await loadHolidays();
             generateCalendar();
         }
 
@@ -434,9 +464,59 @@
             document.getElementById('attendancePercentage').textContent = `${percentage}%`;
         }
 
+        // Holiday management functions
+        async function loadHolidays() {
+            try {
+                const response = await fetch(`/get-calendar-data/?year=${currentYear}&month=${currentMonth + 1}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    if (data.success) {
+                        const monthKey = `${currentYear}-${currentMonth + 1}`;
+                        holidayData[monthKey] = data.events.map(event => ({
+                            day: new Date(event.date).getDate(),
+                            title: event.title,
+                            type: event.type
+                        }));
+                    }
+                }
+            } catch (error) {
+                console.log('Error loading holidays:', error);
+            }
+        }
+        
+        function isHolidayDate(year, month, day) {
+            const monthKey = `${year}-${month}`;
+            if (holidayData[monthKey]) {
+                return holidayData[monthKey].some(holiday => holiday.day === day);
+            }
+            // Also check if it's Sunday (default holiday)
+            const date = new Date(year, month - 1, day);
+            return date.getDay() === 0 || date.getDay() === 6; // Sunday or Saturday
+        }
+        
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
         // Initialize calendar
-        generateCalendar();
-        updateSummary();
+        async function initializeCalendar() {
+            await loadHolidays();
+            generateCalendar();
+            updateSummary();
+        }
+        
+        initializeCalendar();
     </script>
 </body>
 </html>

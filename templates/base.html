@@ -9,6 +9,7 @@
     <title>{% block title %}School Management{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="{% static 'css/dashboard-sidebar-fix.css' %}">
+    <link rel="stylesheet" href="{% static 'css/mobile-overlay-fix.css' %}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     {% block extra_css %}{% endblock %}
 </head>
@@ -147,7 +148,18 @@
                     <span class="nav-text">User Management</span>
                 </a>
                 {% endif %}
+                
+                <a href="{% url 'school_calendar' %}" class="nav-item{% if request.resolver_match.url_name == 'school_calendar' %} active{% endif %}">
+                    <span class="nav-icon">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M19,3H18V1H16V3H8V1H6V3H5A2,2 0 0,0 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5A2,2 0 0,0 19,3M19,19H5V8H19V19M16,10V12H14V10H16M12,10V12H10V10H12M8,10V12H6V10H8M16,14V16H14V14H16M12,14V16H10V14H12M8,14V16H6V14H8"/>
+                        </svg>
+                    </span>
+                    <span class="nav-text">School Calendar</span>
+                </a>
             </nav>
+            
+
         </aside>
         
         <div class="mobile-overlay" onclick="closeSidebar()"></div>
@@ -169,7 +181,7 @@
                     </div>
                     <div style="display: flex; gap: 1rem; align-items: center;">
                         <div class="profile-dropdown" style="position: relative;">
-                            <button class="profile-btn" onclick="toggleProfileDropdown()" style="background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 5px; transition: background 0.3s;">
+                            <button class="profile-btn" onclick="toggleProfileDropdown(event)" style="background: none; border: none; cursor: pointer; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem; border-radius: 5px; transition: background 0.3s; min-height: 44px; -webkit-tap-highlight-color: transparent;">
                                 <div class="profile-avatar" style="width: 32px; height: 32px; background: #007bff; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold;">
                                     {% if admin_username %}{{ admin_username|first|upper }}{% else %}U{% endif %}
                                 </div>
@@ -364,6 +376,7 @@
     </div>
     
     <script src="{% static 'js/main.js' %}"></script>
+    <script src="{% static 'js/mobile-fix.js' %}"></script>
     <script>
         function openSchoolSettingsPopup() {
             document.getElementById('schoolSettingsModal').style.display = 'flex';
@@ -377,6 +390,7 @@
             const sidebar = document.querySelector('.sidebar');
             const overlay = document.querySelector('.mobile-overlay');
             const body = document.body;
+            const mainContent = document.querySelector('.main-content');
             
             if (sidebar && overlay) {
                 sidebar.classList.toggle('open');
@@ -386,8 +400,28 @@
                 if (window.innerWidth <= 768) {
                     if (sidebar.classList.contains('open')) {
                         body.style.overflow = 'hidden';
+                        body.style.position = 'fixed';
+                        body.style.width = '100%';
                     } else {
                         body.style.overflow = '';
+                        body.style.position = '';
+                        body.style.width = '';
+                        
+                        // AGGRESSIVE FIX - FORCE MAIN CONTENT CLICKABLE
+                        if (mainContent) {
+                            mainContent.style.pointerEvents = 'auto';
+                            mainContent.style.touchAction = 'auto';
+                        }
+                        
+                        // FORCE ALL INTERACTIVE ELEMENTS CLICKABLE
+                        setTimeout(() => {
+                            document.querySelectorAll('button, select, input, a, .btn, [onclick]').forEach(el => {
+                                el.style.pointerEvents = 'auto !important';
+                                el.style.touchAction = 'manipulation !important';
+                                el.style.zIndex = '999';
+                                el.style.position = 'relative';
+                            });
+                        }, 50);
                     }
                 }
             }
@@ -397,11 +431,36 @@
             const sidebar = document.querySelector('.sidebar');
             const overlay = document.querySelector('.mobile-overlay');
             const body = document.body;
+            const mainContent = document.querySelector('.main-content');
             
             if (sidebar && overlay) {
                 sidebar.classList.remove('open');
                 overlay.classList.remove('active');
                 body.style.overflow = '';
+                body.style.position = '';
+                body.style.width = '';
+                
+                // AGGRESSIVE FIX - FORCE MAIN CONTENT CLICKABLE
+                if (mainContent) {
+                    mainContent.style.pointerEvents = 'auto';
+                    mainContent.style.touchAction = 'auto';
+                }
+                
+                // FORCE ALL INTERACTIVE ELEMENTS CLICKABLE IMMEDIATELY
+                document.querySelectorAll('button, select, input, a, .btn, [onclick]').forEach(el => {
+                    el.style.pointerEvents = 'auto !important';
+                    el.style.touchAction = 'manipulation !important';
+                    el.style.zIndex = '999';
+                    el.style.position = 'relative';
+                });
+                
+                // DOUBLE CHECK AFTER DELAY
+                setTimeout(() => {
+                    document.querySelectorAll('button, select, input, a, .btn, [onclick]').forEach(el => {
+                        el.style.pointerEvents = 'auto !important';
+                        el.style.touchAction = 'manipulation !important';
+                    });
+                }, 100);
             }
         }
         
@@ -430,6 +489,26 @@
             if (overlay) {
                 overlay.classList.remove('active');
             }
+            
+            // Add touch event listeners for better mobile interaction
+            if ('ontouchstart' in window) {
+                // Improve button responsiveness on mobile
+                document.querySelectorAll('button, .btn, .nav-item').forEach(element => {
+                    element.addEventListener('touchstart', function() {
+                        this.style.transform = 'scale(0.95)';
+                    }, { passive: true });
+                    
+                    element.addEventListener('touchend', function() {
+                        this.style.transform = '';
+                    }, { passive: true });
+                });
+            }
+            
+            // Ensure profile menu is hidden on load
+            const profileMenu = document.getElementById('profileMenu');
+            if (profileMenu) {
+                profileMenu.style.display = 'none';
+            }
         });
         
         // Close modal when clicking outside
@@ -446,27 +525,56 @@
         
         // Close sidebar when clicking nav items on mobile
         document.querySelectorAll('.nav-item').forEach(item => {
-            item.addEventListener('click', () => {
+            item.addEventListener('click', (e) => {
                 if (window.innerWidth <= 768) {
-                    closeSidebar();
+                    // Allow the link to navigate first, then close sidebar
+                    setTimeout(() => {
+                        closeSidebar();
+                    }, 100);
                 }
             });
         });
         
         // Profile dropdown functionality
-        function toggleProfileDropdown() {
+        function toggleProfileDropdown(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            
             const menu = document.getElementById('profileMenu');
-            menu.style.display = menu.style.display === 'none' ? 'block' : 'none';
+            const isVisible = menu.style.display === 'block';
+            
+            // Close all other dropdowns first
+            document.querySelectorAll('.profile-menu').forEach(m => {
+                if (m !== menu) m.style.display = 'none';
+            });
+            
+            menu.style.display = isVisible ? 'none' : 'block';
+            
+            // Add touch event handling for mobile
+            if (!isVisible && 'ontouchstart' in window) {
+                menu.addEventListener('touchstart', function(e) {
+                    e.stopPropagation();
+                }, { passive: true });
+            }
         }
         
         // Close profile dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const dropdown = document.querySelector('.profile-dropdown');
             const menu = document.getElementById('profileMenu');
-            if (!dropdown.contains(event.target)) {
+            if (dropdown && menu && !dropdown.contains(event.target)) {
                 menu.style.display = 'none';
             }
         });
+        
+        // Handle touch events for mobile
+        document.addEventListener('touchstart', function(event) {
+            const dropdown = document.querySelector('.profile-dropdown');
+            const menu = document.getElementById('profileMenu');
+            if (dropdown && menu && !dropdown.contains(event.target)) {
+                menu.style.display = 'none';
+            }
+        }, { passive: true });
         
         // Profile button hover effect
         document.querySelector('.profile-btn').addEventListener('mouseenter', function() {
@@ -493,6 +601,8 @@
                 closeProfileDetailsModal();
             }
         });
+        
+
     </script>
     {% block extra_js %}{% endblock %}
 </body>
