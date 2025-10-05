@@ -11,106 +11,43 @@
     <link rel="stylesheet" href="{% static 'css/dashboard-sidebar-fix.css' %}">
     <link rel="stylesheet" href="{% static 'css/mobile-overlay-fix.css' %}">
     <style>
-    /* Mobile Responsive Styles */
-    @media (max-width: 768px) {
+    /* Extra Small (xs) - Up to 600px - Smartphones */
+    @media (max-width: 600px) {
+        html { font-size: 14px; }
         .container, .container-fluid { padding: 0.5rem !important; }
         .card { margin-bottom: 1rem !important; border-radius: 12px !important; }
-        .card-body { padding: 1rem !important; }
-        .btn { padding: 0.75rem 1rem !important; font-size: 0.9rem !important; min-height: 44px !important; }
-        .form-control, .form-select { padding: 0.75rem !important; font-size: 1rem !important; min-height: 44px !important; }
-        .table-responsive { font-size: 0.85rem !important; }
-        .table th, .table td { padding: 0.5rem 0.25rem !important; }
-        .modal-content { margin: 1rem !important; width: calc(100% - 2rem) !important; }
-        .navbar { padding: 0.5rem 0 !important; }
-        .sidebar { width: 280px !important; }
-        .main-content { margin-left: 0 !important; }
-        h1 { font-size: 1.5rem !important; }
-        h2 { font-size: 1.3rem !important; }
-        h3 { font-size: 1.1rem !important; }
-        .row { margin: 0 !important; }
-        .col-md-3, .col-md-4, .col-md-6, .col-lg-3, .col-lg-4, .col-lg-6 { padding: 0.25rem !important; }
-        .d-flex { flex-wrap: wrap !important; }
-        .justify-content-between { justify-content: center !important; }
-        .text-right { text-align: center !important; }
-        .float-right { float: none !important; display: block !important; margin: 0.5rem auto !important; }
-        .badge { font-size: 0.75rem !important; padding: 0.25rem 0.5rem !important; }
-        .alert { margin: 0.5rem 0 !important; padding: 0.75rem !important; }
-        .pagination { justify-content: center !important; }
-        .pagination .page-link { padding: 0.5rem 0.75rem !important; }
-        .dropdown-menu { position: fixed !important; top: auto !important; left: 1rem !important; right: 1rem !important; width: auto !important; }
-        .chart-container { height: 250px !important; }
-        canvas { max-height: 250px !important; }
-        .stats-card { margin-bottom: 1rem !important; }
-        .profile-dropdown .profile-menu { right: 0 !important; left: auto !important; min-width: 250px !important; }
-        .table thead th { font-size: 0.8rem !important; }
-        .table tbody td { font-size: 0.85rem !important; }
-        .btn-group { flex-direction: column !important; }
-        .btn-group .btn { margin-bottom: 0.25rem !important; }
-        .input-group { flex-direction: column !important; }
-        .input-group .form-control { margin-bottom: 0.5rem !important; }
-        .card-header { padding: 0.75rem 1rem !important; }
-        .card-title { font-size: 1rem !important; }
-        .list-group-item { padding: 0.75rem !important; }
-        .nav-tabs .nav-link { padding: 0.5rem 0.75rem !important; font-size: 0.9rem !important; }
-        .progress { height: 1.5rem !important; }
-        .progress-bar { font-size: 0.8rem !important; }
-        .breadcrumb { padding: 0.5rem 0 !important; }
-        .breadcrumb-item { font-size: 0.9rem !important; }
-        .tooltip { font-size: 0.8rem !important; }
-        .popover { max-width: 90vw !important; }
-        .carousel-caption { padding: 0.5rem !important; }
-        .carousel-caption h5 { font-size: 1rem !important; }
-        .jumbotron { padding: 1rem !important; }
-        .display-1, .display-2, .display-3, .display-4 { font-size: 2rem !important; }
-        .lead { font-size: 1rem !important; }
-        .blockquote { font-size: 1rem !important; }
-        .figure-caption { font-size: 0.8rem !important; }
-        .text-truncate { max-width: 150px !important; }
-        .overflow-auto { max-height: 300px !important; }
-        .fixed-top, .fixed-bottom { position: relative !important; }
-        .sticky-top { position: relative !important; }
-        .shadow, .shadow-sm, .shadow-lg { box-shadow: 0 2px 8px rgba(0,0,0,0.1) !important; }
-        .border { border-width: 1px !important; }
-        .rounded { border-radius: 8px !important; }
-        .w-100 { width: 100% !important; }
-        .h-100 { height: auto !important; }
-        .mw-100 { max-width: 100% !important; }
-        .mh-100 { max-height: none !important; }
-        .min-vw-100 { min-width: 100% !important; }
-        .min-vh-100 { min-height: auto !important; }
-        .vw-100 { width: 100vw !important; }
-        .vh-100 { height: auto !important; }
-        .stretched-link::after { position: relative !important; }
-        .text-decoration-none { text-decoration: none !important; }
-        .font-weight-bold { font-weight: 600 !important; }
-        .font-italic { font-style: italic !important; }
-        .text-uppercase { text-transform: uppercase !important; }
-        .text-lowercase { text-transform: lowercase !important; }
-        .text-capitalize { text-transform: capitalize !important; }
-        .initialism { font-size: 0.8rem !important; }
-        .text-monospace { font-family: monospace !important; }
-        .user-select-all { user-select: all !important; }
-        .user-select-auto { user-select: auto !important; }
-        .user-select-none { user-select: none !important; }
-        .pe-none { pointer-events: none !important; }
-        .pe-auto { pointer-events: auto !important; }
-    }
-    
-    @media (max-width: 576px) {
-        .container, .container-fluid { padding: 0.25rem !important; }
         .card-body { padding: 0.75rem !important; }
-        .btn { padding: 0.5rem 0.75rem !important; font-size: 0.85rem !important; }
-        .form-control, .form-select { padding: 0.5rem !important; font-size: 0.9rem !important; }
+        .btn { padding: 0.5rem 0.75rem !important; font-size: 0.85rem !important; min-height: 44px !important; }
+        .form-control, .form-select { padding: 0.5rem !important; font-size: 0.9rem !important; min-height: 44px !important; }
+        .table-responsive { font-size: 0.8rem !important; }
         .table th, .table td { padding: 0.25rem !important; font-size: 0.8rem !important; }
         .modal-content { margin: 0.5rem !important; width: calc(100% - 1rem) !important; }
+        .navbar { padding: 0.5rem 0 !important; }
+        .navbar .container { padding: 0 0.5rem !important; }
+        .sidebar { width: 260px !important; }
+        .sidebar-header { margin-top: 10px !important; }
+        .sidebar-header img { width: 40px !important; height: 40px !important; }
+        .sidebar-header h2 { font-size: 11px !important; }
+        .main-content { margin-left: 0 !important; }
         h1 { font-size: 1.25rem !important; }
         h2 { font-size: 1.1rem !important; }
         h3 { font-size: 1rem !important; }
-        .sidebar { width: 260px !important; }
-        .navbar .container { padding: 0 0.5rem !important; }
-        .profile-dropdown .profile-menu { min-width: 200px !important; }
+        .row { margin: 0 !important; }
+        .col-md-3, .col-md-4, .col-md-6, .col-lg-3, .col-lg-4, .col-lg-6 { padding: 0.25rem !important; }
         .chart-container { height: 200px !important; }
         canvas { max-height: 200px !important; }
+        .profile-dropdown .profile-menu { min-width: 200px !important; }
+    }
+    
+    /* Small (sm) - 600-960px - Large smartphones and tablets */
+    @media (min-width: 600px) and (max-width: 960px) {
+        html { font-size: 15px; }
+        .container { max-width: 540px; }
+        .sidebar { width: 300px; }
+        .sidebar-header img { width: 50px !important; height: 50px !important; }
+        .sidebar-header h2 { font-size: 12px !important; }
+        .chart-container { height: 300px; }
+        canvas { max-height: 300px; }
     }
     
     /* Touch-friendly interactions */
@@ -128,27 +65,61 @@
         }
     }
     
-    /* Ensure all interactive elements are touch-friendly */
+    /* Touch-friendly elements */
     button, .btn, input, select, textarea, .nav-item, .dropdown-item, .page-link {
         min-height: 44px !important;
-        min-width: 44px !important;
         touch-action: manipulation !important;
     }
     
-    /* Fix for small screens */
-    @media (max-width: 480px) {
-        .table-responsive {
-            border: none !important;
-            overflow-x: auto !important;
-            -webkit-overflow-scrolling: touch !important;
-        }
-        .table {
-            min-width: 600px !important;
-        }
-        .sidebar {
-            width: 100% !important;
-            max-width: 280px !important;
-        }
+    /* Medium (md) - 960-1280px - Tablets and small laptops */
+    @media (min-width: 960px) and (max-width: 1280px) {
+        html { font-size: 16px; }
+        .container { max-width: 720px; }
+        .col-md-1 { flex: 0 0 8.333%; }
+        .col-md-2 { flex: 0 0 16.666%; }
+        .col-md-3 { flex: 0 0 25%; }
+        .col-md-4 { flex: 0 0 33.333%; }
+        .col-md-6 { flex: 0 0 50%; }
+        .col-md-12 { flex: 0 0 100%; }
+        .sidebar { width: 320px; }
+        .sidebar-header img { width: 55px !important; height: 55px !important; }
+        .sidebar-header h2 { font-size: 13px !important; }
+        .chart-container { height: 350px; }
+        canvas { max-height: 350px; }
+    }
+    
+    /* Large (lg) - 1280-1920px - Laptops and desktops */
+    @media (min-width: 1280px) and (max-width: 1920px) {
+        html { font-size: 16px; }
+        .container { max-width: 960px; }
+        .col-lg-1 { flex: 0 0 8.333%; }
+        .col-lg-2 { flex: 0 0 16.666%; }
+        .col-lg-3 { flex: 0 0 25%; }
+        .col-lg-4 { flex: 0 0 33.333%; }
+        .col-lg-6 { flex: 0 0 50%; }
+        .col-lg-12 { flex: 0 0 100%; }
+        .sidebar { width: 350px; }
+        .sidebar-header img { width: 60px !important; height: 60px !important; }
+        .sidebar-header h2 { font-size: 14px !important; }
+        .chart-container { height: 400px; }
+        canvas { max-height: 400px; }
+    }
+    
+    /* Extra Large (xl) - 1920px+ - Large, high-resolution desktop monitors */
+    @media (min-width: 1920px) {
+        html { font-size: 18px; }
+        .container { max-width: 1140px; }
+        .col-xl-1 { flex: 0 0 8.333%; }
+        .col-xl-2 { flex: 0 0 16.666%; }
+        .col-xl-3 { flex: 0 0 25%; }
+        .col-xl-4 { flex: 0 0 33.333%; }
+        .col-xl-6 { flex: 0 0 50%; }
+        .col-xl-12 { flex: 0 0 100%; }
+        .sidebar { width: 400px; }
+        .sidebar-header img { width: 70px !important; height: 70px !important; }
+        .sidebar-header h2 { font-size: 16px !important; }
+        .chart-container { height: 500px; }
+        canvas { max-height: 500px; }
     }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -157,8 +128,8 @@
 <body>
     <div class="layout">
         <aside class="sidebar">
-            <div class="sidebar-header" onclick="openSchoolSettingsPopup()" style="cursor: pointer;">
-                <img src="{% if school_info.logo %}{{ school_info.logo.url }}{% else %}{% static 'img/Everest-Crest-Square.png' %}{% endif %}" alt="{{ school_info.school_name }}" style="width: 60px; height: 60px; object-fit: contain;">
+            <div class="sidebar-header" onclick="openSchoolSettingsPopup()" style="cursor: pointer; margin-top: 20px; overflow: visible; padding: 10px;">
+                <img src="{% if school_info.logo %}{{ school_info.logo.url }}{% else %}{% static 'img/Everest-Crest-Square.png' %}{% endif %}" alt="{{ school_info.school_name }}" style="max-width: 60px; height: auto; z-index: 1000; position: relative;">
                 <h2 style="font-size: 14px; margin-top: 5px;">{{ school_info.school_name }}</h2>
             </div>
             <nav class="sidebar-nav">
