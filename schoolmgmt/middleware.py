@@ -6,7 +6,7 @@ class AdminAuthMiddleware:
 
     def __call__(self, request):
         # Allow public pages
-        public_paths = ['/', '/contact/', '/public-registration/', '/application-status/']
+        public_paths = ['/', '/contact/', '/public-registration/', '/application-status/', '/public-school-calendar/']
         if request.path in public_paths or request.path.startswith('/blog/') or request.path.startswith('/application-status/'):
             response = self.get_response(request)
             return response
