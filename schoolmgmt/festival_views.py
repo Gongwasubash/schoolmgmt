@@ -1,29 +1,12 @@
-import requests
 from django.core.cache import cache
 from django.http import JsonResponse
 from django.conf import settings
 from .models import CalendarEvent, SchoolDetail
 from datetime import datetime
 
-RAPIDAPI_KEY = "your-rapidapi-key"
-API_URL = "https://nepalicalendarapi.p.rapidapi.com/festivals"
-
 CACHE_TTL = 60 * 60 * 24  # 1 day
 
 def get_festivals_from_api(year_bs="2082"):
-    headers = {
-        "X-RapidAPI-Key": RAPIDAPI_KEY,
-        "X-RapidAPI-Host": "nepalicalendarapi.p.rapidapi.com"
-    }
-    params = {"year": year_bs}
-    
-    try:
-        resp = requests.get(API_URL, headers=headers, params=params, timeout=10)
-        resp.raise_for_status()
-        return {"festivals": resp.json()}
-    except:
-        pass
-    
     # Fallback verified data
     return {
         "festivals": [
