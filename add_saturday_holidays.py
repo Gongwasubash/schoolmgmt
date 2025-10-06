@@ -1,61 +1,42 @@
+#!/usr/bin/env python3
 import os
-import django
 import sys
-from datetime import date, timedelta
+import django
+from datetime import datetime, timedelta
 
-# Add the project directory to the Python path
-sys.path.append('e:\\schoolmgmt')
-
-# Set up Django
+sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'schoolmgmt.settings')
 django.setup()
 
-from schoolmgmt.models import CalendarEvent
+from schoolmgmt.models import CalendarEvent, SchoolDetail
 
-def add_all_saturdays_as_holidays():
-    """Add all Saturdays as holidays for current and next year"""
+def add_all_saturdays():
+    school = SchoolDetail.get_current_school()
     
-    current_year = date.today().year
-    years_to_process = [current_year, current_year + 1]
+    # Remove existing Saturday holidays
+    CalendarEvent.objects.filter(event_type='holiday', title='Saturday Holiday').delete()
     
-    created_count = 0
+    # Add Saturdays for 2025 and 2026
+    start_date = datetime(2025, 1, 1).date()
+    end_date = datetime(2026, 12, 31).date()
     
-    for year in years_to_process:
-        # Start from January 1st of the year
-        current_date = date(year, 1, 1)
-        
-        # Find the first Saturday of the year
-        days_until_saturday = (5 - current_date.weekday()) % 7
-        first_saturday = current_date + timedelta(days=days_until_saturday)
-        
-        # Generate all Saturdays for the year
-        saturday = first_saturday
-        while saturday.year == year:
-            # Check if this Saturday already exists as a holiday
-            existing_event = CalendarEvent.objects.filter(
-                event_date=saturday,
-                title="Saturday Holiday"
-            ).first()
-            
-            if not existing_event:
-                CalendarEvent.objects.create(
-                    title="Saturday Holiday",
-                    description="Weekly Saturday holiday",
-                    event_date=saturday,
-                    event_type="holiday",
-                    is_active=True,
-                    created_by="System - Saturday Auto-Add"
-                )
-                created_count += 1
-                print(f"Added Saturday holiday: {saturday}")
-            else:
-                print(f"Saturday holiday already exists: {saturday}")
-            
-            # Move to next Saturday
-            saturday += timedelta(days=7)
+    current_date = start_date
+    saturday_count = 0
     
-    print(f"\nSuccessfully added {created_count} Saturday holidays")
-    print(f"Total Saturdays processed for years {years_to_process}")
+    while current_date <= end_date:
+        if current_date.weekday() == 5:  # Saturday
+            CalendarEvent.objects.create(
+                title="Saturday Holiday",
+                description="Weekly holiday",
+                event_date=current_date,
+                event_type='holiday',
+                school=school,
+                created_by='Saturday System'
+            )
+            saturday_count += 1
+        current_date += timedelta(days=1)
+    
+    print(f"Added {saturday_count} Saturday holidays for 2025-2026")
 
-if __name__ == '__main__':
-    add_all_saturdays_as_holidays()
+if __name__ == "__main__":
+    add_all_saturdays()

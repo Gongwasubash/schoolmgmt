@@ -814,10 +814,10 @@ def pay_student(request, student_id):
                 paid_fee_months[fee_type] += months
         total_balance += payment.balance
     
-    # Get student daily expenses
-    daily_expenses = StudentDailyExpense.objects.filter(student=student)
+    # Get only unpaid student daily expenses
+    unpaid_daily_expenses = StudentDailyExpense.objects.filter(student=student, is_paid=False)
     daily_expenses_data = []
-    for expense in daily_expenses:
+    for expense in unpaid_daily_expenses:
         daily_expenses_data.append({
             'id': expense.id,
             'description': expense.description,
@@ -1331,7 +1331,7 @@ def submit_payment(request):
                     student.save()
                     break
             
-            # Record paid daily expenses as FeePayment entries and delete from StudentDailyExpense
+            # Record paid daily expenses as FeePayment entries and mark as paid
             daily_expenses = json.loads(data.get('daily_expenses', '[]'))
             if daily_expenses:
                 for expense in daily_expenses:
@@ -1353,9 +1353,12 @@ def submit_payment(request):
                         whatsapp_sent=data.get('whatsapp_sent', False)
                     )
                 
-                # Delete paid daily expenses
+                # Mark daily expenses as paid instead of deleting them
                 expense_ids = [expense['id'] for expense in daily_expenses]
-                StudentDailyExpense.objects.filter(id__in=expense_ids).delete()
+                StudentDailyExpense.objects.filter(id__in=expense_ids).update(
+                    is_paid=True,
+                    payment_date=date.today()
+                )
             
             return JsonResponse({'success': True, 'payment_ids': payment_ids, 'daily_expenses_paid': len(daily_expenses) if daily_expenses else 0})
         except Exception as e:
@@ -1421,20 +1424,22 @@ def fee_receipt_book(request):
         # Calculate paid amount
         student_paid = student.total_paid or Decimal('0')
         
-        # Add daily expenses to total fee
-        daily_expenses = StudentDailyExpense.objects.filter(student=student).aggregate(
+        # Get only unpaid daily expenses (paid expenses are deleted from the table)
+        unpaid_daily_expenses = StudentDailyExpense.objects.filter(student=student, is_paid=False)
+        daily_expenses_total = unpaid_daily_expenses.aggregate(
             total_expenses=Sum('amount')
         )['total_expenses'] or Decimal('0')
         
-        student_total_fee += daily_expenses
+        # Only add unpaid daily expenses to total fee
+        student_total_fee += daily_expenses_total
         student_pending = max(Decimal('0'), student_total_fee - student_paid)
         
         # Add to totals
         total_collected += student_paid
         total_pending += student_pending
         
-        # Store daily expenses for display
-        student.daily_expenses = float(daily_expenses)
+        # Store only unpaid daily expenses for display
+        student.daily_expenses_total = float(daily_expenses_total)
         
         # Calculate fee breakdown based on applied filters
         if fee_structure:
@@ -1482,7 +1487,7 @@ def fee_receipt_book(request):
         student.payment_status = 'paid' if student_pending == 0 else 'pending'
         student.class_name = student.student_class
         student.roll_number = student.reg_number
-        student.daily_expenses_total = float(daily_expenses)
+        student.daily_expenses_total = float(daily_expenses_total)
         student.email = student.email  # Ensure email is available
         
         # Calculate monthly fee amount (monthly_fee + tuition_fee)
@@ -1805,9 +1810,9 @@ def credit_slip(request, student_id):
     pending_fees = []
     total_pending = 0
     
-    # Add student daily expenses
-    daily_expenses = StudentDailyExpense.objects.filter(student=student)
-    for expense in daily_expenses:
+    # Add only unpaid student daily expenses
+    unpaid_daily_expenses = StudentDailyExpense.objects.filter(student=student, is_paid=False)
+    for expense in unpaid_daily_expenses:
         pending_fees.append({
             'name': expense.description,
             'amount': float(expense.amount)
@@ -1970,8 +1975,9 @@ def fee_receipt_book_api(request):
                 
                 student_paid = student.total_paid or Decimal('0')
             
-            # Add daily expenses to total fee
-            daily_expenses = StudentDailyExpense.objects.filter(student=student).aggregate(
+            # Add only unpaid daily expenses to total fee
+            unpaid_daily_expenses = StudentDailyExpense.objects.filter(student=student, is_paid=False)
+            daily_expenses = unpaid_daily_expenses.aggregate(
                 total_expenses=Sum('amount')
             )['total_expenses'] or Decimal('0')
             
@@ -3389,45 +3395,31 @@ def generate_class_marksheets_new_tab(request, exam_id):
         # Calculate total school days up to exam date
         exam_date = exam.exam_date if exam.exam_date else date.today()
         session_end_for_exam = min(exam_date, session_end)
-        total_days = (session_end_for_exam - session_start).days + 1
+        total_days = SchoolAttendance.objects.values('date').distinct().count()
     else:
-        total_days = 200  # Default value
+        total_days = SchoolAttendance.objects.values('date').distinct().count()
     
     marksheets_data = []
     for student in students:
         marksheets = Marksheet.objects.filter(student=student, exam=exam)
         
-        # Calculate student attendance, leave, and absent days from actual database records
-        if current_session:
-            date_range = [current_session.start_date, min(current_session.end_date, date.today())]
-        else:
-            # Use current academic year if no session
-            from datetime import timedelta
-            today = date.today()
-            year_start = today.replace(month=4, day=1) if today.month >= 4 else today.replace(year=today.year-1, month=4, day=1)
-            date_range = [year_start, today]
-        
         # Get actual attendance data from SchoolAttendance model
         student_present_days = SchoolAttendance.objects.filter(
-            student=student, date__range=date_range, status='present'
+            student=student, status='present'
         ).count()
         
-        student_leave_days = SchoolAttendance.objects.filter(
-            student=student, date__range=date_range, status='leave'
+        student_late_days = SchoolAttendance.objects.filter(
+            student=student, status='late'
         ).count()
         
         student_absent_days = SchoolAttendance.objects.filter(
-            student=student, date__range=date_range, status='absent'
+            student=student, status='absent'
         ).count()
         
-        # If no attendance records exist, use reasonable defaults
-        if student_present_days == 0 and student_leave_days == 0 and student_absent_days == 0:
-            student_present_days = 165
-            student_leave_days = 15
-            student_absent_days = 20
-        
-        # Total attendance days = present + leave (leave is excused attendance)
-        student_attendance_days = student_present_days + student_leave_days
+        # Total attendance days = present + late (late is counted as attendance)
+        student_attendance_days = student_present_days + student_late_days
+        student_present_and_late_days = student_present_days + student_late_days
+        student_leave_days = 0  # No leave status in current model
         
         if marksheets.exists():
             # Calculate totals
@@ -3485,6 +3477,7 @@ def generate_class_marksheets_new_tab(request, exam_id):
                 'total_school_days': total_days,
                 'student_attendance_days': student_attendance_days,
                 'student_present_days': student_present_days,
+                'student_present_and_late_days': student_present_and_late_days,
                 'student_leave_days': student_leave_days,
                 'student_absent_days': student_absent_days
             })
@@ -3912,9 +3905,13 @@ def student_attendance_dashboard(request):
     selected_class = request.GET.get('class', '')
     selected_section = request.GET.get('section', '')
     
-    # Check if today is a holiday
-    today_event = CalendarEvent.objects.filter(event_date=date.today(), is_active=True).first()
-    is_holiday = bool(today_event)
+    # Check if selected date is a holiday or Saturday
+    from datetime import datetime
+    selected_date_obj = datetime.strptime(selected_date, '%Y-%m-%d').date()
+    selected_event = CalendarEvent.objects.filter(event_date=selected_date_obj, is_active=True, event_type__in=['holiday', 'festival']).first()
+    is_holiday = bool(selected_event)
+    is_saturday = selected_date_obj.weekday() == 5  # Saturday is 5 in Python's weekday()
+    can_mark_attendance = not (is_holiday or is_saturday)
     
     # Get unique classes and sections
     classes = Student.objects.values_list('student_class', flat=True).distinct().order_by('student_class')
@@ -3929,9 +3926,10 @@ def student_attendance_dashboard(request):
     
     students = students_query.order_by('name')
     
-    # Get attendance for selected date
+    # Get attendance for selected date - filter by the same students
     attendance_records = SchoolAttendance.objects.filter(
-        date=selected_date
+        date=selected_date,
+        student__in=students
     ).select_related('student')
     
     # Create attendance dictionary
@@ -3963,6 +3961,9 @@ def student_attendance_dashboard(request):
     absent_count = sum(1 for s in students_with_attendance if s['attendance']['status'] == 'absent')
     late_count = sum(1 for s in students_with_attendance if s['attendance']['status'] == 'late')
     
+    # Total days attendance was recorded
+    total_school_days = SchoolAttendance.objects.values('date').distinct().count()
+    
     context = {
         'students_with_attendance': students_with_attendance,
         'classes': classes,
@@ -3971,11 +3972,14 @@ def student_attendance_dashboard(request):
         'selected_class': selected_class,
         'selected_section': selected_section,
         'total_students': total_students,
-        'today_event': today_event,
+        'today_event': selected_event,
         'is_holiday': is_holiday,
+        'is_saturday': is_saturday,
+        'can_mark_attendance': can_mark_attendance,
         'present_count': present_count,
         'absent_count': absent_count,
         'late_count': late_count,
+        'total_school_days': total_school_days,
         'attendance_percentage': round((present_count / total_students * 100) if total_students > 0 else 0, 1)
     }
     
@@ -4133,7 +4137,8 @@ def get_student_expenses_api(request, student_id):
         today = date.today()
         expenses = StudentDailyExpense.objects.filter(
             student=student,
-            expense_date=today
+            expense_date=today,
+            is_paid=False
         ).order_by('-created_at')
         
         expenses_data = []
@@ -4167,7 +4172,8 @@ def get_class_expenses_api(request, class_name):
         today = date.today()
         expenses = StudentDailyExpense.objects.filter(
             student__student_class=class_name,
-            expense_date=today
+            expense_date=today,
+            is_paid=False
         ).select_related('student').order_by('-created_at')
         
         expenses_data = []
@@ -4217,7 +4223,8 @@ def get_todays_all_expenses_api(request):
     try:
         today = date.today()
         expenses = StudentDailyExpense.objects.filter(
-            expense_date=today
+            expense_date=today,
+            is_paid=False
         ).select_related('student').order_by('-created_at')
         
         expenses_data = []
@@ -4333,6 +4340,12 @@ def edit_holiday_api(request):
             event.description = data.get('description', '')
             event.event_date = data['event_date']
             event.event_type = data.get('event_type', 'event')
+            
+            # Update school if provided
+            if data.get('school_id'):
+                event.school = get_object_or_404(SchoolDetail, id=data['school_id'])
+            else:
+                event.school = None
             
             # Update school if provided
             if data.get('school_id'):
@@ -7352,3 +7365,39 @@ def delete_holiday_api(request):
             return JsonResponse({'success': False, 'error': str(e)})
     
     return JsonResponse({'success': False, 'error': 'Invalid request method'})
+
+def public_school_calendar(request):
+    """Public school calendar view for homepage navbar"""
+    school = SchoolDetail.get_current_school()
+    
+    context = {
+        'school': school,
+    }
+    
+    return render(request, 'public_school_calendar.html', context)
+
+def public_school_calendar(request):
+    from .models import CalendarEvent
+    import json
+    
+    school = SchoolDetail.get_current_school()
+    
+    # Get all active calendar events
+    events = CalendarEvent.objects.filter(is_active=True).order_by('event_date')
+    
+    # Convert events to JSON format for JavaScript
+    events_data = {}
+    for event in events:
+        date_key = event.event_date.strftime('%Y-%m-%d')
+        if date_key not in events_data:
+            events_data[date_key] = []
+        events_data[date_key].append({
+            'title': event.title,
+            'type': event.event_type,
+            'description': event.description
+        })
+    
+    return render(request, 'public_school_calendar.html', {
+        'school': school,
+        'events_json': json.dumps(events_data)
+    })

@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>School Attendance Calendar</h2>
+    
+    <div class="row">
+        {% for day in school_days %}
+        <div class="col-md-3 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h6 class="card-title">{{ day.event_date }}</h6>
+                    <p class="card-text">{{ day.title }}</p>
+                    <a href="/attendance/date/{{ day.event_date }}" class="btn btn-primary btn-sm">
+                        View Attendance
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

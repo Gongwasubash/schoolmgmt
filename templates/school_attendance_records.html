@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Attendance Records - {{ date }}</h2>
+    
+    <div class="mb-3">
+        <a href="/school-attendance-dates/" class="btn btn-secondary">← Back to Dates</a>
+    </div>
+    
+    <div class="card">
+        <div class="card-body">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Class</th>
+                        <th>Section</th>
+                        <th>Status</th>
+                        <th>Marked By</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendance_records %}
+                    <tr>
+                        <td>{{ record.student.name }}</td>
+                        <td>{{ record.student.student_class }}</td>
+                        <td>{{ record.student.section }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if record.status == 'present' %}badge-success
+                                {% elif record.status == 'late' %}badge-warning
+                                {% elif record.status == 'absent' %}badge-danger
+                                {% endif %}">
+                                {{ record.status|title }}
+                            </span>
+                        </td>
+                        <td>{{ record.marked_by }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center">No attendance records found for this date</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

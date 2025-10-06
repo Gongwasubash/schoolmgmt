@@ -579,6 +579,16 @@
     .student-info { gap: 0.5rem; }
     .avatar { width: 32px; height: 32px; font-size: 0.875rem; }
 }
+.student-name-link {
+    color: #007bff;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+.student-name-link:hover {
+    color: #0056b3;
+    text-decoration: underline;
+}
 </style>
 {% endblock %}
 
@@ -704,7 +714,6 @@
                     <th>Total Fee</th>
                     <th>Paid</th>
                     <th>Student Daily Expenses</th>
-                    <th>Fee Breakdown</th>
                     <th>Status</th>
                     <th class="hide-mobile">Last Payment</th>
                     <th>Actions</th>
@@ -717,7 +726,7 @@
                         <div class="student-info">
                             <div class="avatar">{{ student.name|first|upper }}</div>
                             <div class="student-details">
-                                <h3>{{ student.name }}</h3>
+                                <h3><a href="#" class="student-name-link" onclick="viewStudentDetail({{ student.id }})">{{ student.name }}</a></h3>
                                 <div class="student-meta">
                                     <span><i class="fas fa-id-card"></i>{{ student.reg_number|default:student.roll_number }}</span>
                                     <span><i class="fas fa-graduation-cap"></i>{{ student.student_class }}</span>
@@ -735,11 +744,6 @@
                     <td>
                         <div class="fee-amount" style="color: #dc3545;">Rs {{ student.daily_expenses_total|default:0|floatformat:0 }}</div>
                     </td>
-                    <td>
-                        <div class="fee-details" style="font-size: 0.75rem; color: #666;">
-                            {{ student.fee_breakdown_text }}
-                        </div>
-                    </td>
                     <td><span class="badge {{ student.payment_status|yesno:'success,warning' }}">{{ student.payment_status }}</span></td>
 
                     <td class="hide-mobile">
@@ -750,9 +754,6 @@
                     </td>
                     <td>
                         <div class="action-buttons">
-                            <button class="btn-outline" onclick="feeBook.navigate('student-payments', {{ student.id }})">
-                                <i class="fas fa-eye"></i> View
-                            </button>
                             <button class="btn-success" onclick="feeBook.navigate('pay-student', {{ student.id }})">
                                 <i class="fas fa-plus"></i> Pay
                             </button>
@@ -761,9 +762,6 @@
                             </button>
                             <button class="btn-outline" onclick="feeBook.sendWhatsApp({{ student.id }}, '{{ student.mobile }}', '{{ student.name }}')" style="background: #25D366; color: white; border-color: #25D366;">
                                 <i class="fab fa-whatsapp"></i> WhatsApp
-                            </button>
-                            <button class="btn-outline" onclick="feeBook.sendEmail({{ student.id }}, '{{ student.email }}', '{{ student.name }}')" style="background: #007bff; color: white; border-color: #007bff;">
-                                <i class="fas fa-envelope"></i> Email
                             </button>
                         </div>
                     </td>
@@ -883,21 +881,80 @@ class FeeReceiptBook {
         window.open(`/credit-slip/${studentId}/?${params}`, '_blank');
     }
 
-    sendWhatsApp(studentId, mobile, studentName) {
+    async sendWhatsApp(studentId, mobile, studentName) {
         if (!mobile) {
             alert('No mobile number available for this student.');
             return;
         }
         
-        // Get student row to extract fee details
-        const studentRow = document.querySelector(`tr[data-student-id="${studentId}"]`);
-        const totalFee = studentRow.querySelector('.fee-amount').textContent;
-        const paidAmount = studentRow.querySelectorAll('.fee-amount')[1].textContent;
-        const feeBreakdown = studentRow.querySelector('.fee-details').textContent;
-        
-        const message = `Dear Parent,\n\nGreetings from our school!\n\n📋 Fee Statement for ${studentName}:\n\n💰 Total Outstanding: ${totalFee}\n✅ Amount Paid: ${paidAmount}\n\n📊 Fee Details:\n${feeBreakdown}\n\nKindly visit the school office at your earliest convenience to complete the payment.\n\nFor any queries, please feel free to contact us.\n\nThank you for your cooperation.\n\nBest regards,\nSchool Administration`;
-        const whatsappUrl = `https://web.whatsapp.com/send?phone=${mobile.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(message)}`;
-        window.open(whatsappUrl, '_blank');
+        try {
+            // Get detailed fee information from credit slip API
+            const months = Array.from(document.querySelectorAll('.month-filter input:checked'), cb => cb.value);
+            const feeTypes = Array.from(document.querySelectorAll('.fee-type-filter input:checked'), cb => cb.value);
+            
+            const params = new URLSearchParams();
+            if (months.length) params.append('months', months.join(','));
+            if (feeTypes.length) params.append('fee_types', feeTypes.join(','));
+            
+            // Fetch credit slip data to get detailed fee breakdown
+            const response = await fetch(`/credit-slip/${studentId}/?${params}`);
+            const html = await response.text();
+            
+            // Parse the HTML to extract fee details
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const feeRows = doc.querySelectorAll('tbody tr');
+            
+            let feeDetails = '';
+            let totalPending = 0;
+            
+            feeRows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                if (cells.length >= 2) {
+                    const feeName = cells[0].textContent.trim();
+                    const feeAmount = cells[1].textContent.trim();
+                    
+                    if (feeName !== 'Total Pending') {
+                        feeDetails += `• ${feeName}: ${feeAmount}\n`;
+                    } else {
+                        totalPending = feeAmount;
+                    }
+                }
+            });
+            
+            // If no detailed breakdown available, use basic info
+            if (!feeDetails) {
+                const studentRow = document.querySelector(`tr[data-student-id="${studentId}"]`);
+                const totalFee = studentRow.querySelector('.fee-amount').textContent;
+                const dailyExpenses = studentRow.querySelectorAll('.fee-amount')[2].textContent;
+                
+                feeDetails = `• Pending Fees: ${totalFee}\n`;
+                if (dailyExpenses && dailyExpenses !== 'Rs 0') {
+                    feeDetails += `• Daily Expenses: ${dailyExpenses}\n`;
+                }
+                totalPending = totalFee;
+            }
+            
+            // Create professional WhatsApp message
+            const message = `🏫 *SCHOOL FEE NOTICE*\n\nDear Parent/Guardian,\n\nGreetings from our school administration.\n\n👨‍🎓 *Student Details:*\nName: ${studentName}\nClass: ${document.querySelector(`tr[data-student-id="${studentId}"] .student-meta span:nth-child(2)`).textContent.replace('🎓', '').trim()}\n\n💰 *Pending Fee Details:*\n${feeDetails}\n📊 *Total Outstanding: ${totalPending}*\n\n📅 *Payment Request:*\nKindly visit the school office at your earliest convenience to complete the pending payment.\n\n📞 *For Queries:*\nPlease contact the school office during working hours.\n\n🙏 Thank you for your cooperation.\n\n*Best Regards,*\n*School Administration*`;
+            
+            const whatsappUrl = `https://web.whatsapp.com/send?phone=${mobile.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+            
+        } catch (error) {
+            console.error('Error fetching fee details:', error);
+            
+            // Fallback to basic message if API fails
+            const studentRow = document.querySelector(`tr[data-student-id="${studentId}"]`);
+            const totalFee = studentRow.querySelector('.fee-amount').textContent;
+            const paidAmount = studentRow.querySelectorAll('.fee-amount')[1].textContent;
+            const dailyExpenses = studentRow.querySelectorAll('.fee-amount')[2].textContent;
+            
+            const message = `🏫 *SCHOOL FEE NOTICE*\n\nDear Parent/Guardian,\n\nGreetings from our school administration.\n\n👨‍🎓 *Student:* ${studentName}\n\n💰 *Fee Summary:*\n• Total Outstanding: ${totalFee}\n• Amount Paid: ${paidAmount}\n• Daily Expenses: ${dailyExpenses}\n\n📅 Kindly visit the school office to complete the pending payment.\n\n🙏 Thank you for your cooperation.\n\n*Best Regards,*\n*School Administration*`;
+            
+            const whatsappUrl = `https://web.whatsapp.com/send?phone=${mobile.replace(/[^0-9]/g, '')}&text=${encodeURIComponent(message)}`;
+            window.open(whatsappUrl, '_blank');
+        }
     }
 
     async sendEmail(studentId, email, studentName) {
@@ -1031,7 +1088,7 @@ class FeeReceiptBook {
                     <div class="student-info">
                         <div class="avatar">${student.name.charAt(0).toUpperCase()}</div>
                         <div class="student-details">
-                            <h3>${student.name}</h3>
+                            <h3><a href="#" class="student-name-link" onclick="viewStudentDetail(${student.id})">${student.name}</a></h3>
                             <div class="student-meta">
                                 <span><i class="fas fa-id-card"></i>${student.roll_number}</span>
                                 <span><i class="fas fa-graduation-cap"></i>${student.class_name}</span>
@@ -1048,21 +1105,14 @@ class FeeReceiptBook {
                 <td>
                     <div class="fee-amount" style="color: #dc3545;">Rs ${Math.round(student.daily_expenses_total || 0).toLocaleString()}</div>
                 </td>
-                <td>
-                    <div class="fee-details" style="font-size: 0.75rem; color: #666;">
-                        ${student.fee_breakdown_text || 'Fee breakdown not available'}
-                    </div>
-                </td>
                 <td><span class="badge ${student.payment_status === 'paid' ? 'success' : 'warning'}">${student.payment_status}</span></td>
 
                 <td class="hide-mobile"><div class="last-payment"><i class="fas fa-calendar"></i>${student.last_payment_date || 'No payments yet'}</div></td>
                 <td>
                     <div class="action-buttons">
-                        <button class="btn-outline" onclick="feeBook.navigate('student-payments', ${student.id})"><i class="fas fa-eye"></i> View</button>
                         <button class="btn-success" onclick="feeBook.navigate('pay-student', ${student.id})"><i class="fas fa-plus"></i> Pay</button>
                         <button class="btn-primary" onclick="feeBook.printReceipt(${student.id})"><i class="fas fa-print"></i> Print</button>
                         <button class="btn-outline" onclick="feeBook.sendWhatsApp(${student.id}, '${student.mobile || ''}', '${student.name}')" style="background: #25D366; color: white; border-color: #25D366;"><i class="fab fa-whatsapp"></i> WhatsApp</button>
-                        <button class="btn-outline" onclick="feeBook.sendEmail(${student.id}, '${student.email || ''}', '${student.name}')" style="background: #007bff; color: white; border-color: #007bff;"><i class="fas fa-envelope"></i> Email</button>
                     </div>
                 </td>
             </tr>
@@ -1100,6 +1150,20 @@ function applyFilters() { feeBook.applyFilters(); }
 function bulkPrint() { feeBook.bulkPrint(); }
 function bulkWhatsApp() { feeBook.bulkWhatsApp(); }
 
+function viewStudentDetail(studentId) {
+    const months = Array.from(document.querySelectorAll('.month-filter input:checked'), cb => cb.value);
+    const classFilter = document.getElementById('class-filter').value;
+    const statusFilter = document.getElementById('status-filter').value;
+    const feeTypes = Array.from(document.querySelectorAll('.fee-type-filter input:checked'), cb => cb.value);
+    
+    const params = new URLSearchParams();
+    if (months.length) params.append('months', months.join(','));
+    if (classFilter) params.append('class', classFilter);
+    if (statusFilter) params.append('status', statusFilter);
+    if (feeTypes.length) params.append('fee_types', feeTypes.join(','));
+    
+    window.location.href = `/student-detail/${studentId}/?${params}`;
+}
 
 </script>
 {% endblock %}

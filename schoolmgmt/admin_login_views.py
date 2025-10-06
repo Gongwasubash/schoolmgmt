@@ -1,18 +1,20 @@
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from django.http import JsonResponse
-from .models import AdminLogin
+from .models import AdminLogin, SchoolDetail
 import hashlib
 
 def admin_login(request):
     """Simple admin login function"""
+    school = SchoolDetail.get_current_school()
+    
     if request.method == 'POST':
         username = request.POST.get('username', '').strip()
         password = request.POST.get('password', '')
         
         if not username or not password:
             messages.error(request, 'Please enter both username and password')
-            return render(request, 'admin_login.html')
+            return render(request, 'admin_login.html', {'school': school})
         
         hashed_password = hashlib.md5(password.encode()).hexdigest()
         
@@ -42,7 +44,7 @@ def admin_login(request):
         except AdminLogin.DoesNotExist:
             messages.error(request, 'Invalid credentials')
     
-    return render(request, 'admin_login.html')
+    return render(request, 'admin_login.html', {'school': school})
 
 def admin_logout(request):
     """Simple admin logout function"""

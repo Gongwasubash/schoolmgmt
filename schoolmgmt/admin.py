@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, ContactEnquiry, HeroSlider, Blog, SchoolAttendance, Teacher, TeacherClassSubject, CalendarEvent
+from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, Marksheet, StudentMarks, MarksheetData, StudentDailyExpense, SchoolDetail, AdminLogin, StudentRegistration, ContactEnquiry, HeroSlider, Blog, SchoolAttendance, Teacher, TeacherClassSubject, CalendarEvent, StudentAttendance
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
@@ -261,5 +261,22 @@ class CalendarEventAdmin(admin.ModelAdmin):
         }),
         ('Status', {
             'fields': ('is_active', 'created_by')
+        }),
+    )
+
+@admin.register(StudentAttendance)
+class StudentAttendanceAdmin(admin.ModelAdmin):
+    list_display = ['date', 'student', 'status', 'marked_by', 'created_at']
+    list_filter = ['date', 'status', 'student__student_class', 'student__section']
+    search_fields = ['student__name', 'student__reg_number']
+    date_hierarchy = 'date'
+    ordering = ['-date', 'student__name']
+    
+    fieldsets = (
+        ('Attendance Information', {
+            'fields': ('student', 'date', 'status', 'remarks')
+        }),
+        ('Additional Details', {
+            'fields': ('marked_by', 'date_nepali')
         }),
     )

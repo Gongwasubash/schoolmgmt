@@ -9,7 +9,7 @@
         max-width: 1200px;
         margin: 0 auto;
         padding: 10px;
-        background: #f8f9fa;
+        background: white;
         min-height: 100vh;
     }
     
@@ -469,6 +469,7 @@
                     <option value="festival">Festival (Religious/Cultural)</option>
                     <option value="exam">Exam (Tests/Examinations)</option>
                     <option value="event">School Event (Activities/Programs)</option>
+                    <option value="school-day">School Day</option>
                     <option value="meeting">Meeting (Staff/Parent Meetings)</option>
                     <option value="other">Other</option>
                 </select>
@@ -525,6 +526,7 @@
                     <option value="festival">Festival (Religious/Cultural)</option>
                     <option value="exam">Exam (Tests/Examinations)</option>
                     <option value="event">School Event (Activities/Programs)</option>
+                    <option value="school-day">School Day</option>
                     <option value="meeting">Meeting (Staff/Parent Meetings)</option>
                     <option value="other">Other</option>
                 </select>
@@ -695,6 +697,14 @@ async function showEnglishCalendar() {
         const dayCell = document.createElement('div');
         dayCell.className = 'day-cell other-month';
         dayCell.innerHTML = `<div class="day-number"></div>`;
+        dayCell.addEventListener('click', function() {
+            const prevMonth = currentEnglishMonth === 0 ? 12 : currentEnglishMonth;
+            const prevYear = currentEnglishMonth === 0 ? currentEnglishYear - 1 : currentEnglishYear;
+            const prevMonthDays = new Date(prevYear, prevMonth, 0).getDate();
+            const day = prevMonthDays - firstDay + i + 1;
+            const clickedDate = `${prevYear}-${String(prevMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            showDayManagementModal(clickedDate, day);
+        });
         daysContainer.appendChild(dayCell);
     }
     
@@ -755,7 +765,11 @@ async function showEnglishCalendar() {
                         break;
                     case 'event':
                         shouldShow = showEvents;
-                        eventClass = event.title === 'School Day' ? 'school-day' : 'event';
+                        eventClass = 'event';
+                        break;
+                    case 'school-day':
+                        shouldShow = showEvents;
+                        eventClass = 'school-day';
                         break;
                     case 'meeting':
                         shouldShow = showMeetings;
@@ -767,15 +781,16 @@ async function showEnglishCalendar() {
                 }
                 
                 if (shouldShow) {
-                    dayContent += `<div class="${eventClass}" onclick="showEditHolidayModal(${event.id}, '${event.title}', '${event.date}', '${event.type}', '${event.description || ''}')" title="${event.description || event.title}">${event.title}</div>`;
+                    const displayTitle = event.type === 'school-day' ? 'School Day' : event.title;
+                    dayContent += `<div class="${eventClass}" onclick="showEditHolidayModal(${event.id}, '${event.title}', '${event.date}', '${event.type}', '${event.description || ''}')" title="${event.description || event.title}">${displayTitle}</div>`;
                 }
             });
         }
         
         dayCell.innerHTML = dayContent;
         dayCell.addEventListener('click', function() {
-            const clickedDate = new Date(currentEnglishYear, currentEnglishMonth, day);
-            showDayManagementModal(clickedDate.toISOString().split('T')[0], day);
+            const clickedDate = `${currentEnglishYear}-${String(currentEnglishMonth + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            showDayManagementModal(clickedDate, day);
         });
         daysContainer.appendChild(dayCell);
     }
@@ -786,6 +801,12 @@ async function showEnglishCalendar() {
         const dayCell = document.createElement('div');
         dayCell.className = 'day-cell other-month';
         dayCell.innerHTML = `<div class="day-number">${day}</div>`;
+        dayCell.addEventListener('click', function() {
+            const nextMonth = currentEnglishMonth === 11 ? 1 : currentEnglishMonth + 2;
+            const nextYear = currentEnglishMonth === 11 ? currentEnglishYear + 1 : currentEnglishYear;
+            const clickedDate = `${nextYear}-${String(nextMonth).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            showDayManagementModal(clickedDate, day);
+        });
         daysContainer.appendChild(dayCell);
     }
 }
@@ -798,13 +819,12 @@ async function updateNepaliCalendar() {
     // Load events for current Nepali month
     await loadNepaliEvents(currentNepaliYear, currentNepaliMonth + 1);
     
-    // Calculate proper starting day for Ashoj 2082
-    // 1 Ashoj 2082 falls on Thursday (4)
-    const startDay = currentNepaliMonth === 5 ? 4 : 0; // Thursday for Ashoj
+    // Calculate starting day (0=Sunday, 1=Monday, etc.)
+    const startDay = 0; // Start from Sunday for simplicity
     
     // Days in each Nepali month for 2082
     const daysInNepaliMonths = {
-        1: 31, 2: 31, 3: 31, 4: 32, 5: 31, 6: 30, // Ashoj has 30 days
+        1: 31, 2: 31, 3: 31, 4: 32, 5: 31, 6: 30,
         7: 29, 8: 30, 9: 29, 10: 30, 11: 29, 12: 30
     };
     const daysInMonth = daysInNepaliMonths[currentNepaliMonth + 1] || 30;
@@ -813,6 +833,14 @@ async function updateNepaliCalendar() {
     for (let i = 0; i < startDay; i++) {
         const dayCell = document.createElement('div');
         dayCell.className = 'day-cell other-month';
+        const prevMonth = currentNepaliMonth === 0 ? 11 : currentNepaliMonth - 1;
+        const prevYear = currentNepaliMonth === 0 ? currentNepaliYear - 1 : currentNepaliYear;
+        const day = 30 - startDay + i + 1;
+        dayCell.innerHTML = `<div class="day-number">${day}</div>`;
+        dayCell.addEventListener('click', function() {
+            const nepaliDate = convertNepaliToEnglish(prevYear, prevMonth + 1, day);
+            showDayManagementModal(nepaliDate, day);
+        });
         daysContainer.appendChild(dayCell);
     }
     
@@ -821,8 +849,10 @@ async function updateNepaliCalendar() {
         const dayCell = document.createElement('div');
         dayCell.className = 'day-cell';
         
-        // Highlight today (19 Ashoj 2082) - falls on Monday
-        if (day === 19 && currentNepaliMonth === 5 && currentNepaliYear === 2082) {
+        // Highlight today
+        const today = new Date();
+        const nepaliToday = convertEnglishToNepali(today.getFullYear(), today.getMonth() + 1, today.getDate());
+        if (day === nepaliToday.day && currentNepaliMonth === nepaliToday.month - 1 && currentNepaliYear === nepaliToday.year) {
             dayCell.classList.add('today');
         }
         
@@ -875,12 +905,17 @@ async function updateNepaliCalendar() {
                 }
                 
                 if (shouldShow) {
-                    dayContent += `<div class="${eventClass}">${event.title}</div>`;
+                    const displayTitle = event.type === 'school-day' ? 'School Day' : event.title;
+                    dayContent += `<div class="${eventClass}">${displayTitle}</div>`;
                 }
             });
         }
         
         dayCell.innerHTML = dayContent;
+        dayCell.addEventListener('click', function() {
+            const nepaliDate = convertNepaliToEnglish(currentNepaliYear, currentNepaliMonth + 1, day);
+            showDayManagementModal(nepaliDate, day);
+        });
         daysContainer.appendChild(dayCell);
     }
     
@@ -891,6 +926,12 @@ async function updateNepaliCalendar() {
         const dayCell = document.createElement('div');
         dayCell.className = 'day-cell other-month';
         dayCell.innerHTML = `<div class="day-number">${day}</div>`;
+        const nextMonth = currentNepaliMonth === 11 ? 0 : currentNepaliMonth + 1;
+        const nextYear = currentNepaliMonth === 11 ? currentNepaliYear + 1 : currentNepaliYear;
+        dayCell.addEventListener('click', function() {
+            const nepaliDate = convertNepaliToEnglish(nextYear, nextMonth + 1, day);
+            showDayManagementModal(nepaliDate, day);
+        });
         daysContainer.appendChild(dayCell);
     }
 }
@@ -963,8 +1004,10 @@ async function nextNepaliMonth() {
 }
 
 function updateCurrentDate() {
-    const monthName = nepaliMonths[currentNepaliMonth];
-    document.getElementById('currentBSDate').textContent = `आज: ${currentNepaliYear} ${monthName} १९ गते, आइतवार`;
+    const today = new Date();
+    const nepaliToday = convertEnglishToNepali(today.getFullYear(), today.getMonth() + 1, today.getDate());
+    const monthName = nepaliMonths[nepaliToday.month - 1];
+    document.getElementById('currentBSDate').textContent = `आज: ${nepaliToday.year} ${monthName} ${nepaliToday.day} गते`;
 }
 
 // English calendar navigation
@@ -1009,16 +1052,24 @@ function updateNavigationButtons() {
 document.addEventListener('DOMContentLoaded', async function() {
     await loadSchools();
     
-    // Load current month for both calendars
+    // Set current dates
+    const today = new Date();
+    currentEnglishYear = today.getFullYear();
+    currentEnglishMonth = today.getMonth();
+    
+    const nepaliToday = convertEnglishToNepali(today.getFullYear(), today.getMonth() + 1, today.getDate());
+    currentNepaliYear = nepaliToday.year;
+    currentNepaliMonth = nepaliToday.month - 1;
+    
+    // Load current month data
     await loadCustomHolidays(currentEnglishYear, currentEnglishMonth + 1);
     await loadNepaliEvents(currentNepaliYear, currentNepaliMonth + 1);
     
-    // Set Nepali calendar to current month/year (असोज २०८२)
-    currentNepaliYear = 2082;
-    currentNepaliMonth = 5; // असोज
-    
+    // Show English calendar by default
     await showEnglishCalendar();
-    console.log('Calendar loaded - English mode by default, BS calendar ready');
+    updateCurrentDate();
+    
+    console.log('Calendar loaded successfully');
 });
 
 // Load schools for dropdown
@@ -1197,13 +1248,9 @@ async function loadCustomHolidays(year, month) {
         if (response.ok) {
             const data = await response.json();
             if (data.success) {
-                // Store custom holidays with day number
                 const monthKey = `${year}-${month}`;
-                customHolidays[monthKey] = data.events.map(event => ({
-                    ...event,
-                    day: new Date(event.date).getDate()
-                }));
-                console.log(`Loaded ${data.events.length} custom holidays from database`);
+                customHolidays[monthKey] = data.events;
+                console.log(`Loaded ${data.events.length} events for ${year}-${month}`);
             }
         }
     } catch (error) {
@@ -1267,7 +1314,7 @@ async function convertEnglishEventsToNepali(nepaliYear, nepaliMonth) {
 }
 
 function convertEnglishToNepali(englishYear, englishMonth, englishDay) {
-    // More accurate conversion based on current reference: 19 Ashoj 2082 = current date
+    // Fixed conversion: Today (Oct 6, 2024) = 19 Ashoj 2082
     const referenceEnglish = new Date(2024, 9, 6); // Oct 6, 2024
     const referenceNepali = { year: 2082, month: 6, day: 19 }; // 19 Ashoj 2082
     
@@ -1304,30 +1351,56 @@ function convertEnglishToNepali(englishYear, englishMonth, englishDay) {
 }
 
 function convertNepaliToEnglish(nepaliYear, nepaliMonth, nepaliDay) {
-    // Simple conversion for modal functionality
-    const englishYear = nepaliYear - 56;
-    const englishMonth = nepaliMonth - 8;
-    const englishDay = nepaliDay - 15;
+    // Fixed conversion: 19 Ashoj 2082 = Oct 6, 2024
+    const referenceNepali = { year: 2082, month: 6, day: 19 }; // 19 Ashoj 2082
+    const referenceEnglish = new Date(2024, 9, 6); // Oct 6, 2024
     
-    let adjYear = englishYear;
-    let adjMonth = englishMonth;
-    let adjDay = englishDay;
+    // Calculate days difference from reference
+    const daysInNepaliMonths = [31, 31, 31, 32, 31, 30, 29, 30, 29, 30, 29, 30];
     
-    if (adjMonth <= 0) {
-        adjMonth += 12;
-        adjYear -= 1;
-    }
-    if (adjDay <= 0) {
-        adjDay += 30;
-        adjMonth -= 1;
-        if (adjMonth <= 0) {
-            adjMonth += 12;
-            adjYear -= 1;
+    let totalDays = 0;
+    let currentYear = referenceNepali.year;
+    let currentMonth = referenceNepali.month;
+    let currentDay = referenceNepali.day;
+    
+    // Calculate difference in days
+    if (nepaliYear > currentYear || (nepaliYear === currentYear && nepaliMonth > currentMonth) || 
+        (nepaliYear === currentYear && nepaliMonth === currentMonth && nepaliDay > currentDay)) {
+        // Future date
+        while (currentYear < nepaliYear || currentMonth < nepaliMonth || currentDay < nepaliDay) {
+            if (currentDay < daysInNepaliMonths[currentMonth - 1]) {
+                currentDay++;
+                totalDays++;
+            } else {
+                currentDay = 1;
+                currentMonth++;
+                totalDays++;
+                if (currentMonth > 12) {
+                    currentMonth = 1;
+                    currentYear++;
+                }
+            }
+        }
+    } else {
+        // Past date
+        while (currentYear > nepaliYear || currentMonth > nepaliMonth || currentDay > nepaliDay) {
+            if (currentDay > 1) {
+                currentDay--;
+                totalDays--;
+            } else {
+                currentMonth--;
+                if (currentMonth < 1) {
+                    currentMonth = 12;
+                    currentYear--;
+                }
+                currentDay = daysInNepaliMonths[currentMonth - 1];
+                totalDays--;
+            }
         }
     }
     
-    const date = new Date(adjYear, adjMonth - 1, adjDay);
-    return date.toISOString().split('T')[0];
+    const resultDate = new Date(referenceEnglish.getTime() + (totalDays * 24 * 60 * 60 * 1000));
+    return resultDate.toISOString().split('T')[0];
 }
 
 // Get CSRF token function
@@ -1354,8 +1427,8 @@ function showDayManagementModal(dateStr, dayNum) {
     const date = new Date(dateStr);
     document.getElementById('dayModalTitle').textContent = `Events for ${date.toLocaleDateString()}`;
     
-    // Get events for this day
-    const dayEvents = getDayEvents(dateStr, dayNum);
+    // Get events for this exact date
+    const dayEvents = getDayEvents(dateStr);
     const eventsList = document.getElementById('dayEventsList');
     
     if (dayEvents.length === 0) {
@@ -1390,34 +1463,36 @@ function showAddEventForDay() {
     showAddHolidayModal(selectedDate);
 }
 
-function getDayEvents(dateStr, dayNum) {
+function getDayEvents(dateStr) {
     const events = [];
     const date = new Date(dateStr);
     const year = date.getFullYear();
     const month = date.getMonth() + 1;
     const day = date.getDate();
     
-    // Get custom holidays from database
+    // Get custom holidays from database - match exact date
     const monthKey = `${year}-${month}`;
     if (customHolidays[monthKey]) {
-        const dayEvents = customHolidays[monthKey].filter(e => e.day === day);
+        const dayEvents = customHolidays[monthKey].filter(e => {
+            return e.date === dateStr;
+        });
         events.push(...dayEvents.map(e => ({
             id: e.id,
             title: e.title,
             type: e.type,
-            description: e.description,
+            description: e.description || '',
             date: e.date
         })));
     }
     
-    // Add system events (festivals, holidays) - these don't have IDs so can't be edited
-    const nepaliMonth = currentNepaliMonth + 1;
-    if (allEvents[nepaliMonth] && allEvents[nepaliMonth][dayNum]) {
-        const event = allEvents[nepaliMonth][dayNum];
+    // Convert to Nepali date and check for system events
+    const nepaliDate = convertEnglishToNepali(year, month, day);
+    if (allEvents[nepaliDate.month] && allEvents[nepaliDate.month][nepaliDate.day]) {
+        const event = allEvents[nepaliDate.month][nepaliDate.day];
         events.push({
             title: event.name,
             type: event.type,
-            description: 'System Event',
+            description: 'Traditional Nepali Festival/Holiday',
             date: dateStr
         });
     }

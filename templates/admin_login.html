@@ -1,24 +1,94 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Login - School Management</title>
     <style>
-        body { font-family: Arial, sans-serif; background: #f4f4f4; margin: 0; padding: 50px; }
-        .login-container { max-width: 400px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        .form-group { margin-bottom: 20px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input[type="text"], input[type="password"] { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px; box-sizing: border-box; }
-        .btn { background: #007bff; color: white; padding: 12px 20px; border: none; border-radius: 5px; cursor: pointer; width: 100%; }
-        .btn:hover { background: #0056b3; }
-        .alert { padding: 10px; margin-bottom: 20px; border-radius: 5px; }
-        .alert-error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
-        .alert-success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
-        h2 { text-align: center; margin-bottom: 30px; color: #333; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            margin: 0; padding: 20px; min-height: 100vh; 
+            display: flex; align-items: center; justify-content: center;
+        }
+        .login-container { 
+            max-width: 420px; width: 100%; background: white; 
+            padding: 40px; border-radius: 20px; 
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            backdrop-filter: blur(10px);
+        }
+        .logo { text-align: center; margin-bottom: 30px; }
+        .logo-icon { 
+            width: 60px; height: 60px; background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+            color: white; font-size: 24px; font-weight: bold; margin-bottom: 10px;
+        }
+        .form-group { margin-bottom: 25px; position: relative; }
+        label { 
+            display: block; margin-bottom: 8px; font-weight: 600; 
+            color: #374151; font-size: 14px;
+        }
+        input[type="text"], input[type="password"] { 
+            width: 100%; padding: 15px 20px; border: 2px solid #e5e7eb; 
+            border-radius: 12px; font-size: 16px; transition: all 0.3s ease;
+            background: #f9fafb;
+        }
+        input[type="text"]:focus, input[type="password"]:focus {
+            outline: none; border-color: #667eea; background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        .btn { 
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white; padding: 16px 20px; border: none; 
+            border-radius: 12px; cursor: pointer; width: 100%;
+            font-size: 16px; font-weight: 600; transition: all 0.3s ease;
+            text-transform: uppercase; letter-spacing: 0.5px;
+        }
+        .btn:hover { 
+            transform: translateY(-2px); 
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+        }
+        .alert { 
+            padding: 15px 20px; margin-bottom: 25px; border-radius: 12px;
+            font-weight: 500; border-left: 4px solid;
+        }
+        .alert-error { 
+            background: #fef2f2; color: #991b1b; border-left-color: #dc2626;
+        }
+        .alert-success { 
+            background: #f0fdf4; color: #166534; border-left-color: #16a34a;
+        }
+        h2 { 
+            text-align: center; margin-bottom: 10px; color: #1f2937;
+            font-size: 28px; font-weight: 700;
+        }
+        .subtitle {
+            text-align: center; color: #6b7280; margin-bottom: 40px;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 480px) {
+            body { padding: 15px; }
+            .login-container { padding: 30px 25px; }
+            h2 { font-size: 24px; }
+            input[type="text"], input[type="password"] { padding: 14px 16px; }
+            .btn { padding: 15px 20px; }
+        }
     </style>
 </head>
 <body>
     <div class="login-container">
+        <div class="logo">
+            {% load static %}
+            {% if school and school.logo %}
+                <img src="{{ school.logo.url }}" alt="School Logo" style="width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px;">
+            {% else %}
+                <img src="{% static 'img/Everest-Crest-Square.png' %}" alt="School Logo" style="width: 60px; height: 60px; object-fit: contain; margin-bottom: 10px;">
+            {% endif %}
+        </div>
         <h2>Admin Login</h2>
+        <p class="subtitle">School Management System</p>
         
         {% if messages %}
             {% for message in messages %}
@@ -40,16 +110,7 @@
             
             <button type="submit" class="btn">Login</button>
         </form>
-        
-        <div style="margin-top: 20px; text-align: center; font-size: 12px; color: #666;">
-            <p><strong>Super Admin Accounts:</strong></p>
-            <p><strong>superadmin</strong> / admin123</p>
-            <p><strong>subashgongwa</strong> / saMA@123</p>
-            <p><strong>supereme</strong> / saMA@123</p>
-            <hr style="margin: 10px 0;">
-            <p><strong>Basic User Account:</strong></p>
-            <p><strong>basicuser</strong> / basic123</p>
-        </div>
+
     </div>
 </body>
 </html>

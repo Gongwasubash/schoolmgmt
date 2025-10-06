@@ -72,15 +72,14 @@ body { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #1e
   .stat { padding: 1.5rem; }
   .stat-number { font-size: 2rem; }
   .filter-grid { grid-template-columns: 1fr; }
-  .table-container { margin: 0 -1rem; border-radius: 0; }
-  .table { font-size: 0.875rem; }
-  .table th:nth-child(3), .table td:nth-child(3),
-  .table th:nth-child(4), .table td:nth-child(4),
-  .table th:nth-child(5), .table td:nth-child(5) { display: none; }
+  .table-container { margin: 0 -1rem; border-radius: 0; overflow-x: auto; }
+  .table { font-size: 0.875rem; min-width: 600px; }
   .student-info { flex-direction: column; text-align: center; gap: 0.5rem; }
   .avatar { width: 40px; height: 40px; }
   .status-buttons { flex-direction: column; gap: 0.25rem; }
   .status-btn { min-width: auto; padding: 0.5rem; font-size: 0.75rem; }
+  .action-buttons { flex-direction: column; gap: 0.25rem; }
+  .action-btn { width: 32px; height: 32px; }
 }
 </style>
 
@@ -90,35 +89,45 @@ body { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #1e
       <div>
         <h1>📊 Attendance Dashboard</h1>
         <p>Streamlined student attendance management</p>
+        {% if is_holiday or is_saturday %}
+        <div style="background: #fef3c7; color: #92400e; padding: 1rem; border-radius: 12px; margin-top: 1rem; border: 1px solid #fcd34d;">
+          <strong>⚠️ Notice:</strong> 
+          {% if is_saturday %}Selected date is Saturday (Holiday) - Attendance cannot be recorded.{% endif %}
+          {% if is_holiday %}Selected date is a Holiday/Festival - Attendance cannot be recorded.{% endif %}
+        </div>
+        {% endif %}
       </div>
       <div class="actions">
-        <button class="btn" onclick="bulkMarkPresent()">✅ Mark All Present</button>
-        <button class="btn btn-secondary" onclick="saveAllAttendance()">💾 Save All</button>
-        <button class="btn" onclick="sendWhatsAppNotifications()" style="background: linear-gradient(135deg, #25d366, #128c7e);">📱 WhatsApp Absent/Late</button>
+        <button class="btn btn-secondary" onclick="saveAllAttendance()" {% if not can_mark_attendance %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>💾 Save All</button>
       </div>
     </div>
   </div>
 
   <div class="stats">
-    <div class="stat total">
+    <div class="stat total" onclick="filterByStatus('all')" style="cursor: pointer;">
       <div class="stat-icon">👥</div>
       <div class="stat-number" id="totalStudents">{{ total_students }}</div>
       <div class="stat-label">Total Students</div>
     </div>
-    <div class="stat present">
+    <div class="stat present" onclick="filterByStatus('present')" style="cursor: pointer;">
       <div class="stat-icon">✅</div>
       <div class="stat-number" id="presentCount">{{ present_count }}</div>
       <div class="stat-label">Present</div>
     </div>
-    <div class="stat absent">
+    <div class="stat absent" onclick="filterByStatus('absent')" style="cursor: pointer;">
       <div class="stat-icon">❌</div>
       <div class="stat-number" id="absentCount">{{ absent_count }}</div>
       <div class="stat-label">Absent</div>
     </div>
-    <div class="stat late">
+    <div class="stat late" onclick="filterByStatus('late')" style="cursor: pointer;">
       <div class="stat-icon">⏰</div>
       <div class="stat-number" id="lateCount">{{ late_count }}</div>
       <div class="stat-label">Late</div>
+    </div>
+    <div class="stat total">
+      <div class="stat-icon">📅</div>
+      <div class="stat-number">{{ total_school_days|default:0 }}</div>
+      <div class="stat-label">School Days</div>
     </div>
   </div>
 
@@ -162,9 +171,6 @@ body { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #1e
           <tr>
             <th>#</th>
             <th>👤 Student</th>
-            <th>🏫 Class</th>
-            <th>📚 Section</th>
-            <th>🆔 Roll No</th>
             <th>📊 Status</th>
             <th>📱 WhatsApp</th>
             <th>⚙️ Actions</th>
@@ -178,23 +184,21 @@ body { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #1e
               <div class="student-info">
                 <div class="avatar">{{ item.student.name|first }}</div>
                 <div>
-                  <div class="student-name">{{ item.student.name }}</div>
+                  <div class="student-name"><a href="{% url 'student_attendance_detail' item.student.id %}" style="color: #1e293b; text-decoration: none;">{{ item.student.name }}</a></div>
                   <div class="student-id d-md-none">{{ item.student.student_class }}-{{ item.student.section }} | {{ item.student.reg_number }}</div>
                 </div>
               </div>
             </td>
-            <td><span class="badge badge-primary">{{ item.student.student_class }}</span></td>
-            <td><span class="badge badge-info">{{ item.student.section }}</span></td>
-            <td><code style="background: rgba(96, 165, 250, 0.1); color: #60a5fa; padding: 0.25rem 0.5rem; border-radius: 6px;">{{ item.student.reg_number }}</code></td>
+
             <td>
               <div class="status-buttons">
-                <button class="status-btn present {% if item.attendance.status == 'present' %}active{% endif %}" onclick="setStatus(this, 'present')">
+                <button class="status-btn present {% if item.attendance.status == 'present' %}active{% endif %}" onclick="setStatus(this, 'present')" {% if not can_mark_attendance %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
                   <i class="fas fa-check-circle"></i> Present
                 </button>
-                <button class="status-btn absent {% if item.attendance.status == 'absent' %}active{% endif %}" onclick="setStatus(this, 'absent')">
+                <button class="status-btn absent {% if item.attendance.status == 'absent' %}active{% endif %}" onclick="setStatus(this, 'absent')" {% if not can_mark_attendance %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
                   <i class="fas fa-times-circle"></i> Absent
                 </button>
-                <button class="status-btn late {% if item.attendance.status == 'late' %}active{% endif %}" onclick="setStatus(this, 'late')">
+                <button class="status-btn late {% if item.attendance.status == 'late' %}active{% endif %}" onclick="setStatus(this, 'late')" {% if not can_mark_attendance %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>
                   <i class="fas fa-clock"></i> Late
                 </button>
                 <input type="hidden" class="attendance-status" value="{{ item.attendance.status }}">
@@ -205,16 +209,16 @@ body { background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%); color: #1e
             </td>
             <td>
               <div class="action-buttons">
-                <button class="action-btn btn-save" onclick="saveAttendance({{ item.student.id }})" title="Save">💾</button>
+                <button class="action-btn btn-save" onclick="saveAttendance({{ item.student.id }})" title="Save" {% if not can_mark_attendance %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>💾</button>
                 {% if item.attendance.id %}
-                <button class="action-btn btn-delete" onclick="deleteAttendance({{ item.attendance.id }}, {{ item.student.id }})" title="Delete">🗑️</button>
+                <button class="action-btn btn-delete" onclick="deleteAttendance({{ item.attendance.id }}, {{ item.student.id }})" title="Delete" {% if not can_mark_attendance %}disabled style="opacity: 0.5; cursor: not-allowed;"{% endif %}>🗑️</button>
                 {% endif %}
               </div>
             </td>
           </tr>
           {% empty %}
           <tr>
-            <td colspan="8">
+            <td colspan="5">
               <div class="empty-state">
                 <div class="empty-icon">📚</div>
                 <h4>No students found</h4>
@@ -536,6 +540,36 @@ function showAlert(type, message) {
     
     document.body.appendChild(alert);
     setTimeout(() => alert.remove(), 5000);
+}
+
+function filterByStatus(status) {
+    const rows = document.querySelectorAll('#attendanceTableBody tr[data-student-id]');
+    
+    rows.forEach(row => {
+        const currentStatus = row.querySelector('.attendance-status').value;
+        
+        if (status === 'all') {
+            row.style.display = '';
+        } else if (currentStatus === status) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+    
+    // Update stat card highlighting
+    document.querySelectorAll('.stat').forEach(stat => {
+        stat.style.transform = '';
+        stat.style.boxShadow = '';
+    });
+    
+    if (status !== 'all') {
+        const activeStatCard = document.querySelector(`.stat.${status}`);
+        if (activeStatCard) {
+            activeStatCard.style.transform = 'scale(1.05)';
+            activeStatCard.style.boxShadow = '0 10px 30px rgba(0,0,0,0.2)';
+        }
+    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {

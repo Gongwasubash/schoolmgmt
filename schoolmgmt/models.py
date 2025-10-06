@@ -601,6 +601,8 @@ class StudentDailyExpense(models.Model):
     expense_date = models.DateField(auto_now_add=True)
     description = models.CharField(max_length=200)
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    is_paid = models.BooleanField(default=False)
+    payment_date = models.DateField(blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     def __str__(self):
@@ -1068,6 +1070,7 @@ class CalendarEvent(models.Model):
         ('exam', 'Exam'),
         ('meeting', 'Meeting'),
         ('event', 'School Event'),
+        ('school-day', 'School Day'),
         ('other', 'Other'),
     ]
     
@@ -1124,6 +1127,10 @@ class StudentAttendance(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
     
     def save(self, *args, **kwargs):
+        # Validate attendance date
+        from .attendance_validation import validate_attendance_date
+        validate_attendance_date(self.date)
+        
         # Auto-populate Nepali date if not provided
         if self.date and not self.date_nepali:
             nepali_date = NepaliCalendar.english_to_nepali_date(self.date)

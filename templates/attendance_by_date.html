@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Attendance for {{ date }}</h2>
+    
+    <div class="row">
+        <div class="col-md-12">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Student Name</th>
+                        <th>Class</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in attendance_data %}
+                    <tr>
+                        <td>{{ record.student.name }}</td>
+                        <td>{{ record.student.student_class }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if record.status == 'present' %}badge-success
+                                {% elif record.status == 'late' %}badge-warning
+                                {% elif record.status == 'absent' %}badge-danger
+                                {% else %}badge-secondary{% endif %}">
+                                {{ record.status|title }}
+                            </span>
+                        </td>
+                        <td>
+                            <select class="form-control form-control-sm" onchange="markAttendance({{ record.student.id }}, '{{ date }}', this.value)">
+                                <option value="present" {% if record.status == 'present' %}selected{% endif %}>Present</option>
+                                <option value="late" {% if record.status == 'late' %}selected{% endif %}>Late</option>
+                                <option value="absent" {% if record.status == 'absent' %}selected{% endif %}>Absent</option>
+                            </select>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script>
+function markAttendance(studentId, date, status) {
+    fetch('/api/mark-attendance/', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: `student_id=${studentId}&date=${date}&status=${status}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        }
+    });
+}
+</script>
+{% csrf_token %}
+{% endblock %}

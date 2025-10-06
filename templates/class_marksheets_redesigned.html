@@ -20,7 +20,6 @@
         
         @media print {
             .no-print { display: none !important; }
-            .sidebar { display: none !important; }
             .main-content { margin-left: 0 !important; width: 100% !important; padding: 0 !important; }
             .see-marksheet { 
                 margin: 5mm !important; 
@@ -61,54 +60,12 @@
             font-size: 12px;
         }
 
-        .sidebar {
-            width: 250px;
-            background: #2c3e50;
-            color: white;
-            height: 100vh;
-            position: fixed;
-            left: 0;
-            top: 0;
-            padding: 20px;
-            overflow-y: auto;
-            z-index: 1001;
-        }
 
-        .sidebar h3 {
-            margin: 0 0 20px 0;
-            color: #ecf0f1;
-            border-bottom: 2px solid #34495e;
-            padding-bottom: 10px;
-        }
-
-        .sidebar-nav {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .sidebar-nav li {
-            margin-bottom: 10px;
-        }
-
-        .sidebar-nav a {
-            color: #bdc3c7;
-            text-decoration: none;
-            display: block;
-            padding: 10px;
-            border-radius: 5px;
-            transition: background 0.3s;
-        }
-
-        .sidebar-nav a:hover {
-            background: #34495e;
-            color: white;
-        }
 
         .main-content {
-            margin-left: 250px;
+            margin-left: 0;
             padding: 20px;
-            width: calc(100% - 250px);
+            width: 100%;
         }
 
         .see-marksheet {
@@ -375,184 +332,11 @@
             background: #34495e;
         }
 
-        .sidebar-actions {
-            margin-top: 30px;
-            padding-top: 20px;
-            border-top: 1px solid #34495e;
-        }
 
-        .sidebar-btn {
-            width: 100%;
-            padding: 10px;
-            margin-bottom: 10px;
-            background: #3498db;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-        }
 
-        .sidebar-btn:hover {
-            background: #2980b9;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 1024px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
-            }
-            
-            .sidebar.active {
-                transform: translateX(0);
-            }
-            
-            .main-content {
-                margin-left: 0;
-                width: 100%;
-            }
-            
-            .see-marksheet {
-                width: 100%;
-                height: auto;
-                margin: 10px;
-                padding: 15px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .see-header {
-                flex-direction: column;
-                text-align: center;
-            }
-            
-            .nepal-emblem {
-                margin: 0 auto 10px;
-            }
-            
-            .student-columns {
-                flex-direction: column;
-                gap: 5mm;
-            }
-            
-            .student-row {
-                flex-direction: column;
-            }
-            
-            .student-label {
-                width: 100%;
-                margin-bottom: 2px;
-            }
-            
-            .student-value {
-                width: 100%;
-            }
-            
-            .marks-table {
-                font-size: 8px;
-            }
-            
-            .marks-table th,
-            .marks-table td {
-                padding: 1mm;
-            }
-            
-            .result-summary {
-                flex-direction: column;
-            }
-            
-            .result-box {
-                width: 100%;
-                margin-bottom: 10px;
-            }
-            
-            .eca-table {
-                font-size: 7px;
-            }
-            
-            .eca-table th,
-            .eca-table td {
-                padding: 0.5mm;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .see-marksheet {
-                padding: 10px;
-                margin: 5px;
-            }
-            
-            .government-header {
-                font-size: 16px;
-            }
-            
-            .marksheet-title {
-                font-size: 14px;
-            }
-            
-            .marks-table {
-                font-size: 7px;
-            }
-            
-            .marks-table th,
-            .marks-table td {
-                padding: 0.5mm;
-            }
-            
-            .eca-table {
-                font-size: 6px;
-            }
-            
-            .result-box {
-                font-size: 9px;
-            }
-            
-            .signatures {
-                flex-direction: column;
-                gap: 20px;
-            }
-            
-            .signature-block {
-                width: 100%;
-            }
-        }
-
-        /* Mobile Menu Toggle */
+        /* Mobile Menu Toggle - Hidden */
         .mobile-menu-toggle {
             display: none;
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: #2c3e50;
-            color: white;
-            border: none;
-            padding: 10px;
-            border-radius: 5px;
-            cursor: pointer;
-            z-index: 1002;
-        }
-
-        @media (max-width: 1024px) {
-            .mobile-menu-toggle {
-                display: block;
-            }
-            
-            .print-btn {
-                top: 20px;
-                right: 80px;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .print-btn {
-                padding: 8px 16px;
-                font-size: 12px;
-            }
-            
-            .mobile-menu-toggle {
-                padding: 8px;
-                font-size: 12px;
-            }
         }
     </style>
 </head>
@@ -560,18 +344,7 @@
     <button class="mobile-menu-toggle no-print" onclick="toggleSidebar()">☰ Menu</button>
     <button class="print-btn no-print" onclick="window.print()">Print Marksheets</button>
     
-    <div class="sidebar no-print">
-        <h3>SEE Marksheets</h3>
-        <ul class="sidebar-nav">
-            <li><a href="/reports/">← Back to Reports</a></li>
-            <li><a href="#" onclick="window.print()">Print All Marksheets</a></li>
-        </ul>
-        
-        <div class="sidebar-actions">
-            <button class="sidebar-btn" onclick="window.print()">Print All</button>
-            <button class="sidebar-btn" onclick="window.close()">Close Window</button>
-        </div>
-    </div>
+
     
     <div class="main-content">
         {% for data in marksheets_data %}
@@ -679,8 +452,7 @@
                 <div style="text-align: center; margin-bottom: 2mm;"><strong>ATTENDANCE RECORD</strong></div>
                 <div style="display: flex; justify-content: space-between;">
                     <span><strong>Total School Days:</strong> {{ data.total_school_days }}</span>
-                    <span><strong>Present:</strong> {{ data.student_present_days }}</span>
-                    <span><strong>Leave:</strong> {{ data.student_leave_days }}</span>
+                    <span><strong>Present:</strong> {{ data.student_present_and_late_days }}</span>
                     <span><strong>Absent:</strong> {{ data.student_absent_days }}</span>
                 </div>
             </div>
@@ -848,22 +620,8 @@
         }
         
         function toggleSidebar() {
-            const sidebar = document.querySelector('.sidebar');
-            sidebar.classList.toggle('active');
+            // Disabled for non-responsive design
         }
-        
-        // Close sidebar when clicking outside on mobile
-        document.addEventListener('click', function(e) {
-            const sidebar = document.querySelector('.sidebar');
-            const toggle = document.querySelector('.mobile-menu-toggle');
-            
-            if (window.innerWidth <= 1024 && 
-                !sidebar.contains(e.target) && 
-                !toggle.contains(e.target) && 
-                sidebar.classList.contains('active')) {
-                sidebar.classList.remove('active');
-            }
-        });
     </script>
 </body>
 </html>
