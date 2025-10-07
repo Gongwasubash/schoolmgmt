@@ -169,8 +169,8 @@ EMAIL_HOST_PASSWORD = 'your-app-password'  # Replace with Gmail App Password
 DEFAULT_FROM_EMAIL = 'your-email@gmail.com'
 
 # Google OAuth2 Settings
-SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('GOOGLE_OAUTH2_KEY')
-SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('GOOGLE_OAUTH2_SECRET')
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('GOOGLE_OAUTH2_KEY', default='')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('GOOGLE_OAUTH2_SECRET', default='')
 
 # Social Auth Configuration
 AUTHENTICATION_BACKENDS = (
