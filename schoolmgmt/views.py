@@ -158,15 +158,20 @@ def dashboard(request):
 def home(request):
     # Lincoln School Homepage - Modern website homepage
     # Get hero slider images
-    from .models import HeroSlider, Blog
     try:
+        from .models import HeroSlider, Blog
         hero_images = list(HeroSlider.objects.filter(is_active=True).order_by('order'))
-    except:
+    except Exception as e:
+        # Handle case where HeroSlider table doesn't exist yet
+        print(f"HeroSlider table not found: {e}")
         hero_images = []
     
     try:
+        from .models import Blog
         blogs = list(Blog.objects.all()[:3])
-    except:
+    except Exception as e:
+        # Handle case where Blog table doesn't exist yet
+        print(f"Blog table not found: {e}")
         blogs = []
     
     try:
