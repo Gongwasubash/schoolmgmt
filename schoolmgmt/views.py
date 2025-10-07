@@ -160,12 +160,12 @@ def home(request):
     # Get hero slider images
     from .models import HeroSlider, Blog
     try:
-        hero_images = HeroSlider.objects.filter(is_active=True).order_by('order')
+        hero_images = list(HeroSlider.objects.filter(is_active=True).order_by('order'))
     except:
         hero_images = []
     
     try:
-        blogs = Blog.objects.all()[:3]
+        blogs = list(Blog.objects.all()[:3])
     except:
         blogs = []
     
