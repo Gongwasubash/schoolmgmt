@@ -24,16 +24,25 @@ class SchoolDetail(models.Model):
     
     @classmethod
     def get_current_school(cls):
-        school, created = cls.objects.get_or_create(
-            pk=1,
-            defaults={
+        try:
+            school, created = cls.objects.get_or_create(
+                pk=1,
+                defaults={
+                    'school_name': 'Everest Academy',
+                    'address': 'Kathmandu, Nepal',
+                    'phone': '+977-1-4444444',
+                    'email': 'info@everestacademy.edu.np'
+                }
+            )
+            return school
+        except:
+            # Return a default school object if database table doesn't exist
+            return type('obj', (object,), {
                 'school_name': 'Everest Academy',
                 'address': 'Kathmandu, Nepal',
                 'phone': '+977-1-4444444',
                 'email': 'info@everestacademy.edu.np'
-            }
-        )
-        return school
+            })()
 
 class Student(models.Model):
     GENDER_CHOICES = [
