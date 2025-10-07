@@ -127,6 +127,10 @@ class Student(models.Model):
     mother_dob_nepali = models.CharField(max_length=20, blank=True, help_text='Format: YYYY/MM/DD')
     mother_citizen = models.CharField(max_length=50, blank=True)
     
+    # Login Credentials
+    username = models.CharField(max_length=50, unique=True, blank=True, null=True, help_text="Student login username")
+    password = models.CharField(max_length=100, blank=True, null=True, help_text="Student login password")
+    
     # Other Information
     old_balance = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     admission_paid = models.BooleanField(default=False)
@@ -150,6 +154,31 @@ class Student(models.Model):
     
     def __str__(self):
         return f"{self.name} - {self.reg_number}"
+    
+    @property
+    def student_id(self):
+        """Return registration number as student ID"""
+        return self.reg_number
+    
+    @property
+    def class_name(self):
+        """Return student class"""
+        return self.student_class
+    
+    @property
+    def phone(self):
+        """Return mobile number"""
+        return self.mobile
+    
+    @property
+    def address(self):
+        """Return address1 as main address"""
+        return self.address1
+    
+    @property
+    def date_of_birth(self):
+        """Return date of birth"""
+        return self.dob
     
     def get_nepali_dob(self):
         """Convert AD DOB to Nepali date"""

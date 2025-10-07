@@ -1485,7 +1485,6 @@ def fee_receipt_book(request):
         student.paid_amount = float(student_paid)
         student.pending_amount = float(student_pending)
         student.payment_status = 'paid' if student_pending == 0 else 'pending'
-        student.class_name = student.student_class
         student.roll_number = student.reg_number
         student.daily_expenses_total = float(daily_expenses_total)
         student.email = student.email  # Ensure email is available
@@ -2217,7 +2216,6 @@ def fee_pending_report(request):
             student.paid_amount = float(student_paid)
             student.pending_amount = float(student_pending)
             student.payment_status = 'pending'
-            student.class_name = student.student_class
             student.roll_number = student.reg_number
             
             students_with_pending.append(student)

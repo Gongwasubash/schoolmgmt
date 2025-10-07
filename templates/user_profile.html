@@ -1,0 +1,108 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Profile - {{ school.school_name }}</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-school me-2"></i>{{ school.school_name }}
+            </a>
+            <div class="navbar-nav ms-auto">
+                <a class="nav-link" href="{% url 'home' %}">Home</a>
+                <a class="nav-link" href="{% url 'student_logout' %}">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-10">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0"><i class="fas fa-user me-2"></i>My Profile</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h5 class="text-primary mb-3">Google Account Info</h5>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Name:</strong></div>
+                                    <div class="col-sm-8">{{ user.get_full_name|default:user.username }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Email:</strong></div>
+                                    <div class="col-sm-8">{{ user.email }}</div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-sm-4"><strong>Account Type:</strong></div>
+                                    <div class="col-sm-8">Google OAuth User</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h5 class="text-success mb-3">Student Verification</h5>
+                                {% if messages %}
+                                    {% for message in messages %}
+                                        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                            {{ message }}
+                                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                        </div>
+                                    {% endfor %}
+                                {% endif %}
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="student_name" class="form-label">Student Name</label>
+                                        <input type="text" class="form-control" id="student_name" name="student_name" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="student_id" class="form-label">Registration Number</label>
+                                        <input type="text" class="form-control" id="student_id" name="student_id" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label for="class_name" class="form-label">Class</label>
+                                        <input type="text" class="form-control" id="class_name" name="class_name" placeholder="e.g., Grade 10, Class A">
+                                    </div>
+                                    <button type="submit" class="btn btn-success" name="action" value="verify">
+                                        <i class="fas fa-check me-1"></i>Verify Student
+                                    </button>
+                                </form>
+                                
+                                {% if show_verification_form %}
+                                <hr>
+                                <h6 class="text-info mb-3">Enter Verification Code</h6>
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="student_id_temp" value="{{ student_id_temp }}">
+                                    <div class="mb-3">
+                                        <label for="verification_code" class="form-label">Verification Code</label>
+                                        <input type="text" class="form-control" id="verification_code" name="verification_code" required>
+                                        <small class="text-muted">Check your parent's email for the verification code</small>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" name="action" value="confirm">
+                                        <i class="fas fa-key me-1"></i>Confirm Code
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <a href="{% url 'home' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

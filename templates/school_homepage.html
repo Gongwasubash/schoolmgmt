@@ -437,6 +437,34 @@
                     <li class="nav-item"><a class="nav-link" href="/public-school-calendar/">School Calendar</a></li>
                     <li class="nav-item"><a class="nav-link" href="{% url 'public_registration' %}">Registration</a></li>
                     <li class="nav-item"><a class="nav-link" href="#contact">Contact</a></li>
+                    {% if request.session.student_logged_in or user.is_authenticated %}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="background: var(--secondary-color); color: white !important; border-radius: 25px; margin-left: 0.5rem;">
+                                {% if user.is_authenticated %}
+                                    <i class="fab fa-google me-1"></i>{{ user.get_full_name|default:user.username }}
+                                {% else %}
+                                    <i class="fas fa-user-circle me-1"></i>{{ request.session.student_name }}
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="{% url 'student_dashboard' %}"><i class="fas fa-tachometer-alt me-2"></i>Dashboard</a></li>
+                                {% if request.session.student_id %}
+                                    <li><a class="dropdown-item" href="{% url 'student_detail' request.session.student_id %}"><i class="fas fa-user me-2"></i>My Profile</a></li>
+                                {% elif user.is_authenticated %}
+                                    <li><a class="dropdown-item" href="{% url 'user_profile' %}"><i class="fas fa-user me-2"></i>My Profile</a></li>
+                                {% endif %}
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item" href="{% if user.is_authenticated %}{% url 'student_logout' %}{% else %}{% url 'student_logout' %}{% endif %}"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                            </ul>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'student_login' %}" style="background: var(--secondary-color); color: white !important; border-radius: 25px; margin-left: 0.5rem;">
+                                <i class="fas fa-sign-in-alt me-1"></i>Student Login
+                            </a>
+                        </li>
+                    {% endif %}
+
                 </ul>
             </div>
         </div>

@@ -3,10 +3,36 @@ from .models import Student, FeeStructure, FeePayment, Session, Subject, Exam, M
 
 @admin.register(Student)
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ['name', 'reg_number', 'student_class', 'section', 'father_name', 'mobile', 'session']
+    list_display = ['name', 'reg_number', 'student_class', 'section', 'username', 'father_name', 'mobile', 'session']
     list_filter = ['student_class', 'section', 'gender', 'session']
-    search_fields = ['name', 'reg_number', 'father_name', 'mobile', 'session']
+    search_fields = ['name', 'reg_number', 'username', 'father_name', 'mobile', 'session']
     ordering = ['-created_at']
+    
+    fieldsets = (
+        ('Personal Information', {
+            'fields': ('name', 'student_class', 'section', 'gender', 'dob', 'religion', 'photo')
+        }),
+        ('Login Credentials', {
+            'fields': ('username', 'password'),
+            'classes': ('collapse',)
+        }),
+        ('Contact Information', {
+            'fields': ('mobile', 'email', 'address1', 'address2', 'city', 'transport')
+        }),
+        ('Admission Details', {
+            'fields': ('admission_date', 'reg_number', 'session')
+        }),
+        ('Father Details', {
+            'fields': ('father_name', 'father_mobile', 'father_email', 'father_occupation')
+        }),
+        ('Mother Details', {
+            'fields': ('mother_name', 'mother_mobile', 'mother_occupation')
+        }),
+        ('Other Information', {
+            'fields': ('old_balance', 'admission_paid'),
+            'classes': ('collapse',)
+        }),
+    )
 
 @admin.register(FeeStructure)
 class FeeStructureAdmin(admin.ModelAdmin):

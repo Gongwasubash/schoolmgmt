@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -21,7 +22,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-uvh1d8(^z7rj$1@1)!lbm7=$pgh^m2^1wk4v&3i92o24y_d@7)')
+SECRET_KEY = config('SECRET_KEY', default='django-insecure-uvh1d8(^z7rj$1@1)!lbm7=$pgh^m2^1wk4v&3i92o24y_d@7)')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True  # Temporarily enable for debugging
@@ -38,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'social_django',
     'schoolmgmt',
 ]
 
@@ -48,9 +50,11 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'social_django.middleware.SocialAuthExceptionMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'schoolmgmt.middleware.AdminAuthMiddleware',
+    'schoolmgmt.student_access_middleware.StudentAccessMiddleware',
 ]
 
 ROOT_URLCONF = 'schoolmgmt.urls'
@@ -65,6 +69,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'social_django.context_processors.backends',
+                'social_django.context_processors.login_redirect',
                 'schoolmgmt.context_processors.school_context',
                 'schoolmgmt.context_processors.user_permissions',
             ],
@@ -161,3 +167,27 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'your-email@gmail.com'  # Replace with your Gmail
 EMAIL_HOST_PASSWORD = 'your-app-password'  # Replace with Gmail App Password
 DEFAULT_FROM_EMAIL = 'your-email@gmail.com'
+
+# Google OAuth2 Settings
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY = config('GOOGLE_OAUTH2_KEY')
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET = config('GOOGLE_OAUTH2_SECRET')
+
+# Social Auth Configuration
+AUTHENTICATION_BACKENDS = (
+    'social_core.backends.google.GoogleOAuth2',
+    'django.contrib.auth.backends.ModelBackend',
+)
+
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE = [
+    'https://www.googleapis.com/auth/userinfo.email',
+    'https://www.googleapis.com/auth/userinfo.profile',
+]
+
+# Google OAuth2 Redirect URIs
+SOCIAL_AUTH_GOOGLE_OAUTH2_REDIRECT_URI = 'http://127.0.0.1:8000/auth/complete/google-oauth2/'
+
+SOCIAL_AUTH_LOGIN_REDIRECT_URL = '/user-profile/'
+SOCIAL_AUTH_LOGIN_ERROR_URL = '/student-login/'
+LOGIN_URL = '/student-login/'
+LOGIN_REDIRECT_URL = '/user-profile/'
+LOGOUT_REDIRECT_URL = '/'

@@ -15,7 +15,7 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 from . import views, views_admin, views_user, student_views
@@ -155,6 +155,8 @@ urlpatterns = [
     path('blog/<int:blog_id>/', views.blog_detail, name='blog_detail'),
     path('test-enquiry-status/', views.test_enquiry_status, name='test_enquiry_status'),
     path('admin/', admin.site.urls),
+    path('auth/', include('social_django.urls', namespace='social')),
+    path('auth/logout/', views_user.student_logout, name='auth_logout_redirect'),
     
     # Admin Login URLs
     path('admin-login/', views_admin.admin_login_view, name='admin_login_view'),
@@ -170,6 +172,16 @@ urlpatterns = [
     path('user-login/', views_user.user_login_view, name='user_login'),
     path('user-dashboard/', views_user.user_dashboard, name='user_dashboard'),
     path('user-logout/', views_user.user_logout, name='user_logout'),
+    
+    # Student Login URLs
+    path('student-login/', views_user.student_login_view, name='student_login'),
+    path('student-dashboard/', views_user.student_dashboard, name='student_dashboard'),
+    path('student-logout/', views_user.student_logout, name='student_logout'),
+    path('google-login/', views_user.google_oauth_redirect, name='google_login'),
+    path('user-profile/', views_user.user_profile, name='user_profile'),
+    path('student-performance/<int:student_id>/', views_user.student_performance, name='student_performance'),
+    path('student-attendance/<int:student_id>/', views_user.student_attendance, name='student_attendance'),
+    path('student-fees/<int:student_id>/', views_user.student_fees, name='student_fees'),
     path('school-calendar/', views.school_calendar, name='school_calendar'),
     path('public-school-calendar/', views.public_school_calendar, name='public_school_calendar'),
     path('get-calendar-data/', views.get_calendar_data_api, name='get_calendar_data_api'),

@@ -1,0 +1,331 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login - {{ school.school_name|default:"School Management System" }}</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+        }
+        
+        .login-container {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.15);
+            width: 100%;
+            max-width: 400px;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .login-header {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+            padding: 2rem 1.5rem 1rem;
+            text-align: center;
+        }
+        
+        .logo {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+        }
+        
+        .logo i {
+            font-size: 28px;
+            color: white;
+        }
+        
+        .login-title {
+            font-size: 24px;
+            font-weight: 700;
+            color: #1a202c;
+            margin-bottom: 0.5rem;
+        }
+        
+        .login-subtitle {
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        .login-form {
+            padding: 1.5rem;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+        }
+        
+        .input-container {
+            position: relative;
+        }
+        
+        .input-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            font-size: 16px;
+        }
+        
+        .form-input {
+            width: 100%;
+            padding: 14px 14px 14px 45px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            background: white;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        
+        .form-input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .form-input:focus + .input-icon {
+            color: #667eea;
+        }
+        
+        .login-btn {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            border-radius: 10px;
+            color: white;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1rem;
+        }
+        
+        .login-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .divider {
+            display: flex;
+            align-items: center;
+            margin: 1.5rem 0;
+        }
+        
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #e2e8f0;
+        }
+        
+        .divider span {
+            padding: 0 1rem;
+            color: #a0aec0;
+            font-size: 13px;
+        }
+        
+        .google-btn {
+            width: 100%;
+            padding: 14px;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            color: #4a5568;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+        }
+        
+        .google-btn:hover {
+            border-color: #cbd5e0;
+            background: #f7fafc;
+            color: #4a5568;
+            text-decoration: none;
+        }
+        
+        .back-link {
+            text-align: center;
+        }
+        
+        .back-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.3s ease;
+        }
+        
+        .back-link a:hover {
+            color: #5a67d8;
+        }
+        
+        .alert {
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            font-size: 14px;
+        }
+        
+        .alert-danger {
+            background: #fed7d7;
+            color: #c53030;
+            border: 1px solid #feb2b2;
+        }
+        
+        @media (max-width: 768px) {
+            body {
+                padding: 0.5rem;
+            }
+            
+            .login-container {
+                max-width: 100%;
+                border-radius: 16px;
+            }
+            
+            .login-header {
+                padding: 1.5rem 1rem 0.5rem;
+            }
+            
+            .logo {
+                width: 60px;
+                height: 60px;
+                margin-bottom: 0.75rem;
+            }
+            
+            .logo i {
+                font-size: 24px;
+            }
+            
+            .login-title {
+                font-size: 22px;
+            }
+            
+            .login-form {
+                padding: 1rem;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .form-input {
+                padding: 12px 12px 12px 40px;
+                font-size: 16px;
+            }
+            
+            .input-icon {
+                left: 12px;
+                font-size: 14px;
+            }
+            
+            .login-btn, .google-btn {
+                padding: 12px;
+                font-size: 14px;
+            }
+            
+            .login-title {
+                font-size: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-header">
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h1 class="login-title">Student Portal</h1>
+            <p class="login-subtitle">Welcome back! Please sign in to continue</p>
+        </div>
+        
+        <div class="login-form">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="username" class="form-label">Username or Student ID</label>
+                    <div class="input-container">
+                        <input type="text" class="form-input" id="username" name="username" placeholder="Enter your username" required>
+                        <i class="fas fa-user input-icon"></i>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="password" class="form-label">Password</label>
+                    <div class="input-container">
+                        <input type="password" class="form-input" id="password" name="password" placeholder="Enter your password" required>
+                        <i class="fas fa-lock input-icon"></i>
+                    </div>
+                </div>
+                
+                <button type="submit" class="login-btn">
+                    <i class="fas fa-sign-in-alt" style="margin-right: 8px;"></i>
+                    Sign In
+                </button>
+            </form>
+            
+            <div class="divider">
+                <span>or continue with</span>
+            </div>
+            
+            <a href="/auth/login/google-oauth2/" class="google-btn">
+                <i class="fab fa-google"></i>
+                Google
+            </a>
+            
+            <div class="back-link">
+                <a href="{% url 'home' %}">
+                    <i class="fas fa-arrow-left" style="margin-right: 6px;"></i>
+                    Back to Home
+                </a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
