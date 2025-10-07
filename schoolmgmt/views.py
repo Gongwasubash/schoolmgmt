@@ -159,41 +159,73 @@ def home(request):
     # Lincoln School Homepage - Modern website homepage
     # Get hero slider images
     from .models import HeroSlider, Blog
-    hero_images = HeroSlider.objects.filter(is_active=True).order_by('order')
-    blogs = Blog.objects.all()[:3]
+    try:
+        hero_images = HeroSlider.objects.filter(is_active=True).order_by('order')
+    except:
+        hero_images = []
+    
+    try:
+        blogs = Blog.objects.all()[:3]
+    except:
+        blogs = []
+    
     try:
         welcome_section = WelcomeSection.get_active_welcome()
     except:
         welcome_section = None
     
-    # Get basic statistics for potential use
-    total_students = Student.objects.count()
-    boys_count = Student.objects.filter(gender='Boy').count()
-    girls_count = Student.objects.filter(gender='Girl').count()
+    # Get basic statistics for potential use - with error handling
+    try:
+        total_students = Student.objects.count()
+        boys_count = Student.objects.filter(gender='Boy').count()
+        girls_count = Student.objects.filter(gender='Girl').count()
+    except:
+        total_students = 0
+        boys_count = 0
+        girls_count = 0
     
     # Get today's birthdays
     today = date.today()
-    todays_birthdays = Student.objects.filter(dob__month=today.month, dob__day=today.day).count()
+    try:
+        todays_birthdays = Student.objects.filter(dob__month=today.month, dob__day=today.day).count()
+    except:
+        todays_birthdays = 0
     
     # Get collection data
-    todays_collection = FeePayment.objects.filter(payment_date=today).aggregate(total=Sum('payment_amount'))['total'] or 0
+    try:
+        todays_collection = FeePayment.objects.filter(payment_date=today).aggregate(total=Sum('payment_amount'))['total'] or 0
+    except:
+        todays_collection = 0
     
     from datetime import timedelta
     week_start = today - timedelta(days=6)
-    weekly_collection = FeePayment.objects.filter(payment_date__range=[week_start, today]).aggregate(total=Sum('payment_amount'))['total'] or 0
+    try:
+        weekly_collection = FeePayment.objects.filter(payment_date__range=[week_start, today]).aggregate(total=Sum('payment_amount'))['total'] or 0
+    except:
+        weekly_collection = 0
     
     # Monthly collection calculation - total collection for last 30 days
     thirty_days_ago = today - timedelta(days=29)  # 30 days including today
-    monthly_payments = FeePayment.objects.filter(
-        payment_date__range=[thirty_days_ago, today]
-    )
-    monthly_collection = monthly_payments.aggregate(total=Sum('payment_amount'))['total']
-    if monthly_collection is None:
+    try:
+        monthly_payments = FeePayment.objects.filter(
+            payment_date__range=[thirty_days_ago, today]
+        )
+        monthly_collection = monthly_payments.aggregate(total=Sum('payment_amount'))['total']
+        if monthly_collection is None:
+            monthly_collection = Decimal('0')
+    except:
         monthly_collection = Decimal('0')
-    yearly_collection = FeePayment.objects.filter(payment_date__year=today.year).aggregate(total=Sum('payment_amount'))['total'] or 0
+    
+    try:
+        yearly_collection = FeePayment.objects.filter(payment_date__year=today.year).aggregate(total=Sum('payment_amount'))['total'] or 0
+    except:
+        yearly_collection = 0
     
     # Check if today is a school day or holiday
-    today_event = CalendarEvent.objects.filter(event_date=today, is_active=True).first()
+    try:
+        today_event = CalendarEvent.objects.filter(event_date=today, is_active=True).first()
+    except:
+        today_event = None
     
     if today_event and today_event.event_type in ['holiday', 'festival']:
         # Today is a holiday - show event info instead of attendance
@@ -206,18 +238,31 @@ def home(request):
         is_holiday = True
     else:
         # Today is a school day - get attendance data
-        todays_attendance = SchoolAttendance.objects.filter(date=today)
-        total_present = todays_attendance.filter(status='present').count()
-        total_absent = todays_attendance.filter(status='absent').count()
-        total_late = todays_attendance.filter(status='late').count()
-        attendance_percentage = round((total_present / total_students * 100) if total_students > 0 else 0, 1)
+        try:
+            todays_attendance = SchoolAttendance.objects.filter(date=today)
+            total_present = todays_attendance.filter(status='present').count()
+            total_absent = todays_attendance.filter(status='absent').count()
+            total_late = todays_attendance.filter(status='late').count()
+            attendance_percentage = round((total_present / total_students * 100) if total_students > 0 else 0, 1)
+        except:
+            total_present = 0
+            total_absent = 0
+            total_late = 0
+            attendance_percentage = 0
         today_status = 'School Day'
         today_message = 'Regular school day'
         is_holiday = False
     
     # Get class-wise and religion-wise data
-    class_data = Student.objects.values('student_class').annotate(count=Count('student_class')).order_by('student_class')
-    religion_data = Student.objects.values('religion').annotate(count=Count('religion')).order_by('religion')
+    try:
+        class_data = Student.objects.values('student_class').annotate(count=Count('student_class')).order_by('student_class')
+    except:
+        class_data = []
+    
+    try:
+        religion_data = Student.objects.values('religion').annotate(count=Count('religion')).order_by('religion')
+    except:
+        religion_data = []
     
     # Get Nepali date information
     nepali_info = get_comprehensive_nepali_info()
@@ -250,7 +295,11 @@ def home(request):
     }
     
     # Get school details for homepage
-    school = SchoolDetail.get_current_school()
+    try:
+        school = SchoolDetail.get_current_school()
+    except:
+        school = None
+    
     context['school'] = school
     context['hero_images'] = hero_images
     context['blogs'] = blogs
