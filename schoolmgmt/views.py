@@ -161,7 +161,10 @@ def home(request):
     from .models import HeroSlider, Blog
     hero_images = HeroSlider.objects.filter(is_active=True).order_by('order')
     blogs = Blog.objects.all()[:3]
-    welcome_section = WelcomeSection.get_active_welcome()
+    try:
+        welcome_section = WelcomeSection.get_active_welcome()
+    except:
+        welcome_section = None
     
     # Get basic statistics for potential use
     total_students = Student.objects.count()
