@@ -1,17 +1,21 @@
 #!/usr/bin/env bash
-# exit on error
-set -o errexit
+# Build script for Render deployment
 
-echo "Installing dependencies..."
+set -o errexit  # exit on error
+
+echo "Starting build process..."
+
+# Install dependencies
+echo "Installing Python dependencies..."
 pip install -r requirements.txt
+
+echo "Collecting static files..."
+python manage.py collectstatic --no-input
 
 echo "Creating migrations..."
 python manage.py makemigrations
 
 echo "Applying migrations..."
 python manage.py migrate
-
-echo "Collecting static files..."
-python manage.py collectstatic --no-input
 
 echo "Build completed successfully!"

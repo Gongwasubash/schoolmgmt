@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: schoolmgmt
+    env: python
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn schoolmgmt.wsgi:application"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.4
+      - key: DJANGO_SETTINGS_MODULE
+        value: schoolmgmt.settings
